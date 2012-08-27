@@ -10,7 +10,7 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.3dev'
 
 install_requires = [
-    'lxml',
+    'lxml>=3.0alpha2',
 ]
 
 
