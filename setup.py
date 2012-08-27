@@ -14,9 +14,9 @@ install_requires = [
 ]
 
 
-setup(name='pyXMLSec',
+setup(name='pyXMLSecurity',
     version=version,
-    description="Python XML Security",
+    description="pure Python XML Security",
     long_description=README + '\n\n' + NEWS,
     classifiers=[
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
