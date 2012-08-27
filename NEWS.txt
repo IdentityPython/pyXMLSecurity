@@ -20,3 +20,8 @@ News
 * make all exceptions an XMLSecException
 * first draft: sign
 * various cleanups
+
+0.3
+---
+
+*Release date: UNRELEASED*
