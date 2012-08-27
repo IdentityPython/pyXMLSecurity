@@ -10,6 +10,7 @@ import hashlib
 import copy
 import int_to_bytes as itb
 from lxml.builder import ElementMaker
+from exceptions import XMLSigException
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'],nsmap=NS)
@@ -30,9 +31,6 @@ ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 # This code was inspired by https://github.com/andrewdyates/xmldsig
 # and includes https://github.com/andrewdyates/rsa_x509_pem with
 # permission from the author.
-
-class XMLSigException(Exception):
-    pass
 
 def _find_matching_cert(t,fp):
     for cd in t.findall(".//{%s}X509Certificate" % NS['ds']):
@@ -300,11 +298,15 @@ def sign(t,key_spec,cert_file):
     key_f_private = None
     if hasattr(key_spec,'__call__'):
         key_f_private = key_spec
-    else:
+    elif os.path.isfile(key_spec):
         key_data = open(key_spec).read()
         priv_key = rsa_x509_pem.parse(key_data)
         key_f_private = rsa_x509_pem.f_private(priv_key)
-
+    elif key_spec.startswith("pkcs11://"):
+        import pk11
+        key_f_private = pk11.signer(key_spec)
+    else:
+        raise XMLSigException("Unable to load private key from '%s'" % key_spec)
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         _process_references(t,sig)
@@ -317,10 +319,9 @@ def sign(t,key_spec,cert_file):
         digest = _digest(sic,"sha1")
         logging.debug("SignedInfo digest: %s" % digest)
 
-
         b_digest = b64d(digest)
         tbs = _signed_value(b_digest,sz)
 
         sv = b64e(key_f_private(tbs))
-        svv = si.addnext(DS.SignatureValue(sv))
-        svv.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(cert_data))))
+        sv_elt = si.addnext(DS.SignatureValue(sv))
+        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(cert_data))))
