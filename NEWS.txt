@@ -1,0 +1,11 @@
+News
+====
+
+0.1
+-----
+
+*Release date: UNRELEASED*
+
+* This is the first unreleased version of the code
+* http://github.com/leifj/pyXMLSec
+
