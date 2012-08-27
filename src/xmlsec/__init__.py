@@ -109,6 +109,13 @@ def _alg(elt):
     else:
         return uri.rstrip('#')
 
+def _remove_child_comments(t):
+    root = t.getroot()
+    for c in root.iter():
+        if c.tag is etree.Comment or c.tag is etree.PI:
+            _delete_elt(c)
+    return t
+
 def _process_references(t,sig=None):
     if sig is None:
         sig = t.find(".//{%s}Signature" % NS['ds'])
@@ -116,7 +123,7 @@ def _process_references(t,sig=None):
         object = None
         uri = ref.get('URI',None)
         if uri is None or uri == '#' or uri == '':
-            ct = copy.deepcopy(t)
+            ct = _remove_child_comments(copy.deepcopy(t))
             object = ct.getroot()
         elif uri.startswith('#'):
             ct = copy.deepcopy(t)
@@ -128,7 +135,11 @@ def _process_references(t,sig=None):
             raise XMLSigException("Unable to dereference Reference URI='%s'" % uri)
 
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
+            logging.debug("transform: %s" % _alg(tr))
             object = _transform(_alg(tr),object,tr)
+
+        with open("/tmp/foo-obj.xml","w") as fd:
+            fd.write(object)
 
         dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
         if dm is None:
@@ -179,21 +190,37 @@ def _unescape(text):
         else:
             # named entity
             try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                if not text in ('&amp;','&lt;','&gt;'):
+                    text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text # leave as is
     return re.sub("&#?\w+;", fixup, text)
 
+def _delete_elt(elt):
+    assert elt.getparent() is not None,XMLSigException("Cannot delete root")
+    if elt.tail is not None:
+        logging.debug("tail: '%s'" % elt.tail)
+        p = elt.getprevious()
+        if p is not None:
+            logging.debug("adding tail to previous")
+            if p.tail is None:
+                p.tail = ''
+            p.tail += elt.tail
+        else:
+            logging.debug("adding tail to parent")
+            up = elt.getparent()
+            assert up is not None,XMLSigException("Signature has no parent")
+            if up.text is None:
+                up.text = ''
+            up.text += elt.tail
+    elt.getparent().remove(elt)
+
 def _enveloped_signature(t):
     sig = t.find('.//{http://www.w3.org/2000/09/xmldsig#}Signature')
-    p = sig.getprevious()
-    if sig.tail is not None:
-        if p is not None:
-            p.tail += sig.tail
-        else:
-            sig.getparent().text += sig.tail
-    sig.getparent().remove(sig)
+    _delete_elt(sig)
+    with open("/tmp/foo-env.xml","w") as fd:
+        fd.write(etree.tostring(t))
     return t
 
 def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
@@ -208,7 +235,7 @@ def _transform(uri,t,tr=None):
         return _enveloped_signature(t)
 
     if uri == TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS:
-        nslist = []
+        nslist = None
         if tr is not None:
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
             if elt is not None:
@@ -216,7 +243,7 @@ def _transform(uri,t,tr=None):
         return _c14n(t,exclusive=True,with_comments=True,inclusive_prefix_list=nslist)
 
     if uri == TRANSFORM_C14N_EXCLUSIVE:
-        nslist = []
+        nslist = None
         if tr is not None:
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
             if elt is not None:
@@ -233,6 +260,8 @@ def setID(ids):
     _id_attributes = ids
 
 def verify(t,keyspec):
+    with open("/tmp/foo-sig.xml","w") as fd:
+        fd.write(etree.tostring(t.getroot()))
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
         assert sv is not None,XMLSigException("No SignatureValue")
@@ -245,7 +274,8 @@ def verify(t,keyspec):
         expected = key_f_public(b64d(sv))
 
         _process_references(t,sig)
-
+        with open("/tmp/foo-ref.xml","w") as fd:
+            fd.write(etree.tostring(t.getroot()))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
         cm_alg = _alg(cm)
