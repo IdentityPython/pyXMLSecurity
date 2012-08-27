@@ -5,13 +5,13 @@ import os
 import rsa_x509_pem
 import lxml.etree as etree
 import logging
-from pyff.constants import NS
 import base64
 import hashlib
 import copy
 import int_to_bytes as itb
 from lxml.builder import ElementMaker
 
+NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'],nsmap=NS)
 
 # SHA1 digest with ASN.1 BER SHA1 algorithm designator prefix [RSA-SHA1]
@@ -263,4 +263,4 @@ def sign(t,key_spec,cert_file):
 
         sv = b64e(key_f_private(tbs))
         svv = si.addnext(DS.SignatureValue(sv))
-        svv.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(data))))
+        svv.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(cert_data))))
