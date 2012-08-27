@@ -2,10 +2,21 @@ News
 ====
 
 0.1
------
+---
 
 *Release date: UNRELEASED*
 
 * This is the first unreleased version of the code
 * http://github.com/leifj/pyXMLSecurity
 
+0.2
+---
+
+*Release date: Mon Aug 27 12:42:45 CEST 2012*
+
+* more rubust algorithm uri parsing
+* support for "#"-style IDs
+* partial support for <Transform/> elts with child-elements
+* make all exceptions an XMLSecException
+* first draft: sign
+* various cleanups
