@@ -129,7 +129,7 @@ def _process_references(t,sig=None):
             ct = copy.deepcopy(t)
             object = _get_by_id(ct,uri[1:])
         else:
-            raise XMLSigException("unknown reference %s" % uri)
+            raise XMLSigException("Unknown reference %s" % uri)
 
         if object is None:
             raise XMLSigException("Unable to dereference Reference URI='%s'" % uri)
@@ -259,6 +259,9 @@ _id_attributes =['ID','id']
 def setID(ids):
     _id_attributes = ids
 
+def _unfold_pem(pem):
+    return '\n'.join(pem.split('\n')[1:-2])
+
 def verify(t,keyspec):
     with open("/tmp/foo-sig.xml","w") as fd:
         fd.write(etree.tostring(t.getroot()))
@@ -317,10 +320,13 @@ def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=AL
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE,TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
     t.getroot().insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms))
 
-def sign(t,key_spec,cert_file):
+def sign(t,key_spec,cert_spec=None):
 
-    cert_data = open(cert_file).read()
-    cert = rsa_x509_pem.parse(cert_data)
+    cert = None
+    if cert_spec is not None:
+        cert_data = open(cert_spec).read()
+        cert = rsa_x509_pem.parse(cert_data)
+
     pub_key = rsa_x509_pem.get_key(cert)
     key_f_public = rsa_x509_pem.f_public(pub_key)
     sz = int(pub_key.size())+1
@@ -341,17 +347,22 @@ def sign(t,key_spec,cert_file):
     else:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
 
+    assert key_f_private is not None,XMLSigException("Can I haz key?")
+
     if t.find(".//{%s}Signature" % NS['ds']) is None:
         add_enveloped_signature(t)
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         _process_references(t,sig)
+        with open("/tmp/sig-ref.xml","w") as fd:
+            fd.write(etree.tostring(t.getroot()))
 
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
         cm_alg = _alg(cm)
         assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
         sic = _transform(cm_alg,si)
+        logging.debug("SignedInfo C14N: %s" % sic)
         digest = _digest(sic,"sha1")
         logging.debug("SignedInfo digest: %s" % digest)
 
@@ -359,11 +370,11 @@ def sign(t,key_spec,cert_file):
         if pad:
             tbs = _signed_value(b_digest,sz)
         else:
-            tbs = b_digest
+            tbs = PREFIX + b_digest
         s_data = key_f_private(tbs)
         signed = ''.join(chr(i) for i in s_data)
         sv = b64e(signed)
         logging.debug(sv)
         si.addnext(DS.SignatureValue(sv))
         sv_elt = si.getnext()
-        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(cert_data))))
+        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(_unfold_pem(cert_data)))))
