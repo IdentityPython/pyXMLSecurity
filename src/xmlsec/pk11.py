@@ -4,12 +4,13 @@ __author__ = 'leifj'
 from exceptions import XMLSigException
 from urlparse import urlparse
 import os
+import logging
 
 _modules = {}
 
 try:
     import PyKCS11
-    from PyKCS11.LowLevel import CKA_ID, CKA_LABEL
+    from PyKCS11.LowLevel import CKA_ID, CKA_LABEL, CKA_CLASS, CKO_PRIVATE_KEY, CKO_CERTIFICATE, CKK_RSA, CKA_KEY_TYPE
 except ImportError:
     raise XMLSigException("pykcs11 is required for PKCS#11 keys - cf README.rst")
 
@@ -55,6 +56,8 @@ def parse_uri(pk11_uri):
     return library,slot,keyname,query
 
 def _sign_and_close(session,key,data,mech):
+    logging.debug("signing %d bytes using %s" % (len(data),mech))
+    #import pdb; pdb.set_trace()
     sig = session.sign(key,data,mech)
     session.logout()
     session.closeSession()
@@ -62,9 +65,8 @@ def _sign_and_close(session,key,data,mech):
     return sig
 
 def _find_key(session,keyname):
-    for o in session.findObjects((CKA_ID,keyname)):
-        return o
-    for o in session.findObjects((CKA_LABEL,keyname)):
+    for o in session.findObjects([(CKA_LABEL,keyname),(CKA_CLASS,CKO_PRIVATE_KEY),(CKA_KEY_TYPE,CKK_RSA)]):
+        logging.debug("found pkcs11 key: %s" % o)
         return o
 
     return None
@@ -89,6 +91,8 @@ def signer(pk11_uri,mech=PyKCS11.MechanismRSAPKCS1):
 
     if pin is not None:
         session.login(pin)
+    else:
+        logging.warning("No pin provided - not logging in")
 
     key = _find_key(session,keyname)
     if key is None:
