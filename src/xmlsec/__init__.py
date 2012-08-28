@@ -63,7 +63,7 @@ def b64e(s):
         s = itb.int_to_bytes(s)
     return s.encode('base64').replace('\n', '')
 
-def _signed_value(data, key_size):
+def _signed_value(data, key_size, do_pad):
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
 
     The resulting signed value will be in the form:
@@ -78,15 +78,15 @@ def _signed_value(data, key_size):
     """
 
     asn_digest = PREFIX + data
-
-    # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
-    # WARNING: key size is in bits, not bytes!
-    padded_size = key_size/8 - 1
-    pad_size = padded_size - len(asn_digest) - 2
-    pad = '\x01' + '\xFF' * pad_size + '\x00'
-    padded_digest = pad + asn_digest
-
-    return padded_digest
+    if do_pad:
+        # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
+        # WARNING: key size is in bits, not bytes!
+        padded_size = key_size/8 - 1
+        pad_size = padded_size - len(asn_digest) - 2
+        pad = '\x01' + '\xFF' * pad_size + '\x00'
+        return pad + asn_digest
+    else:
+        return asn_digest
 
 def _digest(str,hash_alg):
     h = getattr(hashlib,hash_alg)()
@@ -290,7 +290,7 @@ def verify(t,keyspec):
 
         sz = int(key.size())+1
         logging.debug("key size: %d" % sz)
-        actual = _signed_value(b_digest, sz)
+        actual = _signed_value(b_digest, sz, True)
 
         assert expected == actual,XMLSigException("Signature validation failed")
 
@@ -367,10 +367,7 @@ def sign(t,key_spec,cert_spec=None):
         logging.debug("SignedInfo digest: %s" % digest)
 
         b_digest = b64d(digest)
-        if pad:
-            tbs = _signed_value(b_digest,sz)
-        else:
-            tbs = PREFIX + b_digest
+        tbs = _signed_value(b_digest,sz,pad)
         s_data = key_f_private(tbs)
         signed = ''.join(chr(i) for i in s_data)
         sv = b64e(signed)
