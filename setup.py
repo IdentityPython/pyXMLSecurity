@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 import sys, os
+from distutils import versionpredicate
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.3dev'
+version = '0.3'
 
 install_requires = [
-    'lxml>=3.0alpha2',
+    'lxml'
 ]
-
 
 setup(name='pyXMLSecurity',
     version=version,

@@ -24,4 +24,10 @@ News
 0.3
 ---
 
-*Release date: UNRELEASED*
+*Release date: Tue Aug 28 09:46:47 CEST 2012*
+
+* handle #-style references (remove top-level comments and PIs)
+* don't unescape &amp; &lt; and &gt;
+* don't give empty inclusive ns prefix list to c14n
+* move exception to separate file
+* first version of the pkcs11 shim layer
