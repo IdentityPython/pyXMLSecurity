@@ -251,6 +251,10 @@ def parse(data):
       if not "CERTIFICATE" in s:
         raise NotImplementedError(\
           "Only PEM Certificates are supported. Header: %s", s)
+    elif '-----' == s[:5] and "END" in s:
+        if not "CERTIFICATE" in s:
+            raise NotImplementedError(\
+              "Only PEM Certificates are supported. Footer: %s", s)
     else:
       # include this b64 data for decoding
       lines.append(s.strip())
