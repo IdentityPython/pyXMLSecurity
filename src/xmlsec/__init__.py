@@ -326,6 +326,7 @@ def sign(t,key_spec,cert_file):
     sz = int(pub_key.size())+1
 
     key_f_private = None
+    pad = True
     if hasattr(key_spec,'__call__'):
         key_f_private = key_spec
     elif os.path.isfile(key_spec):
@@ -334,9 +335,14 @@ def sign(t,key_spec,cert_file):
         key_f_private = rsa_x509_pem.f_private(priv_key)
     elif key_spec.startswith("pkcs11://"):
         import pk11
+        pad = False
         key_f_private = pk11.signer(key_spec)
+        logging.debug("Using pkcs11 singing key: %s" % key_f_private)
     else:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
+
+    if t.find(".//{%s}Signature" % NS['ds']) is None:
+        add_enveloped_signature(t)
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         _process_references(t,sig)
@@ -350,8 +356,14 @@ def sign(t,key_spec,cert_file):
         logging.debug("SignedInfo digest: %s" % digest)
 
         b_digest = b64d(digest)
-        tbs = _signed_value(b_digest,sz)
-
-        sv = b64e(key_f_private(tbs))
-        sv_elt = si.addnext(DS.SignatureValue(sv))
+        if pad:
+            tbs = _signed_value(b_digest,sz)
+        else:
+            tbs = b_digest
+        s_data = key_f_private(tbs)
+        signed = ''.join(chr(i) for i in s_data)
+        sv = b64e(signed)
+        logging.debug(sv)
+        si.addnext(DS.SignatureValue(sv))
+        sv_elt = si.getnext()
         sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(cert_data))))
