@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<a xmlns="http://example.com/NS">
+    <b foo="22"/>
+    <ds:Signature xmlns:ds='http://www.w3.org/2000/09/xmldsig#'>
+        <ds:Reference URI="">
+            <ds:Transforms>
+                <ds:Transform Algorithm='http://www.w3.org/2000/09/xmldsig#enveloped-signature'/>
+            </ds:Transforms>
+        </ds:Reference>
+    </ds:Signature>  <!-- a comment -->
+
+</a>

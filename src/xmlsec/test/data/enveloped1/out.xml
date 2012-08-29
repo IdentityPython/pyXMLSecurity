@@ -1,0 +1,5 @@
+<a xmlns="http://example.com/NS">
+    <b foo="22"/>
+      <!-- a comment -->
+
+</a>
