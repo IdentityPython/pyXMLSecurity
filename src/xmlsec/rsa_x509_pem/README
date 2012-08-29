@@ -7,6 +7,9 @@ andrewyates.name@gmail.com
 https://andrewdyates@github.com/andrewdyates/rsa_x509_pem.git
 https://github.com/andrewdyates
 
+This version was modified and redistributed as part of pyXMLSecurity by
+leifj@mnt.se with permission from the original author
+
 See test.py for unit tests and additional sample usage.
 
 ========

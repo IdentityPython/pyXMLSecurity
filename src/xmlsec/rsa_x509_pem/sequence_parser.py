@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 # Copyright ©2011 Andrew D. Yates
 # andrewyates.name@gmail.com
+#
+# Modified and redistributed as part of pyXMLSecurity by leifj@mnt.se
+# with permission from the original author
+#
 """Self-descriptive PEM decoder for 'univ.Sequence'.
 """
 from pyasn1.type import univ

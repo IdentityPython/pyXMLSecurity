@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 # Copyright ©2011 Andrew D Yates
 # andrewyates.name@gmail.com
+#
+# Modified and redistributed as part of pyXMLSecurity by leifj@mnt.se
+# with permission from the original author
+#
 """Test RSA cryptographic PEM reader modules using example files.
 """
 import unittest

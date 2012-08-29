@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 # Copyright ©2011 Andrew D Yates
 # andrewyates.name@gmail.com
+#
+# Modified and redistributed as part of pyXMLSecurity by leifj@mnt.se
+# with permission from the original author
+#
 """Package module into well organized interface.
 """
 from Crypto.PublicKey import RSA
