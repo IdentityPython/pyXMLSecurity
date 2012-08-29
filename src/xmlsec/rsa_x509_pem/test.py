@@ -5,6 +5,7 @@
 """Test RSA cryptographic PEM reader modules using example files.
 """
 import unittest
+import pkg_resources
 
 from Crypto.PublicKey import RSA
 
@@ -49,17 +50,14 @@ MSG_LONG = "I dedicate this essay to the two-dozen-odd people whose refutations 
 
 DUMMY_SIG = (1234567890,)
 
-
 class TestParse(unittest.TestCase):
   """Test parsing PEM formats into labeled dictionaries."""
   
   def setUp(self):
     self.data = {}
     for key, cert in KEY_FILE_PAIRS:
-      with open(key, "r") as f:
-        self.data[key] = f.read()
-      with open(cert, "r") as f:
-        self.data[cert] = f.read()
+        self.data[key] = pkg_resources.resource_stream(__name__,key).read()
+        self.data[cert] = pkg_resources.resource_stream(__name__,cert).read()
     
   def test_key_parse(self):
     for key, cert in KEY_FILE_PAIRS:
@@ -105,12 +103,8 @@ class TestGenKey(unittest.TestCase):
   def setUp(self):
     self.dicts = {}
     for key, cert in KEY_FILE_PAIRS:
-      with open(key, "r") as f:
-        data = f.read()
-        self.dicts[key] = rsa_pem.parse(data)
-      with open(cert, "r") as f:
-        data = f.read()
-        self.dicts[cert] = x509_pem.parse(data)
+        self.dicts[key] = rsa_pem.parse(pkg_resources.resource_stream(__name__,key).read())
+        self.dicts[cert] = x509_pem.parse(pkg_resources.resource_stream(__name__,cert).read())
         
   def test_rsa_tuple_generation(self):
     for key, cert in KEY_FILE_PAIRS:
@@ -148,16 +142,12 @@ class TestRSAKey(unittest.TestCase):
   
   def setUp(self):
     self.keys = {}
-
     for key, cert in KEY_FILE_PAIRS:
-      with open(key, "r") as f:
-        data = f.read()
-        dict = rsa_pem.parse(data)
+        dict = rsa_pem.parse(pkg_resources.resource_stream(__name__,key).read())
         t = rsa_pem.dict_to_tuple(dict)
         self.keys[key] = RSA.construct(t)
-      with open(cert, "r") as f:
-        data = f.read()
-        dict = x509_pem.parse(data)
+
+        dict = x509_pem.parse(pkg_resources.resource_stream(__name__,cert).read())
         t = x509_pem.dict_to_tuple(dict)
         self.keys[cert] = RSA.construct(t)
 
@@ -278,18 +268,18 @@ class TestTop(unittest.TestCase):
   
   def test_rsa_parse(self):
     self.assertEqual(top.rsa_parse, rsa_pem.parse)
-    data = open(KEY_FILE_PAIRS[0][0]).read()
+    data = pkg_resources.resource_stream(__name__,KEY_FILE_PAIRS[0][0]).read()
     rsa_dict = top.parse(data)
     self.assertTrue(rsa_dict)
     
   def test_x509_parse(self):
     self.assertEqual(top.x509_parse, x509_pem.parse)
-    data = open(KEY_FILE_PAIRS[0][1]).read()
+    data = pkg_resources.resource_stream(__name__,KEY_FILE_PAIRS[0][1]).read()
     x509_dict = top.parse(data)
     self.assertTrue(x509_dict)
 
   def test_rsa_dict_to_key(self):
-    data = open(KEY_FILE_PAIRS[0][0]).read()
+    data = pkg_resources.resource_stream(__name__,KEY_FILE_PAIRS[0][0]).read()
     rsa_dict = top.parse(data)
     key = top.get_key(rsa_dict)
     self.assertTrue(key)
@@ -297,7 +287,7 @@ class TestTop(unittest.TestCase):
     self.assertTrue(key.d)
   
   def test_x509_dict_to_key(self):
-    data = open(KEY_FILE_PAIRS[0][1]).read()
+    data = pkg_resources.resource_stream(__name__,KEY_FILE_PAIRS[0][1]).read()
     x509_dict = top.parse(data)
     key = top.get_key(x509_dict)
     self.assertTrue(key)
@@ -311,8 +301,8 @@ class TestTop(unittest.TestCase):
 class TestFunctionWrappers(unittest.TestCase):
 
   def setUp(self):
-    self.pubkey = top.get_key(top.parse(open(KEY_FILE_PAIRS[0][1]).read()))
-    self.privkey = top.get_key(top.parse(open(KEY_FILE_PAIRS[0][0]).read()))
+    self.pubkey = top.get_key(top.parse(pkg_resources.resource_stream(__name__,KEY_FILE_PAIRS[0][1]).read()))
+    self.privkey = top.get_key(top.parse(pkg_resources.resource_stream(__name__,KEY_FILE_PAIRS[0][0]).read()))
 
   def test_public(self):
     f_my_public = top.f_public(self.pubkey)
