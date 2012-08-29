@@ -260,7 +260,7 @@ def setID(ids):
     _id_attributes = ids
 
 def _unfold_pem(pem):
-    return '\n'.join(pem.split('\n')[1:-2])
+    return '\n'.join(pem.split('\n')[1:-1])
 
 def verify(t,keyspec):
     with open("/tmp/foo-sig.xml","w") as fd:
@@ -301,6 +301,7 @@ def _signed_info_transforms(transforms):
     ts = [DS.Transform(Algorithm=t) for t in transforms]
     return DS.Transforms(*ts)
 
+# standard enveloped rsa-sha1 signature
 def _enveloped_signature_template(c14n_method,digest_alg,transforms):
     return DS.Signature(
         DS.SignedInfo(
@@ -322,32 +323,40 @@ def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=AL
 
 def sign(t,key_spec,cert_spec=None):
 
-    cert = None
-    if cert_spec is not None:
-        cert_data = open(cert_spec).read()
-        cert = rsa_x509_pem.parse(cert_data)
-
-    pub_key = rsa_x509_pem.get_key(cert)
-    key_f_public = rsa_x509_pem.f_public(pub_key)
-    sz = int(pub_key.size())+1
-
+    cert_data = None
     key_f_private = None
-    pad = True
+    do_padding = False # only in the case of our fallback keytype do we need to do pkcs1 padding here
+
     if hasattr(key_spec,'__call__'):
         key_f_private = key_spec
     elif os.path.isfile(key_spec):
         key_data = open(key_spec).read()
         priv_key = rsa_x509_pem.parse(key_data)
         key_f_private = rsa_x509_pem.f_private(priv_key)
+        do_padding = True # need to do p1 padding in this case
     elif key_spec.startswith("pkcs11://"):
         import pk11
-        pad = False
-        key_f_private = pk11.signer(key_spec)
+        key_f_private,cert_data = pk11.signer(key_spec)
         logging.debug("Using pkcs11 singing key: %s" % key_f_private)
     else:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
 
     assert key_f_private is not None,XMLSigException("Can I haz key?")
+
+    if cert_data is None and cert_spec is not None:
+        if 'BEGIN CERTIFICATE' in cert_spec:
+            cert_data = cert_spec
+        elif os.path.exists(cert_spec):
+            cert_data = open(cert_spec).read()
+
+    assert cert_data is not None,XMLSigException("Unable to find certificate to go with key %s" % key_spec)
+
+    cert = rsa_x509_pem.parse(cert_data)
+    pub_key = rsa_x509_pem.get_key(cert)
+    key_f_public = rsa_x509_pem.f_public(pub_key)
+    sz = int(pub_key.size())+1
+
+    logging.debug("Using %s bit key" % sz)
 
     if t.find(".//{%s}Signature" % NS['ds']) is None:
         add_enveloped_signature(t)
@@ -367,9 +376,8 @@ def sign(t,key_spec,cert_spec=None):
         logging.debug("SignedInfo digest: %s" % digest)
 
         b_digest = b64d(digest)
-        tbs = _signed_value(b_digest,sz,pad)
-        s_data = key_f_private(tbs)
-        signed = ''.join(chr(i) for i in s_data)
+        tbs = _signed_value(b_digest,sz,do_padding)
+        signed = key_f_private(tbs)
         sv = b64e(signed)
         logging.debug(sv)
         si.addnext(DS.SignatureValue(sv))
