@@ -40,3 +40,8 @@ News
 * starting on tests
 * cleanup pkcs11 layer
 * various bugfixes and cleanup
+
+0.5
+---
+
+*Release date: UNRELEASED*
