@@ -35,4 +35,8 @@ News
 0.4
 ---
 
-*Release date: UNRELEASED*
+*Release date: Wed Aug 29 12:43:05 CEST 2012*
+
+* starting on tests
+* cleanup pkcs11 layer
+* various bugfixes and cleanup
