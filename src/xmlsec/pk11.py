@@ -70,12 +70,15 @@ def parse_uri(pk11_uri):
 def _intarray2bytes(x):
     return ''.join(chr(i) for i in x)
 
+def _close_session(session):
+    session.logout()
+    session.closeSession()
+
 def _sign_and_close(session,key,data,mech):
     logging.debug("signing %d bytes using %s" % (len(data),mech))
     #import pdb; pdb.set_trace()
     sig = session.sign(key,data,mech)
-    session.logout()
-    session.closeSession()
+    _close_session(session)
 
     return _intarray2bytes(sig)
 
@@ -115,16 +118,27 @@ def _find_key(session,keyname):
         logging.debug(cert)
     return key,cert_pem
 
-def signer(pk11_uri,mech=PyKCS11.MechanismRSAPKCS1):
-    library,slot,keyname,query = parse_uri(pk11_uri)
-
+def _session(library,slot,pin=None):
     if not _modules.has_key(library):
+        print "loading library %s" % library
         lib = PyKCS11.PyKCS11Lib()
         lib.load(library)
         _modules[library] = lib
+    else:
+        print "already loaded: %s: %s" % (library,_modules[library])
 
     lib = _modules[library]
     session = lib.openSession(slot)
+    slot = lib.getSlotList()[slot]
+    if pin is not None:
+        session.login(pin)
+    else:
+        logging.warning("No pin provided - not logging in")
+
+    return session
+
+def signer(pk11_uri,mech=PyKCS11.MechanismRSAPKCS1):
+    library,slot,keyname,query = parse_uri(pk11_uri)
 
     pin = None
     pin_spec = query.get('pin',"env:PYKCS11PIN")
@@ -133,10 +147,7 @@ def signer(pk11_uri,mech=PyKCS11.MechanismRSAPKCS1):
     else:
         pin = pin_spec
 
-    if pin is not None:
-        session.login(pin)
-    else:
-        logging.warning("No pin provided - not logging in")
+    session = _session(library,slot,pin)
 
     key,cert = _find_key(session,keyname)
     if key is None:
