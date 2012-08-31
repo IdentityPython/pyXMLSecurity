@@ -48,8 +48,8 @@ def parse_uri(pk11_uri):
             if not '=' in av:
                 raise XMLSigException("Bad query string in pkcs11 URI %s" % pk11_uri)
             (a,sep,v) = av.partition('=')
-            assert(a)
-            assert(v)
+            assert a
+            assert v
             query[a] = v
     else:
         keyname = keyqs
