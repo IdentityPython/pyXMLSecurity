@@ -1,4 +1,5 @@
 import base64
+import threading
 
 __author__ = 'leifj'
 
@@ -71,8 +72,10 @@ def _intarray2bytes(x):
     return ''.join(chr(i) for i in x)
 
 def _close_session(session):
+    _session_lock.acquire()
     session.logout()
     session.closeSession()
+    _session_lock.release()
 
 def _sign_and_close(session,key,data,mech):
     logging.debug("signing %d bytes using %s" % (len(data),mech))
@@ -89,7 +92,6 @@ def _find_object(session,template):
     return None
 
 def _get_object_attributes(session,o):
-    print all_attributes
     attributes = session.getAttributeValue(o, all_attributes)
     return dict(zip(all_attributes, attributes))
 
@@ -118,14 +120,18 @@ def _find_key(session,keyname):
         logging.debug(cert)
     return key,cert_pem
 
+_session_lock = threading.RLock()
+
 def _session(library,slot,pin=None):
+
+    _session_lock.acquire()
     if not _modules.has_key(library):
-        print "loading library %s" % library
+        logging.debug("loading library %s" % library)
         lib = PyKCS11.PyKCS11Lib()
         lib.load(library)
         _modules[library] = lib
     else:
-        print "already loaded: %s: %s" % (library,_modules[library])
+        logging.debug("already loaded: %s: %s" % (library,_modules[library]))
 
     lib = _modules[library]
     session = lib.openSession(slot)
@@ -135,6 +141,7 @@ def _session(library,slot,pin=None):
     else:
         logging.warning("No pin provided - not logging in")
 
+    _session_lock.release()
     return session
 
 def signer(pk11_uri,mech=PyKCS11.MechanismRSAPKCS1):
