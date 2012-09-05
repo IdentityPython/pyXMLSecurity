@@ -44,4 +44,7 @@ News
 0.5
 ---
 
-*Release date: UNRELEASED*
+*Release date: Wed Sep  5 11:52:58 CEST 2012*
+
+* Fix bug when signing using non-p11 keys
+* More robust PEM-unfolding
