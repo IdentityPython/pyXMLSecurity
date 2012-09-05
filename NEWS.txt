@@ -48,3 +48,8 @@ News
 
 * Fix bug when signing using non-p11 keys
 * More robust PEM-unfolding
+
+0.6
+---
+
+*Release date: UNRELEASED*
