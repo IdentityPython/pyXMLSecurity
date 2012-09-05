@@ -44,6 +44,12 @@ def _find_matching_cert(t,fp):
             return cert_pem
     return None
 
+def _root(t):
+    if hasattr(t,'getroot') and hasattr(t.getroot,'__call__'):
+        return t.getroot()
+    else:
+        return t
+
 def number_of_bits(num):
     assert num>=0
     nbits = 1
@@ -107,7 +113,7 @@ def _alg(elt):
         return uri.rstrip('#')
 
 def _remove_child_comments(t):
-    root = t.getroot()
+    root = _root(t)
     for c in root.iter():
         if c.tag is etree.Comment or c.tag is etree.PI:
             _delete_elt(c)
@@ -121,7 +127,7 @@ def _process_references(t,sig=None):
         uri = ref.get('URI',None)
         if uri is None or uri == '#' or uri == '':
             ct = _remove_child_comments(copy.deepcopy(t))
-            object = ct.getroot()
+            object = _root(ct)
         elif uri.startswith('#'):
             ct = copy.deepcopy(t)
             object = _get_by_id(ct,uri[1:])
@@ -261,7 +267,7 @@ def _unfold_pem(pem):
 
 def verify(t,keyspec):
     with open("/tmp/foo-sig.xml","w") as fd:
-        fd.write(etree.tostring(t.getroot()))
+        fd.write(etree.tostring(_root(t)))
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
         assert sv is not None,XMLSigException("No SignatureValue")
@@ -275,7 +281,7 @@ def verify(t,keyspec):
 
         _process_references(t,sig)
         with open("/tmp/foo-ref.xml","w") as fd:
-            fd.write(etree.tostring(t.getroot()))
+            fd.write(etree.tostring(_root(t)))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
         cm_alg = _alg(cm)
@@ -316,7 +322,7 @@ def _enveloped_signature_template(c14n_method,digest_alg,transforms):
 def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=ALGORITHM_DIGEST_SHA1,transforms=None):
     if transforms is None:
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE,TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
-    t.getroot().insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms))
+    _root(t).insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms))
 
 def sign(t,key_spec,cert_spec=None):
 
@@ -361,7 +367,7 @@ def sign(t,key_spec,cert_spec=None):
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         _process_references(t,sig)
         with open("/tmp/sig-ref.xml","w") as fd:
-            fd.write(etree.tostring(t.getroot()))
+            fd.write(etree.tostring(_root(t)))
 
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
