@@ -53,9 +53,6 @@ def number_of_bits(num):
         max += max
     return nbits
 
-def sign(t,key,cert):
-    pass
-
 b64d = lambda s: s.decode('base64')
 
 def b64e(s):
@@ -260,7 +257,7 @@ def setID(ids):
     _id_attributes = ids
 
 def _unfold_pem(pem):
-    return '\n'.join(pem.split('\n')[1:-1])
+    return '\n'.join(pem.strip().split('\n')[1:-1])
 
 def verify(t,keyspec):
     with open("/tmp/foo-sig.xml","w") as fd:
@@ -332,7 +329,7 @@ def sign(t,key_spec,cert_spec=None):
     elif os.path.isfile(key_spec):
         key_data = open(key_spec).read()
         priv_key = rsa_x509_pem.parse(key_data)
-        key_f_private = rsa_x509_pem.f_private(priv_key)
+        key_f_private = rsa_x509_pem.f_private(rsa_x509_pem.get_key(priv_key))
         do_padding = True # need to do p1 padding in this case
     elif key_spec.startswith("pkcs11://"):
         import pk11
@@ -379,7 +376,7 @@ def sign(t,key_spec,cert_spec=None):
         tbs = _signed_value(b_digest,sz,do_padding)
         signed = key_f_private(tbs)
         sv = b64e(signed)
-        logging.debug(sv)
+        logging.debug("SignedValue: %s" % sv)
         si.addnext(DS.SignatureValue(sv))
         sv_elt = si.getnext()
         sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(_unfold_pem(cert_data)))))
