@@ -96,10 +96,23 @@ class TestParse(unittest.TestCase):
       data = self.data[cert]
       dict = x509_pem.parse(data)
       self.assertEqual(dict['subject'], X509_SUBJECT)
+      self.assertTrue(dict['cert'] is not None)
       for part, dtype in X509_PARTS:
         self.assertTrue(part in dict)
         self.assertTrue(isinstance(dict[part], dtype))
 
+  def test_cert_parse_components(self):
+    for key, cert in KEY_FILE_PAIRS:
+        data = self.data[cert]
+        dict = x509_pem.parse(data)
+        self.assertTrue(dict['cert'] is not None)
+        c = dict['cert']
+        validity = c.getComponentByName('tbsCertificate').getComponentByName('validity')
+        validity2 = c['tbsCertificate']['validity']
+        self.assertTrue(validity is not None)
+        self.assertTrue(validity is validity2)
+        self.assertTrue(validity.getComponentByName('notBefore').getComponentByPosition(0))
+        print "/".join(["%s=%s" % ('.'.join("%d" % x for x in rdn[0]['type']),rdn[0]['value'][1]) for rdn in c['tbsCertificate']['subject'][0]])
 
 class TestGenKey(unittest.TestCase):
   """Test RSA Keys from parameters parsed from file."""
