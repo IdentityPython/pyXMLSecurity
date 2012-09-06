@@ -112,7 +112,7 @@ class TestParse(unittest.TestCase):
         self.assertTrue(validity is not None)
         self.assertTrue(validity is validity2)
         self.assertTrue(validity.getComponentByName('notBefore').getComponentByPosition(0))
-        print "/".join(["%s=%s" % ('.'.join("%d" % x for x in rdn[0]['type']),rdn[0]['value'][1]) for rdn in c['tbsCertificate']['subject'][0]])
+        print "/".join(["%s=%s" % (rdn[0]['type'],rdn[0]['value'][1]) for rdn in c['tbsCertificate']['subject'][0]])
 
 class TestGenKey(unittest.TestCase):
   """Test RSA Keys from parameters parsed from file."""

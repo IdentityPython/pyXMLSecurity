@@ -42,8 +42,7 @@ http://www.alvestrand.no/objectid/1.2.840.113549.1.9.1.html
 import re
 
 from pyasn1.type import tag,namedtype,namedval,univ,constraint,char,useful
-from pyasn1.codec.der import decoder, encoder
-from pyasn1 import error
+from pyasn1.codec.der import decoder
 
 from sequence_parser import SequenceParser
 
@@ -89,7 +88,9 @@ class DirectoryString(univ.Choice):
 
 class AttributeValue(DirectoryString): pass
 
-class AttributeType(univ.ObjectIdentifier): pass
+class AttributeType(univ.ObjectIdentifier):
+    def __str__(self):
+        return '.'.join("%d" % x for x in self)
 
 class AttributeTypeAndValue(univ.Sequence):
   componentType = namedtype.NamedTypes(
@@ -172,6 +173,17 @@ class Certificate(univ.Sequence):
     namedtype.NamedType('signatureAlgorithm', AlgorithmIdentifier()),
     namedtype.NamedType('signatureValue', univ.BitString())
     )
+
+  def getSubject(self):
+      s = self['tbsCertificate']['subject'][0]
+      return self._dn2text(s)
+
+  def getIssuer(self):
+      s = self['tbsCertificate']['issuer'][0]
+      return self._dn2text(s)
+
+  def _dn2text(self,dn):
+      return "/".join(["%s=%s" % ('.'.join("%d" % x for x in rdn[0]['type']),rdn[0]['value'][1]) for rdn in dn])
 
   def dict(self):
     """Return simple dictionary of key elements as simple types.
