@@ -262,8 +262,26 @@ _id_attributes =['ID','id']
 def setID(ids):
     _id_attributes = ids
 
-def _unfold_pem(pem):
+def pem2b64(pem):
     return '\n'.join(pem.strip().split('\n')[1:-1])
+
+def b642pem(data):
+    x = data
+    r = "-----BEGIN CERTIFICATE-----\n"
+    while len(x) > 64:
+        r += x[0:64]
+        r += "\n"
+        x = x[64:]
+    r += x
+    r += "\n"
+    r += "-----END CERTIFICATE-----"
+    return r
+
+def pem2cert(pem):
+    return rsa_x509_pem.parse(pem)
+
+def b642cert(data):
+    return rsa_x509_pem.parse(b642pem(data))
 
 def verify(t,keyspec):
     with open("/tmp/foo-sig.xml","w") as fd:
@@ -385,4 +403,4 @@ def sign(t,key_spec,cert_spec=None):
         logging.debug("SignedValue: %s" % sv)
         si.addnext(DS.SignatureValue(sv))
         sv_elt = si.getnext()
-        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(_unfold_pem(cert_data)))))
+        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_data)))))
