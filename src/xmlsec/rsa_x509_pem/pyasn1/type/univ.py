@@ -1,4 +1,7 @@
 # ASN.1 "universal" data types
+#
+# Modified to support __items__ (leifj@mnt.se)
+#
 import string
 import types
 import operator
@@ -502,6 +505,9 @@ class SequenceAndSetBase(base.AbstractConstructedAsn1Item):
                     r, self._componentValues[idx].prettyPrint(scope)
                     )
         return r
+
+    def __items__(self):
+        return [self._componentValues[idx] for idx in range(len(self._componentValues))]
 
 class Sequence(SequenceAndSetBase):
     tagSet = tag.initTagSet(

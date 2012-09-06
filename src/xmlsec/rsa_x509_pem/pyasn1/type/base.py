@@ -1,4 +1,7 @@
 # Base classes for ASN.1 types
+#
+# Modified to support name-based indexes in __getitem__ (leifj@mnt.se)
+#
 try:
     from sys import version_info
 except ImportError:
@@ -211,7 +214,12 @@ class AbstractConstructedAsn1Item(Asn1ItemBase):
 
     def getComponentType(self): return self._componentType
 
-    def __getitem__(self, idx): return self._componentValues[idx]
+    def __getitem__(self, idx):
+        if type(idx) is int:
+            return self._componentValues[idx]
+        else:
+            return self.getComponentByName(idx)
+
 
     def __len__(self): return len(self._componentValues)
     
