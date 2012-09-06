@@ -294,7 +294,7 @@ def parse(data):
   # add base64 encoding and type to return dictionary
   dict['body'] = body
   dict['type'] = "X509 CERTIFICATE"
-
+  dict['cert'] = cert
   return dict
 
 
