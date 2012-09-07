@@ -86,11 +86,18 @@ class DirectoryString(univ.Choice):
     namedtype.NamedType('ia5String', char.IA5String().subtype(subtypeSpec=constraint.ValueSizeConstraint(1, MAX)))
     )
 
-class AttributeValue(DirectoryString): pass
+class AttributeValue(DirectoryString):
+
+    def __str__(self):
+        return self[1].__str__()
 
 class AttributeType(univ.ObjectIdentifier):
     def __str__(self):
-        return '.'.join("%d" % x for x in self)
+        oid = '.'.join("%d" % x for x in self)
+        if X500_CODE_MAP.has_key(oid):
+            return X500_CODE_MAP[oid]
+        else:
+            return oid
 
 class AttributeTypeAndValue(univ.Sequence):
   componentType = namedtype.NamedTypes(
@@ -98,16 +105,28 @@ class AttributeTypeAndValue(univ.Sequence):
     namedtype.NamedType('value', AttributeValue())
     )
 
+  def __str__(self):
+      return "%s=%s" % (self['type'],self['value'])
+
 class RelativeDistinguishedName(univ.SetOf):
   componentType = AttributeTypeAndValue()
 
+  def __str__(self):
+      return "+".join(avp.__str__() for avp in self)
+
 class RDNSequence(univ.SequenceOf):
   componentType = RelativeDistinguishedName()
+
+  def __str__(self):
+      return "/".join([rdn.__str__() for rdn in self])
 
 class Name(univ.Choice):
   componentType = namedtype.NamedTypes(
     namedtype.NamedType('', RDNSequence())
     )
+
+  def __str__(self):
+      return self[0].__str__()
                           
 class AlgorithmIdentifier(univ.Sequence):
   componentType = namedtype.NamedTypes(
@@ -175,15 +194,31 @@ class Certificate(univ.Sequence):
     )
 
   def getSubject(self):
-      s = self['tbsCertificate']['subject'][0]
-      return self._dn2text(s)
+      return self['tbsCertificate']['subject'][0]
+
+  def get_subject(self):
+      return self.getSubject()
 
   def getIssuer(self):
-      s = self['tbsCertificate']['issuer'][0]
-      return self._dn2text(s)
+      return self['tbsCertificate']['issuer'][0]
 
-  def _dn2text(self,dn):
-      return "/".join(["%s=%s" % ('.'.join("%d" % x for x in rdn[0]['type']),rdn[0]['value'][1]) for rdn in dn])
+  def get_issuer(self):
+      return self.get_issuer()
+
+  def getValidity(self):
+      return self['tbsCertificate']['validity']
+
+  def getNotAfter(self):
+      return self.getValidity()['notAfter'][0]
+
+  def get_notAfter(self):
+      return self.getNotAfter()
+
+  def getNotBefore(self):
+      return self.getValidity()['notBefore'][0]
+
+  def get_notBefore(self):
+      return self.getNotBefore()
 
   def dict(self):
     """Return simple dictionary of key elements as simple types.
