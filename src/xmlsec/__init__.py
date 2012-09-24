@@ -1,3 +1,4 @@
+from UserDict import DictMixin
 
 __author__ = 'leifj'
 
@@ -32,16 +33,34 @@ ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 # and includes https://github.com/andrewdyates/rsa_x509_pem with
 # permission from the author.
 
+class CertDict(DictMixin):
+    def __init__(self,t):
+        self.certs = {}
+        for cd in t.findall(".//{%s}X509Certificate" % NS['ds']):
+            cert_pem = cd.text
+            cert_der = base64.b64decode(cert_pem)
+            m = hashlib.sha1()
+            m.update(cert_der)
+            fingerprint = m.hexdigest().lower()
+            fingerprint = ":".join([fingerprint[x:x+2] for x in xrange(0,len(fingerprint),2)])
+            self.certs[fingerprint] = cert_pem
+
+    def __getitem__(self, item):
+        return self.certs[item]
+
+    def keys(self):
+        return self.certs.keys()
+
+    def __setitem__(self, key, value):
+        self.certs[key] = value
+
+    def __delitem__(self, key):
+        del self.certs[key]
+
 def _find_matching_cert(t,fp):
-    for cd in t.findall(".//{%s}X509Certificate" % NS['ds']):
-        fp = fp.lower().replace(":","")
-        cert_pem = cd.text
-        cert_der = base64.b64decode(cert_pem)
-        m = hashlib.sha1()
-        m.update(cert_der)
-        fingerprint = m.hexdigest().lower()
-        if fingerprint == fp:
-            return cert_pem
+    for hash,pem in CertDict(t).iteritems():
+        if fp == hash:
+            return pem
     return None
 
 def _root(t):
@@ -130,7 +149,7 @@ def _process_references(t,sig=None):
             object = _root(ct)
         elif uri.startswith('#'):
             ct = copy.deepcopy(t)
-            object = _get_by_id(ct,uri[1:])
+            object = _root(_get_by_id(ct,uri[1:]))
         else:
             raise XMLSigException("Unknown reference %s" % uri)
 
