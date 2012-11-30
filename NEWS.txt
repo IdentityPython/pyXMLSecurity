@@ -52,4 +52,6 @@ News
 0.6
 ---
 
-*Release date: UNRELEASED*
+*Release date: Fri Nov 30 10:29:03 CET 2012*
+
+* Allow Reference@URI to be passed as argument
