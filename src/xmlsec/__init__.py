@@ -247,7 +247,7 @@ def _enveloped_signature(t):
 
 def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
     cxml = etree.tostring(t,method="c14n",exclusive=exclusive,with_comments=with_comments,inclusive_ns_prefixes=inclusive_prefix_list)
-    u = _unescape(cxml.decode("utf8",errors='replace')).encode("utf8").strip()
+    u = _unescape(cxml.decode("utf8",'replace')).encode("utf8").strip()
     assert u[0] == '<',XMLSigException("C14N buffer doesn't start with '<'")
     assert u[-1] == '>',XMLSigException("C14N buffer doesn't end with '>'")
     return u
@@ -342,7 +342,7 @@ def _signed_info_transforms(transforms):
     return DS.Transforms(*ts)
 
 # standard enveloped rsa-sha1 signature
-def _enveloped_signature_template(c14n_method,digest_alg,transforms):
+def _enveloped_signature_template(c14n_method,digest_alg,transforms,reference_uri):
     return DS.Signature(
         DS.SignedInfo(
             DS.CanonicalizationMethod(Algorithm=c14n_method),
@@ -351,17 +351,17 @@ def _enveloped_signature_template(c14n_method,digest_alg,transforms):
                 _signed_info_transforms(transforms),
                 DS.DigestMethod(Algorithm=digest_alg),
                 DS.DigestValue(),
-                URI=""
+                URI=reference_uri
             )
         )
     )
 
-def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=ALGORITHM_DIGEST_SHA1,transforms=None):
+def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=ALGORITHM_DIGEST_SHA1,transforms=None,reference_uri=""):
     if transforms is None:
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE,TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
-    _root(t).insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms))
+    _root(t).insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms,reference_uri))
 
-def sign(t,key_spec,cert_spec=None):
+def sign(t,key_spec,cert_spec=None,reference_uri=""):
 
     cert_data = None
     key_f_private = None
@@ -399,7 +399,7 @@ def sign(t,key_spec,cert_spec=None):
     logging.debug("Using %s bit key" % sz)
 
     if t.find(".//{%s}Signature" % NS['ds']) is None:
-        add_enveloped_signature(t)
+        add_enveloped_signature(t,reference_uri=reference_uri)
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         _process_references(t,sig)
