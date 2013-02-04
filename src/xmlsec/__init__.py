@@ -85,7 +85,7 @@ def b64e(s):
         s = itb.int_to_bytes(s)
     return s.encode('base64').replace('\n', '')
 
-def _signed_value(data, key_size, do_pad):
+def _signed_value(data, key_size, do_pad): # TODO must take hash_alg as input. Do proper asn1 CMS
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
 
     The resulting signed value will be in the form:
@@ -138,7 +138,7 @@ def _remove_child_comments(t):
             _delete_elt(c)
     return t
 
-def _process_references(t,sig=None):
+def _process_references(t,sig=None): ### TODO: return hash_alg to support other digest algs
     if sig is None:
         sig = t.find(".//{%s}Signature" % NS['ds'])
     for ref in sig.findall(".//{%s}Reference" % NS['ds']):
@@ -402,7 +402,7 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         add_enveloped_signature(t,reference_uri=reference_uri)
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
-        _process_references(t,sig)
+        _process_references(t,sig) # TODO pull hash_alg from return and replace with static sha1 below. Also give to _signed_value
         with open("/tmp/sig-ref.xml","w") as fd:
             fd.write(etree.tostring(_root(t)))
 
