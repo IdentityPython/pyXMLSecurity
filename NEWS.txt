@@ -60,3 +60,5 @@ News
 ---
 
 *Release date: Mon Feb  4 15:53:32 CET 2013*
+
+* Minor fixes
