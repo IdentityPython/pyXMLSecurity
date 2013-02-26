@@ -9,7 +9,14 @@ __author__ = 'leifj'
 import logging,traceback,os,subprocess,unittest,tempfile
 from StringIO import StringIO
 
-P11_MODULE = '/usr/lib/libsofthsm.so'
+def _find_alts(alts):
+    for a in alts:
+        if os.path.exists(a):
+            return a
+    return None
+
+P11_MODULES = ['/usr/lib/libsofthsm.so','/usr/lib/softhsm/libsofthsm.so']
+P11_MODULE = _find_alts(P11_MODULES)
 P11_ENGINE = '/usr/lib/engines/engine_pkcs11.so'
 P11_SPY = '/usr/lib/pkcs11/pkcs11-spy.so'
 
