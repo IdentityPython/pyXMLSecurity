@@ -55,7 +55,7 @@ def parse_uri(pk11_uri):
         keyname = keyqs
 
     if ':' in module_path:
-        (library,sep,slot_str) = o.netloc.rpartition()
+        (library,sep,slot_str) = module_path.rpartition(":")
         slot = int(slot_str)
     else:
         library = module_path
