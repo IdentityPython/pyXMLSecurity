@@ -110,9 +110,16 @@ def _signed_value(data, key_size, do_pad): # TODO must take hash_alg as input. D
     else:
         return asn_digest
 
-def _digest(str,hash_alg):
+def _digest(data, hash_alg):
+    """
+    Calculate a hash digest of algorithm hash_alg and return the result base64 encoded.
+
+    :param hash_alg: String with algorithm, such as 'sha1'
+    :param data: The data to digest
+    :returns: Base64 string
+    """
     h = getattr(hashlib,hash_alg)()
-    h.update(str)
+    h.update(data)
     digest = b64e(h.digest())
     return digest
 
@@ -125,6 +132,10 @@ def _get_by_id(t,id_v):
     return None
 
 def _alg(elt):
+    """
+    Return the hashlib name of an Algorithm. Hopefully.
+    :returns: None or string
+    """
     uri = elt.get('Algorithm',None)
     if uri is None:
         return None
@@ -246,6 +257,18 @@ def _enveloped_signature(t):
     return t
 
 def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
+    """
+    Perform XML canonicalization (c14n) on an lxml.etree.
+
+    NOTE: The c14n done here is missing whitespace removal. The whitespace has to
+    be removed at parse time. One way to do that is to use xmlsec.parse_xml().
+
+    :param t: XML as lxml.etree
+    :param exclusive: boolean
+    :param with_comments: boolean, keep comments or not
+    :param inclusive_prefix_list: List of namespaces to include (?)
+    :returns: XML as string (utf8)
+    """
     cxml = etree.tostring(t,method="c14n",exclusive=exclusive,with_comments=with_comments,inclusive_ns_prefixes=inclusive_prefix_list)
     u = _unescape(cxml.decode("utf8",'replace')).encode("utf8").strip()
     assert u[0] == '<',XMLSigException("C14N buffer doesn't start with '<'")
