@@ -70,13 +70,16 @@ def _root(t):
         return t
 
 def number_of_bits(num):
+    """
+    Return the number of bits required to represent num.
+
+    In python >= 2.7, there is num.bit_length().
+
+    NOTE: This function appears unused, so it might go away.
+    """
     assert num>=0
-    nbits = 1
-    max = 2
-    while max<=num:
-        nbits += 1
-        max += max
-    return nbits
+    # this is much faster than you would think, AND it is easy to read ;)
+    return len(bin(num)) - 2
 
 b64d = lambda s: s.decode('base64')
 
