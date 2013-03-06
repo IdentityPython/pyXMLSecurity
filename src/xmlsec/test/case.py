@@ -7,6 +7,7 @@ __author__ = 'leifj'
 import pkg_resources
 import lxml.etree as etree
 from StringIO import StringIO
+import xmlsec
 
 class XMLTestDataException(Exception):
     pass
@@ -24,5 +25,5 @@ class XMLTestData():
         assert self.data.has_key(n),XMLTestDataException("No data named %s in test case %s" % (n,self.name))
         return self.data[n]
 
-    def as_etree(self,n):
-        return etree.parse(StringIO(self.as_buf(n)))
+    def as_etree(self,n,remove_whitespace=True):
+        return xmlsec.parse_xml(self.as_buf(n), remove_whitespace)
