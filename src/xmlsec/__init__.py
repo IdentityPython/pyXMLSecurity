@@ -423,3 +423,5 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         si.addnext(DS.SignatureValue(sv))
         sv_elt = si.getnext()
         sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_data)))))
+
+    return t
