@@ -425,3 +425,13 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_data)))))
 
     return t
+
+def parse_xml(data):
+    """
+    Parse XML data into an lxml.etree and remove whitespace in the process.
+
+    :param data: XML as string
+    :returns: XML as lxml.etree
+    """
+    parser = etree.XMLParser(remove_blank_text=remove_blank_text)
+    return etree.XML(data, parser)
