@@ -189,6 +189,18 @@ def _process_references(t,sig=None): ### TODO: return hash_alg to support other 
         dv.text = digest
 
 def _cert(sig,keyspec):
+    """
+    Look for X.509 certificate for keyspec.
+
+    Search order :
+      1. in file indicated by keyspec
+      2. in Signature element, with fingerprint indicated by keyspec
+      3. in keyspec itself (keyspec is the cert in this case)
+
+    :param sig: Signature element as lxml.Element
+    :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
+    :returns: X.509 cert as string
+    """
     data = None
     if os.path.isfile(keyspec):
         with open(keyspec) as c:
@@ -329,6 +341,15 @@ def b642cert(data):
     return rsa_x509_pem.parse(b642pem(data))
 
 def verify(t,keyspec):
+    """
+    Verify the signature(s) in an XML document.
+
+    Throws an XMLSigException on any non-matching signatures.
+
+    :param t: XML as lxml.etree
+    :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
+    :returns: True
+    """
     with open("/tmp/foo-sig.xml","w") as fd:
         fd.write(etree.tostring(_root(t)))
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
