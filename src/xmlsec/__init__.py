@@ -16,6 +16,9 @@ from exceptions import XMLSigException
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'],nsmap=NS)
 
+# Enable this to get various parts written to files in /tmp. Not for production!
+_DEBUG_WRITE_TO_FILES = False
+
 # SHA1 digest with ASN.1 BER SHA1 algorithm designator prefix [RSA-SHA1]
 PREFIX = '\x30\x21\x30\x09\x06\x05\x2B\x0E\x03\x02\x1A\x05\x00\x04\x14'
 
@@ -174,8 +177,9 @@ def _process_references(t,sig=None): ### TODO: return hash_alg to support other 
             logging.debug("transform: %s" % _alg(tr))
             object = _transform(_alg(tr),object,tr)
 
-        with open("/tmp/foo-obj.xml","w") as fd:
-            fd.write(object)
+        if _DEBUG_WRITE_TO_FILES:
+            with open("/tmp/foo-obj.xml","w") as fd:
+                fd.write(object)
 
         dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
         if dm is None:
@@ -267,8 +271,9 @@ def _delete_elt(elt):
 def _enveloped_signature(t):
     sig = t.find('.//{http://www.w3.org/2000/09/xmldsig#}Signature')
     _delete_elt(sig)
-    with open("/tmp/foo-env.xml","w") as fd:
-        fd.write(etree.tostring(t))
+    if _DEBUG_WRITE_TO_FILES:
+        with open("/tmp/foo-env.xml","w") as fd:
+            fd.write(etree.tostring(t))
     return t
 
 def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
@@ -350,8 +355,9 @@ def verify(t,keyspec):
     :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
     :returns: True if signature(s) validated, False if there were no signatures
     """
-    with open("/tmp/foo-sig.xml","w") as fd:
-        fd.write(etree.tostring(_root(t)))
+    if _DEBUG_WRITE_TO_FILES:
+        with open("/tmp/foo-sig.xml","w") as fd:
+            fd.write(etree.tostring(_root(t)))
     validated = False
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
@@ -365,8 +371,9 @@ def verify(t,keyspec):
         expected = key_f_public(b64d(sv))
 
         _process_references(t,sig)
-        with open("/tmp/foo-ref.xml","w") as fd:
-            fd.write(etree.tostring(_root(t)))
+        if _DEBUG_WRITE_TO_FILES:
+            with open("/tmp/foo-ref.xml","w") as fd:
+                fd.write(etree.tostring(_root(t)))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         b_digest = _create_signature_digest(si)
 
@@ -455,8 +462,9 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         _process_references(t,sig) # TODO pull hash_alg from return and replace with static sha1 below. Also give to _signed_value
-        with open("/tmp/sig-ref.xml","w") as fd:
-            fd.write(etree.tostring(_root(t)))
+        if _DEBUG_WRITE_TO_FILES:
+            with open("/tmp/sig-ref.xml","w") as fd:
+                fd.write(etree.tostring(_root(t)))
 
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         b_digest = _create_signature_digest(si)
