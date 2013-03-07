@@ -348,10 +348,11 @@ def verify(t,keyspec):
 
     :param t: XML as lxml.etree
     :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
-    :returns: True
+    :returns: True if signature(s) validated, False if there were no signatures
     """
     with open("/tmp/foo-sig.xml","w") as fd:
         fd.write(etree.tostring(_root(t)))
+    validated = False
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
         assert sv is not None,XMLSigException("No SignatureValue")
@@ -374,8 +375,9 @@ def verify(t,keyspec):
         actual = _signed_value(b_digest, sz, True)
 
         assert expected == actual,XMLSigException("Signature validation failed")
+        validated = True
 
-    return True
+    return validated
 
 ## TODO - support transforms with arguments
 def _signed_info_transforms(transforms):
