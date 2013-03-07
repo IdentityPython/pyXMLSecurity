@@ -388,7 +388,16 @@ def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=AL
     _root(t).insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms,reference_uri))
 
 def sign(t,key_spec,cert_spec=None,reference_uri=""):
+    """
+    Sign an XML document.
 
+    :param t: XML as lxml.etree
+    :param key_spec: instance with attr __call__, PEM filename or 'pkcs11://' URL
+    :param cert_spec: None, X.509 cert as string or X.509 cert filename
+        None is only valid if key_spec is a pkcs11:// URL
+    :param reference_uri: Envelope signature reference URI
+    :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
+    """
     cert_data = None
     key_f_private = None
     do_padding = False # only in the case of our fallback keytype do we need to do pkcs1 padding here
@@ -447,6 +456,7 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         sv = b64e(signed)
         logging.debug("SignedValue: %s" % sv)
         si.addnext(DS.SignatureValue(sv))
+        # Insert cert_data as b64-encoded X.509 certificate into XML document
         sv_elt = si.getnext()
         sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_data)))))
 
