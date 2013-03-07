@@ -75,6 +75,15 @@ class CertDict(DictMixin):
         del self.certs[key]
 
 def _find_matching_cert(t,fp):
+    """
+    Find certificate using fingerprint.
+
+    :param t: XML as lxml.etree or None
+    :param fp: fingerprint as string
+    :returns: PEM formatted certificate as string or None
+    """
+    if t is None:
+        return None
     for hash,pem in CertDict(t).iteritems():
         if fp == hash:
             return pem
@@ -89,7 +98,7 @@ def _cert(sig,keyspec):
       2. in Signature element, with fingerprint indicated by keyspec
       3. in keyspec itself (keyspec is the cert in this case)
 
-    :param sig: Signature element as lxml.Element
+    :param sig: Signature element as lxml.Element or None
     :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
     :returns: X.509 cert as string
     """
@@ -371,7 +380,7 @@ def pem2cert(pem):
 def b642cert(data):
     return rsa_x509_pem.parse(b642pem(data))
 
-def verify(t,keyspec):
+def verify(t, keyspec):
     """
     Verify the signature(s) in an XML document.
 
@@ -382,32 +391,44 @@ def verify(t,keyspec):
     :returns: True if signature(s) validated, False if there were no signatures
     """
     if _DEBUG_WRITE_TO_FILES:
-        with open("/tmp/foo-sig.xml","w") as fd:
+        with open("/tmp/foo-sig.xml", "w") as fd:
             fd.write(etree.tostring(_root(t)))
+
+    # Load and parse certificate, unless keyspec is a fingerprint.
+    cert = _cert(None, keyspec)
+    if cert is not None:
+        cert = rsa_x509_pem.parse(cert)
+        key = rsa_x509_pem.get_key(cert)
+        f_public = rsa_x509_pem.f_public(key)
+        keysize = int(key.size()) + 1
+
     validated = False
+
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
-        assert sv is not None,XMLSigException("No SignatureValue")
+        assert sv is not None, XMLSigException("No SignatureValue")
 
-        data = _cert(sig,keyspec)
-        cert = rsa_x509_pem.parse(data)
-        key = rsa_x509_pem.get_key(cert)
-        key_f_public = rsa_x509_pem.f_public(key)
+        if cert is None:
+            # keyspec is fingerprint - look for matching certificate in XML
+            data = _cert(sig, keyspec)
+            this_cert = rsa_x509_pem.parse(data)
+            this_key = rsa_x509_pem.get_key(this_cert)
+            this_f_public = rsa_x509_pem.f_public(this_key)
+            this_keysize = int(this_key.size()) + 1
+            logging.debug("key size: %d bits" % this_keysize)
+        else:
+            # Non-fingerprint keyspec, use pre-parsed values
+            this_f_public = f_public
+            this_keysize = keysize
 
-        expected = key_f_public(b64d(sv))
-
-        hash_alg = _process_references(t,sig)
-        if _DEBUG_WRITE_TO_FILES:
-            with open("/tmp/foo-ref.xml","w") as fd:
-                fd.write(etree.tostring(_root(t)))
+        hash_alg = _process_references(t, sig)
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         b_digest = _create_signature_digest(si, hash_alg)
 
-        sz = int(key.size())+1
-        logging.debug("key size: %d" % sz)
-        actual = _signed_value(b_digest, sz, True, hash_alg)
+        actual = _signed_value(b_digest, this_keysize, True, hash_alg)
+        expected = this_f_public(b64d(sv))
 
-        assert expected == actual,XMLSigException("Signature validation failed")
+        assert expected == actual, XMLSigException("Signature validation failed")
         validated = True
 
     return validated
@@ -479,9 +500,9 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
     cert = rsa_x509_pem.parse(cert_data)
     pub_key = rsa_x509_pem.get_key(cert)
     key_f_public = rsa_x509_pem.f_public(pub_key)
-    sz = int(pub_key.size())+1
+    keysize = int(pub_key.size())+1
 
-    logging.debug("Using %s bit key" % sz)
+    logging.debug("Using %s bit key" % keysize)
 
     if t.find(".//{%s}Signature" % NS['ds']) is None:
         add_enveloped_signature(t,reference_uri=reference_uri)
@@ -495,7 +516,7 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         b_digest = _create_signature_digest(si, hash_alg)
 
-        tbs = _signed_value(b_digest,sz,do_padding,hash_alg)
+        tbs = _signed_value(b_digest, keysize, do_padding, hash_alg)
         signed = key_f_private(tbs)
         sv = b64e(signed)
         logging.debug("SignedValue: %s" % sv)
