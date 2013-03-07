@@ -19,8 +19,15 @@ DS = ElementMaker(namespace=NS['ds'],nsmap=NS)
 # Enable this to get various parts written to files in /tmp. Not for production!
 _DEBUG_WRITE_TO_FILES = False
 
-# SHA1 digest with ASN.1 BER SHA1 algorithm designator prefix [RSA-SHA1]
-PREFIX = '\x30\x21\x30\x09\x06\x05\x2B\x0E\x03\x02\x1A\x05\x00\x04\x14'
+# ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
+ASN1_BER_ALG_DESIGNATOR_PREFIX = { \
+    # disabled 'md2': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x02\x05\x00\x04\x10',
+    # disabled 'md5': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x05\x05\x00\x04\x10',
+    'sha1':   '\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14',
+    'sha256': '\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20',
+    'sha384': '\x30\x41\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x02\x05\x00\x04\x30',
+    'sha512': '\x30\x51\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03\x05\x00\x04\x40',
+    }
 
 import re, htmlentitydefs
 
@@ -37,7 +44,14 @@ ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 # permission from the author.
 
 class CertDict(DictMixin):
+    """
+    Extract all X509Certificate XML elements and create a dict-like object
+    to access the certificates.
+    """
     def __init__(self,t):
+        """
+        :param t: XML as lxml.etree
+        """
         self.certs = {}
         for cd in t.findall(".//{%s}X509Certificate" % NS['ds']):
             cert_pem = cd.text
@@ -91,7 +105,7 @@ def b64e(s):
         s = itb.int_to_bytes(s)
     return s.encode('base64').replace('\n', '')
 
-def _signed_value(data, key_size, do_pad): # TODO must take hash_alg as input. Do proper asn1 CMS
+def _signed_value(data, key_size, do_pad, hash_alg): # TODO Do proper asn1 CMS
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
 
     The resulting signed value will be in the form:
@@ -105,7 +119,10 @@ def _signed_value(data, key_size, do_pad): # TODO must take hash_alg as input. D
       str: rsa-sha1 signature value of `data`
     """
 
-    asn_digest = PREFIX + data
+    prefix = ASN1_BER_ALG_DESIGNATOR_PREFIX.get(hash_alg)
+    if not prefix:
+        raise XMLSigException("Unknown hash algorithm %s" % hash_alg)
+    asn_digest = prefix + data
     if do_pad:
         # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
         # WARNING: key size is in bits, not bytes!
@@ -155,9 +172,13 @@ def _remove_child_comments(t):
             _delete_elt(c)
     return t
 
-def _process_references(t,sig=None): ### TODO: return hash_alg to support other digest algs
+def _process_references(t,sig=None):
+    """
+    :returns: hash algorithm as string
+    """
     if sig is None:
         sig = t.find(".//{%s}Signature" % NS['ds'])
+    hash_alg = None
     for ref in sig.findall(".//{%s}Reference" % NS['ds']):
         object = None
         uri = ref.get('URI',None)
@@ -184,13 +205,18 @@ def _process_references(t,sig=None): ### TODO: return hash_alg to support other 
         dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
         if dm is None:
             raise XMLSigException("Unable to find DigestMethod")
-        hash_alg = (_alg(dm).split("#"))[1]
-        logging.debug("using hash algorithm %s" % hash_alg)
-        digest = _digest(object,hash_alg)
+        this_hash_alg = (_alg(dm).split("#"))[1]
+        logging.debug("using hash algorithm %s" % this_hash_alg)
+        hash_alg = hash_alg or this_hash_alg
+        if this_hash_alg != hash_alg:
+            raise XMLSigException("Unable to handle more than one hash algorithm (%s != %s)" \
+                                      % (this_hash_alg, hash_alg))
+        digest = _digest(object,this_hash_alg)
         logging.debug("digest for %s: %s" % (uri,digest))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
         logging.debug(etree.tostring(dv))
         dv.text = digest
+    return hash_alg
 
 def _cert(sig,keyspec):
     """
@@ -370,16 +396,16 @@ def verify(t,keyspec):
 
         expected = key_f_public(b64d(sv))
 
-        _process_references(t,sig)
+        hash_alg = _process_references(t,sig)
         if _DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-ref.xml","w") as fd:
                 fd.write(etree.tostring(_root(t)))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        b_digest = _create_signature_digest(si)
+        b_digest = _create_signature_digest(si, hash_alg)
 
         sz = int(key.size())+1
         logging.debug("key size: %d" % sz)
-        actual = _signed_value(b_digest, sz, True)
+        actual = _signed_value(b_digest, sz, True, hash_alg)
 
         assert expected == actual,XMLSigException("Signature validation failed")
         validated = True
@@ -461,15 +487,15 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         add_enveloped_signature(t,reference_uri=reference_uri)
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
-        _process_references(t,sig) # TODO pull hash_alg from return and replace with static sha1 below. Also give to _signed_value
+        hash_alg = _process_references(t,sig)
         if _DEBUG_WRITE_TO_FILES:
             with open("/tmp/sig-ref.xml","w") as fd:
                 fd.write(etree.tostring(_root(t)))
 
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        b_digest = _create_signature_digest(si)
+        b_digest = _create_signature_digest(si, hash_alg)
 
-        tbs = _signed_value(b_digest,sz,do_padding)
+        tbs = _signed_value(b_digest,sz,do_padding,hash_alg)
         signed = key_f_private(tbs)
         sv = b64e(signed)
         logging.debug("SignedValue: %s" % sv)
@@ -480,13 +506,16 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
 
     return t
 
-def _create_signature_digest(si):
+def _create_signature_digest(si, hash_alg):
+    """
+    :param hash_alg: string such as 'sha1'
+    """
     cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
     cm_alg = _alg(cm)
     assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
     sic = _transform(cm_alg,si)
     logging.debug("SignedInfo C14N: %s" % sic)
-    digest = _digest(sic,"sha1")
+    digest = _digest(sic, hash_alg)
     logging.debug("SignedInfo digest: %s" % digest)
     return b64d(digest)
 
