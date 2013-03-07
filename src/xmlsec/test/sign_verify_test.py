@@ -3,6 +3,7 @@ import pkg_resources
 __author__ = 'ft'
 
 import os
+import copy
 import unittest
 import xmlsec
 from xmlsec.test.case import XMLTestData
@@ -79,6 +80,22 @@ class TestTransforms(unittest.TestCase):
                             )
         self.assertTrue(res)
 
+    def test_verify_SAML_assertion2(self):
+        """
+        Test that we reject a modified XML document.
+        """
+        case = copy.deepcopy(self.cases['SAML_assertion1'])
+
+        # modify the givenName in the XML and make sure the signature
+        # does NOT validate anymore
+        case.data['out.xml'] = case.data['out.xml'].replace('>Bar<', '>Malory<')
+
+        print("XML input :\n{}\n\n".format(case.as_buf('out.xml')))
+
+        with self.assertRaises(xmlsec.XMLSigException):
+            xmlsec.verify(case.as_etree('out.xml'),
+                          self.public_keyspec,
+                          )
 
 def main():
     unittest.main()

@@ -285,7 +285,8 @@ def _unescape(text):
     return re.sub("&#?\w+;", fixup, text)
 
 def _delete_elt(elt):
-    assert elt.getparent() is not None,XMLSigException("Cannot delete root")
+    if elt.getparent() is None:
+        raise XMLSigException("Cannot delete root")
     if elt.tail is not None:
         logging.debug("tail: '%s'" % elt.tail)
         p = elt.getprevious()
@@ -297,7 +298,8 @@ def _delete_elt(elt):
         else:
             logging.debug("adding tail to parent")
             up = elt.getparent()
-            assert up is not None,XMLSigException("Signature has no parent")
+            if up is None:
+                raise XMLSigException("Signature has no parent")
             if up.text is None:
                 up.text = ''
             up.text += elt.tail
@@ -326,8 +328,10 @@ def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
     """
     cxml = etree.tostring(t,method="c14n",exclusive=exclusive,with_comments=with_comments,inclusive_ns_prefixes=inclusive_prefix_list)
     u = _unescape(cxml.decode("utf8",'replace')).encode("utf8").strip()
-    assert u[0] == '<',XMLSigException("C14N buffer doesn't start with '<'")
-    assert u[-1] == '>',XMLSigException("C14N buffer doesn't end with '>'")
+    if u[0] != '<':
+        raise XMLSigException("C14N buffer doesn't start with '<'")
+    if u[-1] != '>':
+        raise XMLSigException("C14N buffer doesn't end with '>'")
     return u
 
 def _transform(uri,t,tr=None):
@@ -406,7 +410,8 @@ def verify(t, keyspec):
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
-        assert sv is not None, XMLSigException("No SignatureValue")
+        if sv is None:
+            raise XMLSigException("No SignatureValue")
 
         if cert is None:
             # keyspec is fingerprint - look for matching certificate in XML
@@ -428,7 +433,8 @@ def verify(t, keyspec):
         actual = _signed_value(b_digest, this_keysize, True, hash_alg)
         expected = this_f_public(b64d(sv))
 
-        assert expected == actual, XMLSigException("Signature validation failed")
+        if expected != actual:
+            raise XMLSigException("Signature validation failed")
         validated = True
 
     return validated
@@ -487,7 +493,8 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
     else:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
 
-    assert key_f_private is not None,XMLSigException("Can I haz key?")
+    if key_f_private is None:
+        raise XMLSigException("Can I haz key?")
 
     if cert_data is None and cert_spec is not None:
         if 'BEGIN CERTIFICATE' in cert_spec:
@@ -495,7 +502,8 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         elif os.path.exists(cert_spec):
             cert_data = open(cert_spec).read()
 
-    assert cert_data is not None,XMLSigException("Unable to find certificate to go with key %s" % key_spec)
+    if cert_data is None:
+        raise XMLSigException("Unable to find certificate to go with key %s" % key_spec)
 
     cert = rsa_x509_pem.parse(cert_data)
     pub_key = rsa_x509_pem.get_key(cert)
@@ -533,7 +541,8 @@ def _create_signature_digest(si, hash_alg):
     """
     cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
     cm_alg = _alg(cm)
-    assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
+    if cm is None or cm_alg is None:
+        raise XMLSigException("No CanonicalizationMethod")
     sic = _transform(cm_alg,si)
     logging.debug("SignedInfo C14N: %s" % sic)
     digest = _digest(sic, hash_alg)
