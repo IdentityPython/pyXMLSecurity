@@ -346,13 +346,7 @@ def verify(t,keyspec):
         with open("/tmp/foo-ref.xml","w") as fd:
             fd.write(etree.tostring(_root(t)))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
-        cm_alg = _alg(cm)
-        assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
-        sic = _transform(cm_alg,si)
-        digest = _digest(sic,"sha1")
-        logging.debug("SignedInfo digest: %s" % digest)
-        b_digest = b64d(digest)
+        b_digest = _create_signature_digest(si)
 
         sz = int(key.size())+1
         logging.debug("key size: %d" % sz)
@@ -442,15 +436,8 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
             fd.write(etree.tostring(_root(t)))
 
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
-        cm_alg = _alg(cm)
-        assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
-        sic = _transform(cm_alg,si)
-        logging.debug("SignedInfo C14N: %s" % sic)
-        digest = _digest(sic,"sha1")
-        logging.debug("SignedInfo digest: %s" % digest)
+        b_digest = _create_signature_digest(si)
 
-        b_digest = b64d(digest)
         tbs = _signed_value(b_digest,sz,do_padding)
         signed = key_f_private(tbs)
         sv = b64e(signed)
@@ -461,6 +448,16 @@ def sign(t,key_spec,cert_spec=None,reference_uri=""):
         sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_data)))))
 
     return t
+
+def _create_signature_digest(si):
+    cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
+    cm_alg = _alg(cm)
+    assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
+    sic = _transform(cm_alg,si)
+    logging.debug("SignedInfo C14N: %s" % sic)
+    digest = _digest(sic,"sha1")
+    logging.debug("SignedInfo digest: %s" % digest)
+    return b64d(digest)
 
 def parse_xml(data, remove_whitespace=True):
     """
