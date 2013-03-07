@@ -80,6 +80,35 @@ def _find_matching_cert(t,fp):
             return pem
     return None
 
+def _cert(sig,keyspec):
+    """
+    Look for X.509 certificate for keyspec.
+
+    Search order :
+      1. in file indicated by keyspec
+      2. in Signature element, with fingerprint indicated by keyspec
+      3. in keyspec itself (keyspec is the cert in this case)
+
+    :param sig: Signature element as lxml.Element
+    :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
+    :returns: X.509 cert as string
+    """
+    data = None
+    if os.path.isfile(keyspec):
+        with open(keyspec) as c:
+            data = c.read()
+    elif ':' in keyspec:
+        cd = _find_matching_cert(sig,keyspec)
+        if cd is not None:
+            data = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % cd
+    else:
+        data = keyspec
+
+    if data is None:
+        raise XMLSigException("Unable to find anything useful to verify with")
+
+    return data
+
 def _root(t):
     if hasattr(t,'getroot') and hasattr(t.getroot,'__call__'):
         return t.getroot()
@@ -217,35 +246,6 @@ def _process_references(t,sig=None):
         logging.debug(etree.tostring(dv))
         dv.text = digest
     return hash_alg
-
-def _cert(sig,keyspec):
-    """
-    Look for X.509 certificate for keyspec.
-
-    Search order :
-      1. in file indicated by keyspec
-      2. in Signature element, with fingerprint indicated by keyspec
-      3. in keyspec itself (keyspec is the cert in this case)
-
-    :param sig: Signature element as lxml.Element
-    :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
-    :returns: X.509 cert as string
-    """
-    data = None
-    if os.path.isfile(keyspec):
-        with open(keyspec) as c:
-            data = c.read()
-    elif ':' in keyspec:
-        cd = _find_matching_cert(sig,keyspec)
-        if cd is not None:
-            data = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % cd
-    else:
-        data = keyspec
-
-    if data is None:
-        raise XMLSigException("Unable to find anything useful to verify with")
-
-    return data
 
 ##
 # Removes HTML or XML character references and entities from a text string.
