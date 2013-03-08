@@ -1,8 +1,13 @@
 """
 Testing the PKCS#11 shim layer
 """
+import xmlsec
+import pkg_resources
+import unittest
+
 from PyKCS11 import PyKCS11Error
 from PyKCS11.LowLevel import CKR_PIN_INCORRECT
+from xmlsec.test.case import XMLTestData, load_test_data
 
 __author__ = 'leifj'
 
@@ -165,7 +170,23 @@ def is_configured():
     global configured
     return configured
 
-class TestPKCS11():
+def _get_all_signatures(t):
+    res = []
+    for sig in t.findall(".//{%s}Signature" % xmlsec.NS['ds']):
+        sv = sig.findtext(".//{%s}SignatureValue" % xmlsec.NS['ds'])
+        assert sv is not None
+        # base64-dance to normalize newlines
+        res.append(sv.decode('base64').encode('base64'))
+    return res
+
+class TestPKCS11(unittest.TestCase):
+
+    def setUp(self):
+        datadir = pkg_resources.resource_filename(__name__, 'data')
+        self.private_keyspec = os.path.join(datadir, 'test.key')
+        self.public_keyspec  = os.path.join(datadir, 'test.pem')
+
+        self.cases = load_test_data('data/signverify')
 
     #@unittest.skipUnless(is_configured(),"PKCS11 unconfigured")
     def test_is_configured(self):
@@ -241,3 +262,23 @@ class TestPKCS11():
         finally:
             if session is not None:
                 pk11._close_session(session)
+
+    #@unittest.skipUnless(configured,"PKCS11 unconfigured")
+    def test_SAML_sign_with_pkcs11(self):
+        """
+        Test signing a SAML assertion using PKCS#11 and then verifying it using plain file.
+        """
+        case = self.cases['SAML_assertion1']
+        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+
+        os.environ['SOFTHSM_CONF'] = softhsm_conf
+
+        signed = xmlsec.sign(case.as_etree('in.xml'),
+                             key_spec="pkcs11://%s:0/test?pin=secret1" % (P11_MODULE)
+                             )
+
+        # verify signature using the public key
+        res = xmlsec.verify(signed,
+                            signer_cert_pem,
+                            )
+        self.assertTrue(res)

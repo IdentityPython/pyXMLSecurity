@@ -16,8 +16,18 @@ from exceptions import XMLSigException
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'],nsmap=NS)
 
-# SHA1 digest with ASN.1 BER SHA1 algorithm designator prefix [RSA-SHA1]
-PREFIX = '\x30\x21\x30\x09\x06\x05\x2B\x0E\x03\x02\x1A\x05\x00\x04\x14'
+# Enable this to get various parts written to files in /tmp. Not for production!
+_DEBUG_WRITE_TO_FILES = False
+
+# ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
+ASN1_BER_ALG_DESIGNATOR_PREFIX = { \
+    # disabled 'md2': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x02\x05\x00\x04\x10',
+    # disabled 'md5': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x05\x05\x00\x04\x10',
+    'sha1':   '\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14',
+    'sha256': '\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20',
+    'sha384': '\x30\x41\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x02\x05\x00\x04\x30',
+    'sha512': '\x30\x51\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03\x05\x00\x04\x40',
+    }
 
 import re, htmlentitydefs
 
@@ -34,7 +44,14 @@ ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 # permission from the author.
 
 class CertDict(DictMixin):
+    """
+    Extract all X509Certificate XML elements and create a dict-like object
+    to access the certificates.
+    """
     def __init__(self,t):
+        """
+        :param t: XML as lxml.etree
+        """
         self.certs = {}
         for cd in t.findall(".//{%s}X509Certificate" % NS['ds']):
             cert_pem = cd.text
@@ -58,10 +75,103 @@ class CertDict(DictMixin):
         del self.certs[key]
 
 def _find_matching_cert(t,fp):
+    """
+    Find certificate using fingerprint.
+
+    :param t: XML as lxml.etree or None
+    :param fp: fingerprint as string
+    :returns: PEM formatted certificate as string or None
+    """
+    if t is None:
+        return None
     for hash,pem in CertDict(t).iteritems():
         if fp == hash:
             return pem
     return None
+
+def _load_keyspec(keyspec, private=False, signature_element=None):
+    """
+    Load a key referenced by a keyspec (see below).
+
+    To 'load' a key means different things based on what can be loaded through a
+    given specification. For example, if keyspec is a a PKCS#11 reference to a
+    private key then naturally the key itself is not available.
+
+    Possible keyspecs, in evaluation order :
+
+      - a callable.    Return a partial dict with 'f_private' set to the keyspec.
+      - a filename.    Load an X.509 certificate from the file.
+      - a PKCS#11-URI  (see xmlsec.pk11.parse_uri()). Return a dict with 'f_private'
+                       set to a function calling the 'sign' function for the key,
+                       and the rest based on the (public) key returned by
+                       xmlsec.pk11.signer().
+      - a fingerprint. If signature_element is provided, the key is located using
+                       the fingerprint (provided as string).
+      - X.509 string.  An X.509 certificate as string.
+
+    Resulting dictionary (used except for 'callable') :
+
+      {'keyspec': keyspec,
+       'source': 'pkcs11' or 'file' or 'fingerprint' or 'keyspec',
+       'data': X.509 certificate as string,
+       'key': Parsed key from certificate,
+       'keysize': Keysize in bits,
+       'f_public': rsa_x509_pem.f_public(key) if private == False,
+       'f_private': rsa_x509_pem.f_private(key) if private == True,
+      }
+
+    :param sig: Signature element as lxml.Element or None
+    :param keyspec: Keyspec as string or callable. See above.
+    :returns: dict, see above.
+    """
+    data = None
+    source = None
+    key_f_private = None
+    if private and hasattr(keyspec, '__call__'):
+        return {'keyspec': keyspec,
+                'source': 'callable',
+                'f_private': keyspec,
+                }
+    if isinstance(keyspec, basestring):
+        if os.path.isfile(keyspec):
+            with open(keyspec) as c:
+                data = c.read()
+            source = 'file'
+        elif private and keyspec.startswith("pkcs11://"):
+            import pk11
+            key_f_private, data = pk11.signer(keyspec)
+            logging.debug("Using pkcs11 signing key: %s" % key_f_private)
+            source = 'pkcs11'
+        elif ':' in keyspec and signature_element is not None:
+            cd = _find_matching_cert(signature_element, keyspec)
+            if cd is not None:
+                data = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % cd
+                source = 'signature_element'
+        else:
+            data = keyspec
+            source = 'keyspec'
+
+    if data is None:
+        raise XMLSigException("Unable to find a useful key from keyspec '%s'" % (keyspec))
+
+    #logging.debug("Certificate data (source '%s') :\n%s" % (source, data))
+
+    cert_pem = rsa_x509_pem.parse(data)
+    key = rsa_x509_pem.get_key(cert_pem)
+
+    res = {'keyspec': keyspec,
+           'source': source,
+           'data': data,
+           'key': key,
+           'keysize': int(key.size()) + 1,
+           }
+
+    if private:
+        res['f_private'] = key_f_private or rsa_x509_pem.f_private(key)
+    else:
+        res['f_public'] = rsa_x509_pem.f_public(key)
+
+    return res
 
 def _root(t):
     if hasattr(t,'getroot') and hasattr(t.getroot,'__call__'):
@@ -70,13 +180,16 @@ def _root(t):
         return t
 
 def number_of_bits(num):
+    """
+    Return the number of bits required to represent num.
+
+    In python >= 2.7, there is num.bit_length().
+
+    NOTE: This function appears unused, so it might go away.
+    """
     assert num>=0
-    nbits = 1
-    max = 2
-    while max<=num:
-        nbits += 1
-        max += max
-    return nbits
+    # this is much faster than you would think, AND it is easy to read ;)
+    return len(bin(num)) - 2
 
 b64d = lambda s: s.decode('base64')
 
@@ -85,7 +198,7 @@ def b64e(s):
         s = itb.int_to_bytes(s)
     return s.encode('base64').replace('\n', '')
 
-def _signed_value(data, key_size, do_pad): # TODO must take hash_alg as input. Do proper asn1 CMS
+def _signed_value(data, key_size, do_pad, hash_alg): # TODO Do proper asn1 CMS
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
 
     The resulting signed value will be in the form:
@@ -99,7 +212,10 @@ def _signed_value(data, key_size, do_pad): # TODO must take hash_alg as input. D
       str: rsa-sha1 signature value of `data`
     """
 
-    asn_digest = PREFIX + data
+    prefix = ASN1_BER_ALG_DESIGNATOR_PREFIX.get(hash_alg)
+    if not prefix:
+        raise XMLSigException("Unknown hash algorithm %s" % hash_alg)
+    asn_digest = prefix + data
     if do_pad:
         # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
         # WARNING: key size is in bits, not bytes!
@@ -110,9 +226,16 @@ def _signed_value(data, key_size, do_pad): # TODO must take hash_alg as input. D
     else:
         return asn_digest
 
-def _digest(str,hash_alg):
+def _digest(data, hash_alg):
+    """
+    Calculate a hash digest of algorithm hash_alg and return the result base64 encoded.
+
+    :param hash_alg: String with algorithm, such as 'sha1'
+    :param data: The data to digest
+    :returns: Base64 string
+    """
     h = getattr(hashlib,hash_alg)()
-    h.update(str)
+    h.update(data)
     digest = b64e(h.digest())
     return digest
 
@@ -125,6 +248,10 @@ def _get_by_id(t,id_v):
     return None
 
 def _alg(elt):
+    """
+    Return the hashlib name of an Algorithm. Hopefully.
+    :returns: None or string
+    """
     uri = elt.get('Algorithm',None)
     if uri is None:
         return None
@@ -138,9 +265,13 @@ def _remove_child_comments(t):
             _delete_elt(c)
     return t
 
-def _process_references(t,sig=None): ### TODO: return hash_alg to support other digest algs
+def _process_references(t,sig=None):
+    """
+    :returns: hash algorithm as string
+    """
     if sig is None:
         sig = t.find(".//{%s}Signature" % NS['ds'])
+    hash_alg = None
     for ref in sig.findall(".//{%s}Reference" % NS['ds']):
         object = None
         uri = ref.get('URI',None)
@@ -160,36 +291,25 @@ def _process_references(t,sig=None): ### TODO: return hash_alg to support other 
             logging.debug("transform: %s" % _alg(tr))
             object = _transform(_alg(tr),object,tr)
 
-        with open("/tmp/foo-obj.xml","w") as fd:
-            fd.write(object)
+        if _DEBUG_WRITE_TO_FILES:
+            with open("/tmp/foo-obj.xml","w") as fd:
+                fd.write(object)
 
         dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
         if dm is None:
             raise XMLSigException("Unable to find DigestMethod")
-        hash_alg = (_alg(dm).split("#"))[1]
-        logging.debug("using hash algorithm %s" % hash_alg)
-        digest = _digest(object,hash_alg)
+        this_hash_alg = (_alg(dm).split("#"))[1]
+        logging.debug("using hash algorithm %s" % this_hash_alg)
+        hash_alg = hash_alg or this_hash_alg
+        if this_hash_alg != hash_alg:
+            raise XMLSigException("Unable to handle more than one hash algorithm (%s != %s)" \
+                                      % (this_hash_alg, hash_alg))
+        digest = _digest(object,this_hash_alg)
         logging.debug("digest for %s: %s" % (uri,digest))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
         logging.debug(etree.tostring(dv))
         dv.text = digest
-
-def _cert(sig,keyspec):
-    data = None
-    if os.path.isfile(keyspec):
-        with open(keyspec) as c:
-            data = c.read()
-    elif ':' in keyspec:
-        cd = _find_matching_cert(sig,keyspec)
-        if cd is not None:
-            data = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % cd
-    else:
-        data = keyspec
-
-    if data is None:
-        raise XMLSigException("Unable to find anything useful to verify with")
-
-    return data
+    return hash_alg
 
 ##
 # Removes HTML or XML character references and entities from a text string.
@@ -220,7 +340,8 @@ def _unescape(text):
     return re.sub("&#?\w+;", fixup, text)
 
 def _delete_elt(elt):
-    assert elt.getparent() is not None,XMLSigException("Cannot delete root")
+    if elt.getparent() is None:
+        raise XMLSigException("Cannot delete root")
     if elt.tail is not None:
         logging.debug("tail: '%s'" % elt.tail)
         p = elt.getprevious()
@@ -232,7 +353,8 @@ def _delete_elt(elt):
         else:
             logging.debug("adding tail to parent")
             up = elt.getparent()
-            assert up is not None,XMLSigException("Signature has no parent")
+            if up is None:
+                raise XMLSigException("Signature has no parent")
             if up.text is None:
                 up.text = ''
             up.text += elt.tail
@@ -241,15 +363,30 @@ def _delete_elt(elt):
 def _enveloped_signature(t):
     sig = t.find('.//{http://www.w3.org/2000/09/xmldsig#}Signature')
     _delete_elt(sig)
-    with open("/tmp/foo-env.xml","w") as fd:
-        fd.write(etree.tostring(t))
+    if _DEBUG_WRITE_TO_FILES:
+        with open("/tmp/foo-env.xml","w") as fd:
+            fd.write(etree.tostring(t))
     return t
 
 def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
+    """
+    Perform XML canonicalization (c14n) on an lxml.etree.
+
+    NOTE: The c14n done here is missing whitespace removal. The whitespace has to
+    be removed at parse time. One way to do that is to use xmlsec.parse_xml().
+
+    :param t: XML as lxml.etree
+    :param exclusive: boolean
+    :param with_comments: boolean, keep comments or not
+    :param inclusive_prefix_list: List of namespaces to include (?)
+    :returns: XML as string (utf8)
+    """
     cxml = etree.tostring(t,method="c14n",exclusive=exclusive,with_comments=with_comments,inclusive_ns_prefixes=inclusive_prefix_list)
     u = _unescape(cxml.decode("utf8",'replace')).encode("utf8").strip()
-    assert u[0] == '<',XMLSigException("C14N buffer doesn't start with '<'")
-    assert u[-1] == '>',XMLSigException("C14N buffer doesn't end with '>'")
+    if u[0] != '<':
+        raise XMLSigException("C14N buffer doesn't start with '<'")
+    if u[-1] != '>':
+        raise XMLSigException("C14N buffer doesn't end with '>'")
     return u
 
 def _transform(uri,t,tr=None):
@@ -302,39 +439,55 @@ def pem2cert(pem):
 def b642cert(data):
     return rsa_x509_pem.parse(b642pem(data))
 
-def verify(t,keyspec):
-    with open("/tmp/foo-sig.xml","w") as fd:
-        fd.write(etree.tostring(_root(t)))
+def verify(t, keyspec):
+    """
+    Verify the signature(s) in an XML document.
+
+    Throws an XMLSigException on any non-matching signatures.
+
+    :param t: XML as lxml.etree
+    :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
+    :returns: True if signature(s) validated, False if there were no signatures
+    """
+    if _DEBUG_WRITE_TO_FILES:
+        with open("/tmp/foo-sig.xml", "w") as fd:
+            fd.write(etree.tostring(_root(t)))
+
+    # Load and parse certificate, unless keyspec is a fingerprint.
+    cert = _load_keyspec(keyspec)
+
+    validated = False
+
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
-        assert sv is not None,XMLSigException("No SignatureValue")
+        if sv is None:
+            raise XMLSigException("No SignatureValue")
 
-        data = _cert(sig,keyspec)
-        cert = rsa_x509_pem.parse(data)
-        key = rsa_x509_pem.get_key(cert)
-        key_f_public = rsa_x509_pem.f_public(key)
+        if cert is None:
+            # keyspec is fingerprint - look for matching certificate in XML
+            this_cert = _load_keyspec(keyspec, signature_element=sig)
+            if not this_cert:
+                raise XMLSigException("Could not find certificate to validate signature")
+            logging.debug("key size: %d bits" % this_cert['keysize'])
+        else:
+            this_cert = cert
 
-        expected = key_f_public(b64d(sv))
+        # Non-fingerprint keyspec, use pre-parsed values
+        this_f_public = cert['f_public']
+        this_keysize = cert['keysize']
 
-        _process_references(t,sig)
-        with open("/tmp/foo-ref.xml","w") as fd:
-            fd.write(etree.tostring(_root(t)))
+        hash_alg = _process_references(t, sig)
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
-        cm_alg = _alg(cm)
-        assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
-        sic = _transform(cm_alg,si)
-        digest = _digest(sic,"sha1")
-        logging.debug("SignedInfo digest: %s" % digest)
-        b_digest = b64d(digest)
+        b_digest = _create_signature_digest(si, hash_alg)
 
-        sz = int(key.size())+1
-        logging.debug("key size: %d" % sz)
-        actual = _signed_value(b_digest, sz, True)
+        actual = _signed_value(b_digest, this_keysize, True, hash_alg)
+        expected = this_f_public(b64d(sv))
 
-        assert expected == actual,XMLSigException("Signature validation failed")
+        if expected != actual:
+            raise XMLSigException("Signature validation failed")
+        validated = True
 
-    return True
+    return validated
 
 ## TODO - support transforms with arguments
 def _signed_info_transforms(transforms):
@@ -361,65 +514,86 @@ def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=AL
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE,TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
     _root(t).insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms,reference_uri))
 
-def sign(t,key_spec,cert_spec=None,reference_uri=""):
+def sign(t, key_spec, cert_spec=None, reference_uri=''):
+    """
+    Sign an XML document. This means to 'complete' all Signature elements in the XML.
 
-    cert_data = None
-    key_f_private = None
+    :param t: XML as lxml.etree
+    :param key_spec: private key reference, see _load_keyspec() for syntax.
+    :param cert_spec: None or public key reference, see _load_keyspec() for syntax.
+        None is only valid if key_spec is a pkcs11:// URL
+    :param reference_uri: Envelope signature reference URI
+    :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
+    """
     do_padding = False # only in the case of our fallback keytype do we need to do pkcs1 padding here
 
-    if hasattr(key_spec,'__call__'):
-        key_f_private = key_spec
-    elif os.path.isfile(key_spec):
-        key_data = open(key_spec).read()
-        priv_key = rsa_x509_pem.parse(key_data)
-        key_f_private = rsa_x509_pem.f_private(rsa_x509_pem.get_key(priv_key))
-        do_padding = True # need to do p1 padding in this case
-    elif key_spec.startswith("pkcs11://"):
-        import pk11
-        key_f_private,cert_data = pk11.signer(key_spec)
-        logging.debug("Using pkcs11 singing key: %s" % key_f_private)
-    else:
+    private = _load_keyspec(key_spec, private=True)
+    if private is None:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
 
-    assert key_f_private is not None,XMLSigException("Can I haz key?")
+    if private['source'] == 'file':
+        do_padding = True # need to do p1 padding in this case
 
-    if cert_data is None and cert_spec is not None:
-        if 'BEGIN CERTIFICATE' in cert_spec:
-            cert_data = cert_spec
-        elif os.path.exists(cert_spec):
-            cert_data = open(cert_spec).read()
+    if cert_spec is None and private['source'] == 'pkcs11':
+        cert_spec = private['data']
+        logging.debug("Using P11 cert_spec :\n%s" % (cert_spec))
 
-    assert cert_data is not None,XMLSigException("Unable to find certificate to go with key %s" % key_spec)
+    public = _load_keyspec(cert_spec)
+    if public is None:
+        raise XMLSigException("Unable to load public key from '%s'" \
+                                  % (cert_spec))
 
-    cert = rsa_x509_pem.parse(cert_data)
-    pub_key = rsa_x509_pem.get_key(cert)
-    key_f_public = rsa_x509_pem.f_public(pub_key)
-    sz = int(pub_key.size())+1
+    logging.debug("Using %s/%s bit key" % (public['keysize'], private['keysize']))
 
-    logging.debug("Using %s bit key" % sz)
+    #if private['source'] == 'pkcs11':
+    #    assert 0
 
     if t.find(".//{%s}Signature" % NS['ds']) is None:
-        add_enveloped_signature(t,reference_uri=reference_uri)
+        add_enveloped_signature(t, reference_uri=reference_uri)
 
-    for sig in t.findall(".//{%s}Signature" % NS['ds']):
-        _process_references(t,sig) # TODO pull hash_alg from return and replace with static sha1 below. Also give to _signed_value
+    if _DEBUG_WRITE_TO_FILES:
         with open("/tmp/sig-ref.xml","w") as fd:
             fd.write(etree.tostring(_root(t)))
 
+    for sig in t.findall(".//{%s}Signature" % NS['ds']):
+        hash_alg = _process_references(t, sig)
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
-        cm_alg = _alg(cm)
-        assert cm is not None and cm_alg is not None,XMLSigException("No CanonicalizationMethod")
-        sic = _transform(cm_alg,si)
-        logging.debug("SignedInfo C14N: %s" % sic)
-        digest = _digest(sic,"sha1")
-        logging.debug("SignedInfo digest: %s" % digest)
+        b_digest = _create_signature_digest(si, hash_alg)
 
-        b_digest = b64d(digest)
-        tbs = _signed_value(b_digest,sz,do_padding)
-        signed = key_f_private(tbs)
-        sv = b64e(signed)
-        logging.debug("SignedValue: %s" % sv)
-        si.addnext(DS.SignatureValue(sv))
+        # RSA sign hash digest and insert it into the XML
+        tbs = _signed_value(b_digest, public['keysize'], do_padding, hash_alg)
+        signed = private['f_private'](tbs)
+        signature = b64e(signed)
+        logging.debug("SignatureValue: %s" % signature)
+        si.addnext(DS.SignatureValue(signature))
+
+        # Insert cert_data as b64-encoded X.509 certificate into XML document
         sv_elt = si.getnext()
-        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_data)))))
+        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(public['data'])))))
+
+    return t
+
+def _create_signature_digest(si, hash_alg):
+    """
+    :param hash_alg: string such as 'sha1'
+    """
+    cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
+    cm_alg = _alg(cm)
+    if cm is None or cm_alg is None:
+        raise XMLSigException("No CanonicalizationMethod")
+    sic = _transform(cm_alg,si)
+    logging.debug("SignedInfo C14N: %s" % sic)
+    digest = _digest(sic, hash_alg)
+    logging.debug("SignedInfo digest: %s" % digest)
+    return b64d(digest)
+
+def parse_xml(data, remove_whitespace=True):
+    """
+    Parse XML data into an lxml.etree and remove whitespace in the process.
+
+    :param data: XML as string
+    :param remove_whitespace: boolean
+    :returns: XML as lxml.etree
+    """
+    parser = etree.XMLParser(remove_blank_text=remove_whitespace)
+    return etree.XML(data, parser)
