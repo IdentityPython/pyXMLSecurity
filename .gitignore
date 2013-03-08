@@ -20,3 +20,6 @@ sign.key
 .*~
 \#*
 .\#*
+
+no.token
+token.db
