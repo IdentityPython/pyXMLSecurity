@@ -15,3 +15,11 @@ _build
 doc/api
 sign.crt
 sign.key
+
+*~
+.*~
+\#*
+.\#*
+
+no.token
+token.db
