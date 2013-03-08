@@ -1,12 +1,12 @@
-import pkg_resources
-
 __author__ = 'ft'
 
 import os
 import copy
 import unittest
 import xmlsec
-from xmlsec.test.case import XMLTestData
+import pkg_resources
+
+from xmlsec.test.case import XMLTestData, load_test_data
 from lxml.builder import ElementMaker
 
 def _get_all_signatures(t):
@@ -25,10 +25,7 @@ class TestTransforms(unittest.TestCase):
         self.private_keyspec = os.path.join(datadir, 'test.key')
         self.public_keyspec  = os.path.join(datadir, 'test.pem')
 
-        self.cases = {}
-        for case_n in pkg_resources.resource_listdir(__name__,"data/signverify"):
-            case = XMLTestData(__name__,"data/signverify/%s" % case_n)
-            self.cases[case_n] = case
+        self.cases = load_test_data('data/signverify')
 
     def test_sign_verify_SAML_assertion1(self):
         """

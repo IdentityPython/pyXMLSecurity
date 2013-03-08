@@ -4,6 +4,7 @@ A simple package to keep track of XML test cases
 
 __author__ = 'leifj'
 
+import os
 import pkg_resources
 import lxml.etree as etree
 from StringIO import StringIO
@@ -27,3 +28,16 @@ class XMLTestData():
 
     def as_etree(self,n,remove_whitespace=True):
         return xmlsec.parse_xml(self.as_buf(n), remove_whitespace)
+
+
+def load_test_data(path=None):
+    """
+    Load files from the resource path and store them in dict.
+    """
+    if not path:
+        return # fool unittest that executes this function
+    cases = {}
+    for case_n in pkg_resources.resource_listdir(__name__, path):
+        case = XMLTestData(__name__, os.path.join(path, case_n))
+        cases[case_n] = case
+    return cases
