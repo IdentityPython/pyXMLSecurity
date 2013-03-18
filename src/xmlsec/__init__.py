@@ -585,7 +585,7 @@ def _create_signature_digest(si, hash_alg):
     logging.debug("SignedInfo digest: %s" % digest)
     return b64d(digest)
 
-def parse_xml(data, remove_whitespace=True):
+def parse_xml(data, remove_whitespace=True, remove_comments=True):
     """
     Parse XML data into an lxml.etree and remove whitespace in the process.
 
@@ -593,5 +593,5 @@ def parse_xml(data, remove_whitespace=True):
     :param remove_whitespace: boolean
     :returns: XML as lxml.etree
     """
-    parser = etree.XMLParser(remove_blank_text=remove_whitespace)
+    parser = etree.XMLParser(remove_blank_text=remove_whitespace, remove_comments=remove_comments)
     return etree.XML(data, parser)
