@@ -12,6 +12,8 @@ import copy
 import int_to_bytes as itb
 from lxml.builder import ElementMaker
 from exceptions import XMLSigException
+import re
+import htmlentitydefs
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NS)
@@ -20,7 +22,7 @@ DS = ElementMaker(namespace=NS['ds'], nsmap=NS)
 _DEBUG_WRITE_TO_FILES = False
 
 # ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
-ASN1_BER_ALG_DESIGNATOR_PREFIX = { \
+ASN1_BER_ALG_DESIGNATOR_PREFIX = {
     # disabled 'md2': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x02\x05\x00\x04\x10',
     # disabled 'md5': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x05\x05\x00\x04\x10',
     'sha1': '\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14',
@@ -28,8 +30,6 @@ ASN1_BER_ALG_DESIGNATOR_PREFIX = { \
     'sha384': '\x30\x41\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x02\x05\x00\x04\x30',
     'sha512': '\x30\x51\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03\x05\x00\x04\x40',
 }
-
-import re, htmlentitydefs
 
 TRANSFORM_ENVELOPED_SIGNATURE = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature'
 TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS = 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments'
@@ -146,17 +146,18 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)
             source = 'pkcs11'
-        elif ':' in keyspec and signature_element is not None:
+        elif signature_element is not None:
             cd = _find_matching_cert(signature_element, keyspec)
             if cd is not None:
                 data = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % cd
                 source = 'signature_element'
-        else:
+        elif '-----BEGIN' in keyspec:
             data = keyspec
             source = 'keyspec'
 
     if data is None:
-        raise XMLSigException("Unable to find a useful key from keyspec '%s'" % (keyspec))
+        return None
+        #raise XMLSigException("Unable to find a useful key from keyspec '%s'" % (keyspec))
 
     #logging.debug("Certificate data (source '%s') :\n%s" % (source, data))
 
@@ -167,8 +168,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
            'source': source,
            'data': data,
            'key': key,
-           'keysize': int(key.size()) + 1,
-    }
+           'keysize': int(key.size()) + 1}
 
     if private:
         res['f_private'] = key_f_private or rsa_x509_pem.f_private(key)
@@ -293,7 +293,7 @@ def _process_references(t, sig=None):
             ct = _remove_child_comments(copy.deepcopy(t))
             object = _root(ct)
         elif uri.startswith('#'):
-            ct = copy.deepcopy(t)
+            ct = _remove_child_comments(copy.deepcopy(t))
             object = _root(_get_by_id(ct, uri[1:]))
         else:
             raise XMLSigException("Unknown reference %s" % uri)
@@ -491,18 +491,25 @@ def verify(t, keyspec):
         if sv is None:
             raise XMLSigException("No SignatureValue")
 
+        this_f_public = None
+        this_keysize = None
         if cert is None:
             # keyspec is fingerprint - look for matching certificate in XML
             this_cert = _load_keyspec(keyspec, signature_element=sig)
-            if not this_cert:
+            if this_cert is None:
                 raise XMLSigException("Could not find certificate to validate signature")
-            logging.debug("key size: %d bits" % this_cert['keysize'])
+            this_f_public = this_cert['f_public']
+            this_keysize = this_cert['keysize']
         else:
+            # Non-fingerprint keyspec, use pre-parsed values
             this_cert = cert
+            this_f_public = cert['f_public']
+            this_keysize = cert['keysize']
 
-        # Non-fingerprint keyspec, use pre-parsed values
-        this_f_public = cert['f_public']
-        this_keysize = cert['keysize']
+        logging.debug("key size: %d bits" % this_cert['keysize'])
+
+        if this_cert is None:
+            raise XMLSigException("Could not find certificate to validate signature")
 
         hash_alg = _process_references(t, sig)
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
@@ -517,10 +524,12 @@ def verify(t, keyspec):
 
     return validated
 
+
 ## TODO - support transforms with arguments
 def _signed_info_transforms(transforms):
     ts = [DS.Transform(Algorithm=t) for t in transforms]
     return DS.Transforms(*ts)
+
 
 # standard enveloped rsa-sha1 signature
 def _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri):
