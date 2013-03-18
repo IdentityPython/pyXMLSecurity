@@ -520,8 +520,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
 
     :param t: XML as lxml.etree
     :param key_spec: private key reference, see _load_keyspec() for syntax.
-    :param cert_spec: None or public key reference, see _load_keyspec() for syntax.
-        None is only valid if key_spec is a pkcs11:// URL
+    :param cert_spec: None or public key reference (to add cert to document), see _load_keyspec() for syntax.
     :param reference_uri: Envelope signature reference URI
     :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
     """
@@ -538,15 +537,13 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
         cert_spec = private['data']
         logging.debug("Using P11 cert_spec :\n%s" % (cert_spec))
 
-    public = _load_keyspec(cert_spec)
-    if public is None:
-        raise XMLSigException("Unable to load public key from '%s'" \
-                                  % (cert_spec))
-
-    logging.debug("Using %s/%s bit key" % (public['keysize'], private['keysize']))
-
-    #if private['source'] == 'pkcs11':
-    #    assert 0
+    public = None
+    if cert_spec is not None:
+        public = _load_keyspec(cert_spec)
+        if public['keysize'] != private['keysize']:
+            raise XMLSigException("Public and private key sizes do not match (%s, %s)" \
+                                      % (public['keysize'], private['keysize']))
+    logging.debug("Using %s bit key" % (private['keysize']))
 
     if t.find(".//{%s}Signature" % NS['ds']) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
@@ -561,15 +558,16 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
         b_digest = _create_signature_digest(si, hash_alg)
 
         # RSA sign hash digest and insert it into the XML
-        tbs = _signed_value(b_digest, public['keysize'], do_padding, hash_alg)
+        tbs = _signed_value(b_digest, private['keysize'], do_padding, hash_alg)
         signed = private['f_private'](tbs)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
         si.addnext(DS.SignatureValue(signature))
 
-        # Insert cert_data as b64-encoded X.509 certificate into XML document
-        sv_elt = si.getnext()
-        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(public['data'])))))
+        if public is not None:
+            # Insert cert_data as b64-encoded X.509 certificate into XML document
+            sv_elt = si.getnext()
+            sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(public['data'])))))
 
     return t
 
