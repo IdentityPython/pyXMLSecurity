@@ -14,7 +14,7 @@ from lxml.builder import ElementMaker
 from exceptions import XMLSigException
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
-DS = ElementMaker(namespace=NS['ds'],nsmap=NS)
+DS = ElementMaker(namespace=NS['ds'], nsmap=NS)
 
 # Enable this to get various parts written to files in /tmp. Not for production!
 _DEBUG_WRITE_TO_FILES = False
@@ -23,11 +23,11 @@ _DEBUG_WRITE_TO_FILES = False
 ASN1_BER_ALG_DESIGNATOR_PREFIX = { \
     # disabled 'md2': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x02\x05\x00\x04\x10',
     # disabled 'md5': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x05\x05\x00\x04\x10',
-    'sha1':   '\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14',
+    'sha1': '\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14',
     'sha256': '\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20',
     'sha384': '\x30\x41\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x02\x05\x00\x04\x30',
     'sha512': '\x30\x51\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03\x05\x00\x04\x40',
-    }
+}
 
 import re, htmlentitydefs
 
@@ -48,7 +48,8 @@ class CertDict(DictMixin):
     Extract all X509Certificate XML elements and create a dict-like object
     to access the certificates.
     """
-    def __init__(self,t):
+
+    def __init__(self, t):
         """
         :param t: XML as lxml.etree
         """
@@ -59,7 +60,7 @@ class CertDict(DictMixin):
             m = hashlib.sha1()
             m.update(cert_der)
             fingerprint = m.hexdigest().lower()
-            fingerprint = ":".join([fingerprint[x:x+2] for x in xrange(0,len(fingerprint),2)])
+            fingerprint = ":".join([fingerprint[x:x + 2] for x in xrange(0, len(fingerprint), 2)])
             self.certs[fingerprint] = cert_pem
 
     def __getitem__(self, item):
@@ -74,7 +75,8 @@ class CertDict(DictMixin):
     def __delitem__(self, key):
         del self.certs[key]
 
-def _find_matching_cert(t,fp):
+
+def _find_matching_cert(t, fp):
     """
     Find certificate using fingerprint.
 
@@ -84,10 +86,11 @@ def _find_matching_cert(t,fp):
     """
     if t is None:
         return None
-    for hash,pem in CertDict(t).iteritems():
+    for hash, pem in CertDict(t).iteritems():
         if fp == hash:
             return pem
     return None
+
 
 def _load_keyspec(keyspec, private=False, signature_element=None):
     """
@@ -131,7 +134,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
         return {'keyspec': keyspec,
                 'source': 'callable',
                 'f_private': keyspec,
-                }
+        }
     if isinstance(keyspec, basestring):
         if os.path.isfile(keyspec):
             with open(keyspec) as c:
@@ -139,6 +142,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
             source = 'file'
         elif private and keyspec.startswith("pkcs11://"):
             import pk11
+
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)
             source = 'pkcs11'
@@ -164,7 +168,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
            'data': data,
            'key': key,
            'keysize': int(key.size()) + 1,
-           }
+    }
 
     if private:
         res['f_private'] = key_f_private or rsa_x509_pem.f_private(key)
@@ -173,11 +177,13 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
 
     return res
 
+
 def _root(t):
-    if hasattr(t,'getroot') and hasattr(t.getroot,'__call__'):
+    if hasattr(t, 'getroot') and hasattr(t.getroot, '__call__'):
         return t.getroot()
     else:
         return t
+
 
 def number_of_bits(num):
     """
@@ -187,16 +193,19 @@ def number_of_bits(num):
 
     NOTE: This function appears unused, so it might go away.
     """
-    assert num>=0
+    assert num >= 0
     # this is much faster than you would think, AND it is easy to read ;)
     return len(bin(num)) - 2
 
+
 b64d = lambda s: s.decode('base64')
+
 
 def b64e(s):
     if type(s) in (int, long):
         s = itb.int_to_bytes(s)
     return s.encode('base64').replace('\n', '')
+
 
 def _signed_value(data, key_size, do_pad, hash_alg): # TODO Do proper asn1 CMS
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
@@ -219,12 +228,13 @@ def _signed_value(data, key_size, do_pad, hash_alg): # TODO Do proper asn1 CMS
     if do_pad:
         # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
         # WARNING: key size is in bits, not bytes!
-        padded_size = key_size/8 - 1
+        padded_size = key_size / 8 - 1
         pad_size = padded_size - len(asn_digest) - 2
         pad = '\x01' + '\xFF' * pad_size + '\x00'
         return pad + asn_digest
     else:
         return asn_digest
+
 
 def _digest(data, hash_alg):
     """
@@ -234,29 +244,32 @@ def _digest(data, hash_alg):
     :param data: The data to digest
     :returns: Base64 string
     """
-    h = getattr(hashlib,hash_alg)()
+    h = getattr(hashlib, hash_alg)()
     h.update(data)
     digest = b64e(h.digest())
     return digest
 
-def _get_by_id(t,id_v):
+
+def _get_by_id(t, id_v):
     for id_a in _id_attributes:
-        logging.debug("Looking for #%s using id attribute '%s'" % (id_v,id_a))
-        elts = t.xpath("//*[@%s='%s']" % (id_a,id_v))
+        logging.debug("Looking for #%s using id attribute '%s'" % (id_v, id_a))
+        elts = t.xpath("//*[@%s='%s']" % (id_a, id_v))
         if elts is not None and len(elts) > 0:
             return elts[0]
     return None
+
 
 def _alg(elt):
     """
     Return the hashlib name of an Algorithm. Hopefully.
     :returns: None or string
     """
-    uri = elt.get('Algorithm',None)
+    uri = elt.get('Algorithm', None)
     if uri is None:
         return None
     else:
         return uri.rstrip('#')
+
 
 def _remove_child_comments(t):
     root = _root(t)
@@ -265,7 +278,8 @@ def _remove_child_comments(t):
             _delete_elt(c)
     return t
 
-def _process_references(t,sig=None):
+
+def _process_references(t, sig=None):
     """
     :returns: hash algorithm as string
     """
@@ -274,13 +288,13 @@ def _process_references(t,sig=None):
     hash_alg = None
     for ref in sig.findall(".//{%s}Reference" % NS['ds']):
         object = None
-        uri = ref.get('URI',None)
+        uri = ref.get('URI', None)
         if uri is None or uri == '#' or uri == '':
             ct = _remove_child_comments(copy.deepcopy(t))
             object = _root(ct)
         elif uri.startswith('#'):
             ct = copy.deepcopy(t)
-            object = _root(_get_by_id(ct,uri[1:]))
+            object = _root(_get_by_id(ct, uri[1:]))
         else:
             raise XMLSigException("Unknown reference %s" % uri)
 
@@ -289,10 +303,10 @@ def _process_references(t,sig=None):
 
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
             logging.debug("transform: %s" % _alg(tr))
-            object = _transform(_alg(tr),object,tr)
+            object = _transform(_alg(tr), object, tr)
 
         if _DEBUG_WRITE_TO_FILES:
-            with open("/tmp/foo-obj.xml","w") as fd:
+            with open("/tmp/foo-obj.xml", "w") as fd:
                 fd.write(object)
 
         dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
@@ -303,9 +317,9 @@ def _process_references(t,sig=None):
         hash_alg = hash_alg or this_hash_alg
         if this_hash_alg != hash_alg:
             raise XMLSigException("Unable to handle more than one hash algorithm (%s != %s)" \
-                                      % (this_hash_alg, hash_alg))
-        digest = _digest(object,this_hash_alg)
-        logging.debug("digest for %s: %s" % (uri,digest))
+                                  % (this_hash_alg, hash_alg))
+        digest = _digest(object, this_hash_alg)
+        logging.debug("digest for %s: %s" % (uri, digest))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
         logging.debug(etree.tostring(dv))
         dv.text = digest
@@ -332,12 +346,14 @@ def _unescape(text):
         else:
             # named entity
             try:
-                if not text in ('&amp;','&lt;','&gt;'):
+                if not text in ('&amp;', '&lt;', '&gt;'):
                     text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text # leave as is
+
     return re.sub("&#?\w+;", fixup, text)
+
 
 def _delete_elt(elt):
     if elt.getparent() is None:
@@ -360,15 +376,17 @@ def _delete_elt(elt):
             up.text += elt.tail
     elt.getparent().remove(elt)
 
+
 def _enveloped_signature(t):
     sig = t.find('.//{http://www.w3.org/2000/09/xmldsig#}Signature')
     _delete_elt(sig)
     if _DEBUG_WRITE_TO_FILES:
-        with open("/tmp/foo-env.xml","w") as fd:
+        with open("/tmp/foo-env.xml", "w") as fd:
             fd.write(etree.tostring(t))
     return t
 
-def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
+
+def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
     """
     Perform XML canonicalization (c14n) on an lxml.etree.
 
@@ -381,15 +399,17 @@ def _c14n(t,exclusive,with_comments,inclusive_prefix_list=None):
     :param inclusive_prefix_list: List of namespaces to include (?)
     :returns: XML as string (utf8)
     """
-    cxml = etree.tostring(t,method="c14n",exclusive=exclusive,with_comments=with_comments,inclusive_ns_prefixes=inclusive_prefix_list)
-    u = _unescape(cxml.decode("utf8",'replace')).encode("utf8").strip()
+    cxml = etree.tostring(t, method="c14n", exclusive=exclusive, with_comments=with_comments,
+                          inclusive_ns_prefixes=inclusive_prefix_list)
+    u = _unescape(cxml.decode("utf8", 'replace')).encode("utf8").strip()
     if u[0] != '<':
         raise XMLSigException("C14N buffer doesn't start with '<'")
     if u[-1] != '>':
         raise XMLSigException("C14N buffer doesn't end with '>'")
     return u
 
-def _transform(uri,t,tr=None):
+
+def _transform(uri, t, tr=None):
     if uri == TRANSFORM_ENVELOPED_SIGNATURE:
         return _enveloped_signature(t)
 
@@ -398,28 +418,33 @@ def _transform(uri,t,tr=None):
         if tr is not None:
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
             if elt is not None:
-                nslist = elt.get('PrefixList','').split()
-        return _c14n(t,exclusive=True,with_comments=True,inclusive_prefix_list=nslist)
+                nslist = elt.get('PrefixList', '').split()
+        return _c14n(t, exclusive=True, with_comments=True, inclusive_prefix_list=nslist)
 
     if uri == TRANSFORM_C14N_EXCLUSIVE:
         nslist = None
         if tr is not None:
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
             if elt is not None:
-                nslist = elt.get('PrefixList','').split()
-        return _c14n(t,exclusive=True,with_comments=False,inclusive_prefix_list=nslist)
+                nslist = elt.get('PrefixList', '').split()
+        return _c14n(t, exclusive=True, with_comments=False, inclusive_prefix_list=nslist)
 
     if uri == TRANSFORM_C14N_INCLUSIVE:
-        return _c14n(t,exclusive=False,with_comments=False)
+        return _c14n(t, exclusive=False, with_comments=False)
 
     raise XMLSigException("unknown or unimplemented transform %s" % uri)
 
-_id_attributes =['ID','id']
+
+_id_attributes = ['ID', 'id']
+
+
 def setID(ids):
     _id_attributes = ids
 
+
 def pem2b64(pem):
     return '\n'.join(pem.strip().split('\n')[1:-1])
+
 
 def b642pem(data):
     x = data
@@ -433,11 +458,14 @@ def b642pem(data):
     r += "-----END CERTIFICATE-----"
     return r
 
+
 def pem2cert(pem):
     return rsa_x509_pem.parse(pem)
 
+
 def b642cert(data):
     return rsa_x509_pem.parse(b642pem(data))
+
 
 def verify(t, keyspec):
     """
@@ -495,7 +523,7 @@ def _signed_info_transforms(transforms):
     return DS.Transforms(*ts)
 
 # standard enveloped rsa-sha1 signature
-def _enveloped_signature_template(c14n_method,digest_alg,transforms,reference_uri):
+def _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri):
     return DS.Signature(
         DS.SignedInfo(
             DS.CanonicalizationMethod(Algorithm=c14n_method),
@@ -509,10 +537,13 @@ def _enveloped_signature_template(c14n_method,digest_alg,transforms,reference_ur
         )
     )
 
-def add_enveloped_signature(t,c14n_method=TRANSFORM_C14N_INCLUSIVE,digest_alg=ALGORITHM_DIGEST_SHA1,transforms=None,reference_uri=""):
+
+def add_enveloped_signature(t, c14n_method=TRANSFORM_C14N_INCLUSIVE, digest_alg=ALGORITHM_DIGEST_SHA1, transforms=None,
+                            reference_uri=""):
     if transforms is None:
-        transforms = (TRANSFORM_ENVELOPED_SIGNATURE,TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
-    _root(t).insert(0,_enveloped_signature_template(c14n_method,digest_alg,transforms,reference_uri))
+        transforms = (TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
+    _root(t).insert(0, _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
+
 
 def sign(t, key_spec, cert_spec=None, reference_uri=''):
     """
@@ -541,7 +572,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
     public = _load_keyspec(cert_spec)
     if public is None:
         raise XMLSigException("Unable to load public key from '%s'" \
-                                  % (cert_spec))
+                              % (cert_spec))
 
     logging.debug("Using %s/%s bit key" % (public['keysize'], private['keysize']))
 
@@ -552,7 +583,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
         add_enveloped_signature(t, reference_uri=reference_uri)
 
     if _DEBUG_WRITE_TO_FILES:
-        with open("/tmp/sig-ref.xml","w") as fd:
+        with open("/tmp/sig-ref.xml", "w") as fd:
             fd.write(etree.tostring(_root(t)))
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
@@ -573,6 +604,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
 
     return t
 
+
 def _create_signature_digest(si, hash_alg):
     """
     :param hash_alg: string such as 'sha1'
@@ -581,11 +613,12 @@ def _create_signature_digest(si, hash_alg):
     cm_alg = _alg(cm)
     if cm is None or cm_alg is None:
         raise XMLSigException("No CanonicalizationMethod")
-    sic = _transform(cm_alg,si)
+    sic = _transform(cm_alg, si)
     logging.debug("SignedInfo C14N: %s" % sic)
     digest = _digest(sic, hash_alg)
     logging.debug("SignedInfo digest: %s" % digest)
     return b64d(digest)
+
 
 def parse_xml(data, remove_whitespace=True):
     """
