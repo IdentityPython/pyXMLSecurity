@@ -87,7 +87,7 @@ def _find_matching_cert(t, fp):
     if t is None:
         return None
     for hash, pem in CertDict(t).iteritems():
-        if fp == hash:
+        if fp.lower() == hash:
             return pem
     return None
 
@@ -272,8 +272,8 @@ def _alg(elt):
 
 
 def _remove_child_comments(t):
-    root = _root(t)
-    for c in root.iter():
+    #root = _root(t)
+    for c in t.iter():
         if c.tag is etree.Comment or c.tag is etree.PI:
             _delete_elt(c)
     return t
@@ -290,11 +290,11 @@ def _process_references(t, sig=None):
         object = None
         uri = ref.get('URI', None)
         if uri is None or uri == '#' or uri == '':
-            ct = _remove_child_comments(copy.deepcopy(t))
+            ct = _remove_child_comments(_root(copy.deepcopy(t)))
             object = _root(ct)
         elif uri.startswith('#'):
-            ct = _remove_child_comments(copy.deepcopy(t))
-            object = _root(_get_by_id(ct, uri[1:]))
+            ct = copy.deepcopy(t)
+            object = _remove_child_comments(_get_by_id(ct, uri[1:]))
         else:
             raise XMLSigException("Unknown reference %s" % uri)
 
