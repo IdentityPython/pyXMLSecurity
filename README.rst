@@ -1,7 +1,6 @@
 python XML Security
 ===================
 
-
 This is a python implementation of XML-Security - XML-DSIG only right now. There are no
 dependencies except lxml currently.
 
