@@ -72,6 +72,7 @@ def parse_uri(pk11_uri):
     if library is None or len(library) == 0:
         raise XMLSigException("No PKCS11 module in pkcs11 URI %s" % pk11_uri)
 
+    logging.debug("returning %s %s %s %s" % (library,slot,keyname,query))
     return library,slot,keyname,query
 
 def _intarray2bytes(x):
