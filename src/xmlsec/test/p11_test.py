@@ -85,6 +85,10 @@ def setup():
             '--id','a1b2',
             '--label','test',
             '--pin','secret1'])
+	_p(['pkcs11-tool',
+            '--module', P11_MODULE,
+            '-l',
+            '--pin','secret1','-O'])
         global signer_cert_der
         global signer_cert_pem
         signer_cert_pem = _tf()
