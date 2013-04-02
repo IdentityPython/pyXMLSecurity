@@ -45,11 +45,11 @@ def parse_uri(pk11_uri):
     (module_path,sep,keyqs) = o.path.rpartition('/')
 
     qs = o.query
-    if '?' in qs:
-       (keyname,sep,qss) = qs.rpartition('?')
+    if qs:
+        keyname = keyqs
+    elif '?' in keyqs:
+       (keyname,sep,qss) = keyqs.rpartition('?')
        qs = qss
-    else:
-       keyname = keyqs
 
     if qs:
         for av in qs.split('&'):
