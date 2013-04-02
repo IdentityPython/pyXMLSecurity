@@ -29,9 +29,10 @@ all_attributes = [e for e in all_attributes if isinstance(e, int)]
 
 def parse_uri(pk11_uri):
     o = urlparse(pk11_uri)
-    print o
     if o.scheme != 'pkcs11':
         raise XMLSigException("Bad URI scheme in pkcs11 URI %s" % pk11_uri)
+
+    logging.debug("parsed pkcs11 uri: %s" % repr(o))
 
     slot = 0
     library = None
@@ -43,16 +44,21 @@ def parse_uri(pk11_uri):
 
     (module_path,sep,keyqs) = o.path.rpartition('/')
 
-    if o.query:
-        for av in o.query.split('&'):
+    qs = o.query
+    if '?' in qs:
+       (keyname,sep,qss) = qs.rpartition('?')
+       qs = qss
+    else:
+       keyname = keyqs
+
+    if qs:
+        for av in qs.split('&'):
             if not '=' in av:
                 raise XMLSigException("Bad query string in pkcs11 URI %s" % pk11_uri)
             (a,sep,v) = av.partition('=')
             assert a
             assert v
             query[a] = v
-
-    keyname = keyqs
 
     if ':' in module_path:
         (library,sep,slot_str) = module_path.rpartition(":")
@@ -66,7 +72,6 @@ def parse_uri(pk11_uri):
     if library is None or len(library) == 0:
         raise XMLSigException("No PKCS11 module in pkcs11 URI %s" % pk11_uri)
 
-    print library,slot,keyname,query
     return library,slot,keyname,query
 
 def _intarray2bytes(x):
