@@ -63,7 +63,11 @@ News
 
 * Minor fixes
 
-0.9dev
+0.8
 ---
 
-*Release date: UNRELEASED*
+*Release date: Wed Apr  3 09:05:53 CEST 2013*
+
+* Multiple bugfixes
+* More SAML and P11 testcases
+
