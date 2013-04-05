@@ -23,8 +23,10 @@ try:
 except ImportError:
     _fastmath = None
 
-class error (Exception):
+
+class error(Exception):
     pass
+
 
 def generate(bits, randfunc, progress_func=None):
     """generate(bits:int, randfunc:callable, progress_func:callable)
@@ -33,69 +35,72 @@ def generate(bits, randfunc, progress_func=None):
     random data and 'progress_func', if present, to display
     the progress of the key generation.
     """
-    obj=RSAobj()
+    obj = RSAobj()
 
     # Generate the prime factors of n
     if progress_func:
         progress_func('p,q\n')
     p = q = 1L
-    while number.size(p*q) < bits:
-        p = pubkey.getPrime(bits/2, randfunc)
-        q = pubkey.getPrime(bits/2, randfunc)
+    while number.size(p * q) < bits:
+        p = pubkey.getPrime(bits / 2, randfunc)
+        q = pubkey.getPrime(bits / 2, randfunc)
 
     # p shall be smaller than q (for calc of u)
     if p > q:
-        (p, q)=(q, p)
+        (p, q) = (q, p)
     obj.p = p
     obj.q = q
 
     if progress_func:
         progress_func('u\n')
     obj.u = pubkey.inverse(obj.p, obj.q)
-    obj.n = obj.p*obj.q
+    obj.n = obj.p * obj.q
 
     obj.e = 65537L
     if progress_func:
         progress_func('d\n')
-    obj.d=pubkey.inverse(obj.e, (obj.p-1)*(obj.q-1))
+    obj.d = pubkey.inverse(obj.e, (obj.p - 1) * (obj.q - 1))
 
-    assert bits <= 1+obj.size(), "Generated key is too small"
+    assert bits <= 1 + obj.size(), "Generated key is too small"
 
     return obj
+
 
 def construct(tuple):
     """construct(tuple:(long,) : RSAobj
     Construct an RSA object from a 2-, 3-, 5-, or 6-tuple of numbers.
     """
 
-    obj=RSAobj()
-    if len(tuple) not in [2,3,5,6]:
+    obj = RSAobj()
+    if len(tuple) not in [2, 3, 5, 6]:
         raise error, 'argument for construct() wrong length'
     for i in range(len(tuple)):
         field = obj.keydata[i]
         setattr(obj, field, tuple[i])
     if len(tuple) >= 5:
         # Ensure p is smaller than q 
-        if obj.p>obj.q:
-            (obj.p, obj.q)=(obj.q, obj.p)
+        if obj.p > obj.q:
+            (obj.p, obj.q) = (obj.q, obj.p)
 
     if len(tuple) == 5:
         # u not supplied, so we're going to have to compute it.
-        obj.u=pubkey.inverse(obj.p, obj.q)
+        obj.u = pubkey.inverse(obj.p, obj.q)
 
     return obj
 
+
 class RSAobj(pubkey.pubkey):
     keydata = ['n', 'e', 'd', 'p', 'q', 'u']
+
     def _encrypt(self, plaintext, K=''):
-        if self.n<=plaintext:
+        if self.n <= plaintext:
             raise error, 'Plaintext too large'
         return (pow(plaintext, self.e, self.n),)
 
     def _decrypt(self, ciphertext):
         if (not hasattr(self, 'd')):
             raise error, 'Private key not available in this object'
-        if self.n<=ciphertext[0]:
+        if self.n <= ciphertext[0]:
             raise error, 'Ciphertext too large'
         return pow(ciphertext[0], self.d, self.n)
 
@@ -103,10 +108,11 @@ class RSAobj(pubkey.pubkey):
         return (self._decrypt((M,)),)
 
     def _verify(self, M, sig):
-        m2=self._encrypt(sig[0])
-        if m2[0]==M:
+        m2 = self._encrypt(sig[0])
+        if m2[0] == M:
             return 1
-        else: return 0
+        else:
+            return 0
 
     def _blind(self, M, B):
         tmp = pow(B, self.e, self.n)
@@ -114,9 +120,9 @@ class RSAobj(pubkey.pubkey):
 
     def _unblind(self, M, B):
         tmp = pubkey.inverse(B, self.n)
-        return  (M * tmp) % self.n
+        return (M * tmp) % self.n
 
-    def can_blind (self):
+    def can_blind(self):
         """can_blind() : bool
         Return a Boolean value recording whether this algorithm can
         blind data.  (This does not imply that this
@@ -138,13 +144,15 @@ class RSAobj(pubkey.pubkey):
         """
         if hasattr(self, 'd'):
             return 1
-        else: return 0
+        else:
+            return 0
 
     def publickey(self):
         """publickey(): RSAobj
         Return a new key object containing only the public key information.
         """
         return construct((self.n, self.e))
+
 
 class RSAobj_c(pubkey.pubkey):
     keydata = ['n', 'e', 'd', 'p', 'q', 'u']
@@ -165,20 +173,20 @@ class RSAobj_c(pubkey.pubkey):
         d = {}
         for k in self.keydata:
             if hasattr(self.key, k):
-                d[k]=getattr(self.key, k)
+                d[k] = getattr(self.key, k)
         return d
 
     def __setstate__(self, state):
-        n,e = state['n'], state['e']
+        n, e = state['n'], state['e']
         if not state.has_key('d'):
-            self.key = _fastmath.rsa_construct(n,e)
+            self.key = _fastmath.rsa_construct(n, e)
         else:
             d = state['d']
             if not state.has_key('q'):
-                self.key = _fastmath.rsa_construct(n,e,d)
+                self.key = _fastmath.rsa_construct(n, e, d)
             else:
                 p, q, u = state['p'], state['q'], state['u']
-                self.key = _fastmath.rsa_construct(n,e,d,p,q,u)
+                self.key = _fastmath.rsa_construct(n, e, d, p, q, u)
 
     def _encrypt(self, plain, K):
         return (self.key._encrypt(plain),)
@@ -198,7 +206,7 @@ class RSAobj_c(pubkey.pubkey):
     def _unblind(self, M, B):
         return self.key._unblind(M, B)
 
-    def can_blind (self):
+    def can_blind(self):
         return 1
 
     def size(self):
@@ -210,42 +218,44 @@ class RSAobj_c(pubkey.pubkey):
     def publickey(self):
         return construct_c((self.key.n, self.key.e))
 
-def generate_c(bits, randfunc, progress_func = None):
+
+def generate_c(bits, randfunc, progress_func=None):
     # Generate the prime factors of n
     if progress_func:
         progress_func('p,q\n')
 
     p = q = 1L
-    while number.size(p*q) < bits:
-        p = pubkey.getPrime(bits/2, randfunc)
-        q = pubkey.getPrime(bits/2, randfunc)
+    while number.size(p * q) < bits:
+        p = pubkey.getPrime(bits / 2, randfunc)
+        q = pubkey.getPrime(bits / 2, randfunc)
 
     # p shall be smaller than q (for calc of u)
     if p > q:
-        (p, q)=(q, p)
+        (p, q) = (q, p)
     if progress_func:
         progress_func('u\n')
-    u=pubkey.inverse(p, q)
-    n=p*q
+    u = pubkey.inverse(p, q)
+    n = p * q
 
     e = 65537L
     if progress_func:
         progress_func('d\n')
-    d=pubkey.inverse(e, (p-1)*(q-1))
-    key = _fastmath.rsa_construct(n,e,d,p,q,u)
+    d = pubkey.inverse(e, (p - 1) * (q - 1))
+    key = _fastmath.rsa_construct(n, e, d, p, q, u)
     obj = RSAobj_c(key)
 
-##    print p
-##    print q
-##    print number.size(p), number.size(q), number.size(q*p),
-##    print obj.size(), bits
-    assert bits <= 1+obj.size(), "Generated key is too small"
+    ##    print p
+    ##    print q
+    ##    print number.size(p), number.size(q), number.size(q*p),
+    ##    print obj.size(), bits
+    assert bits <= 1 + obj.size(), "Generated key is too small"
     return obj
 
 
 def construct_c(tuple):
     key = apply(_fastmath.rsa_construct, tuple)
     return RSAobj_c(key)
+
 
 object = RSAobj
 

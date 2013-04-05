@@ -1,31 +1,47 @@
 # NamedType specification for constructed types
 from .. import error
 
+
 class NamedType:
     isOptional = 0
     isDefaulted = 0
+
     def __init__(self, name, t):
-        self.__name = name; self.__type = t
-    def __repr__(self): return '%s(%s, %s)' % (
-        self.__class__.__name__, repr(self.__name), repr(self.__type)
+        self.__name = name;
+        self.__type = t
+
+    def __repr__(self):
+        return '%s(%s, %s)' % (
+            self.__class__.__name__, repr(self.__name), repr(self.__type)
         )
-    def getType(self): return self.__type
-    def getName(self): return self.__name
+
+    def getType(self):
+        return self.__type
+
+    def getName(self):
+        return self.__name
+
     def __getitem__(self, idx):
         if idx == 0: return self.__name
         if idx == 1: return self.__type
         raise IndexError()
-    
+
+
 class OptionalNamedType(NamedType):
     isOptional = 1
+
+
 class DefaultedNamedType(NamedType):
     isDefaulted = 1
-    
+
+
 class NamedTypes:
     def __init__(self, *namedTypes):
         self.__namedTypes = namedTypes
         self.__minTagSet = None
-        self.__typeMap = {}; self.__tagMap = {}; self.__nameMap = {}
+        self.__typeMap = {};
+        self.__tagMap = {};
+        self.__nameMap = {}
         self.__ambigiousTypes = {}
 
     def __repr__(self):
@@ -33,19 +49,25 @@ class NamedTypes:
         for n in self.__namedTypes:
             r = r + '%s, ' % repr(n)
         return r + ')'
-    
-    def __getitem__(self, idx): return self.__namedTypes[idx]
+
+    def __getitem__(self, idx):
+        return self.__namedTypes[idx]
 
     def __nonzero__(self):
-        if self.__namedTypes: return 1
-        else: return 0
-    def __len__(self): return len(self.__namedTypes)
-    
+        if self.__namedTypes:
+            return 1
+        else:
+            return 0
+
+    def __len__(self):
+        return len(self.__namedTypes)
+
     def getTypeByPosition(self, idx):
         try:
             return self.__namedTypes[idx].getType()
         except IndexError:
             raise error.PyAsn1Error('Type position out of range')
+
     def getPositionByType(self, tagSet):
         if not self.__tagMap:
             idx = len(self.__namedTypes)
@@ -59,12 +81,13 @@ class NamedTypes:
             return self.__tagMap[tagSet]
         except KeyError:
             raise error.PyAsn1Error('Type %s not found' % tagSet)
-        
+
     def getNameByPosition(self, idx):
         try:
             return self.__namedTypes[idx].getName()
         except IndexError:
             raise error.PyAsn1Error('Type position out of range')
+
     def getPositionByName(self, name):
         if not self.__nameMap:
             idx = len(self.__namedTypes)
@@ -90,7 +113,7 @@ class NamedTypes:
             else:
                 ambigiousTypes = (t, )
             self.__ambigiousTypes[idx] = apply(NamedTypes, ambigiousTypes)
-        
+
     def getTypeMapNearPosition(self, idx):
         if not self.__ambigiousTypes: self.__buildAmbigiousTagMap()
         try:
@@ -101,7 +124,7 @@ class NamedTypes:
     def getPositionNearType(self, tagSet, idx):
         if not self.__ambigiousTypes: self.__buildAmbigiousTagMap()
         try:
-            return idx+self.__ambigiousTypes[idx].getPositionByType(tagSet)
+            return idx + self.__ambigiousTypes[idx].getPositionByType(tagSet)
         except KeyError:
             raise error.PyAsn1Error('Type position out of range')
 
@@ -109,11 +132,11 @@ class NamedTypes:
         if self.__minTagSet is None:
             for t in self.__namedTypes:
                 __type = t.getType()
-                tagSet = getattr(__type,'getMinTagSet',__type.getTagSet)()
+                tagSet = getattr(__type, 'getMinTagSet', __type.getTagSet)()
                 if self.__minTagSet is None or tagSet < self.__minTagSet:
                     self.__minTagSet = tagSet
         return self.__minTagSet
-    
+
     def getTypeMap(self, uniq=None):
         if not self.__typeMap:
             for t in self.__namedTypes:
@@ -123,8 +146,8 @@ class NamedTypes:
                     for k in typeMap.keys():
                         if self.__typeMap.has_key(k):
                             raise error.PyAsn1Error(
-                               'Duplicate type %s in map %s'%(k,self.__typeMap)
-                                )
+                                'Duplicate type %s in map %s' % (k, self.__typeMap)
+                            )
                         self.__typeMap[k] = __type
                 else:
                     for k in typeMap.keys():
