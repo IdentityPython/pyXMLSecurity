@@ -1,4 +1,4 @@
-class PyAsn1Error(StandardError):
+class PyAsn1Error(Exception):
     pass
 
 

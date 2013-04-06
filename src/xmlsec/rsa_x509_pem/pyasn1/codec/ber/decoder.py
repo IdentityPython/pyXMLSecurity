@@ -68,8 +68,8 @@ class BitStringDecoder(AbstractDecoder):
 
     def valueDecoder(self, substrate, asn1Spec, tagSet, length,
                      state, decodeFun):
-        r = self._createComponent(tagSet, asn1Spec) # XXX use default tagset
-        if tagSet[0][1] == tag.tagFormatSimple:    # XXX what tag to check?
+        r = self._createComponent(tagSet, asn1Spec)  # XXX use default tagset
+        if tagSet[0][1] == tag.tagFormatSimple:     # XXX what tag to check?
             if not substrate:
                 raise error.PyAsn1Error('Missing initial octet')
             trailingBits = ord(substrate[0])
@@ -78,8 +78,8 @@ class BitStringDecoder(AbstractDecoder):
                     'Trailing bits overflow %s' % trailingBits
                 )
             substrate = substrate[1:]
-            lsb = p = 0;
-            l = len(substrate) - 1;
+            lsb = p = 0
+            l = len(substrate) - 1
             b = []
             while p <= l:
                 if p == l:
@@ -88,10 +88,11 @@ class BitStringDecoder(AbstractDecoder):
                 o = ord(substrate[p])
                 while j >= lsb:
                     b.append((o >> j) & 0x01)
-                    j = j - 1
-                p = p + 1
+                    j -= 1
+                p += 1
             return r.clone(tuple(b)), ''
-        if r: r = r.clone(value=())
+        if r:
+            r = r.clone(value=())
         if not decodeFun:
             return r, substrate
         while substrate:
@@ -101,8 +102,9 @@ class BitStringDecoder(AbstractDecoder):
 
     def indefLenValueDecoder(self, substrate, asn1Spec, tagSet,
                              length, state, decodeFun):
-        r = self._createComponent(tagSet, asn1Spec) # XXX use default tagset
-        if r: r = r.clone(value='')
+        r = self._createComponent(tagSet, asn1Spec)  # XXX use default tagset
+        if r:
+            r = r.clone(value='')
         if not decodeFun:
             return r, substrate
         while substrate:
@@ -122,10 +124,11 @@ class OctetStringDecoder(AbstractDecoder):
 
     def valueDecoder(self, substrate, asn1Spec, tagSet, length,
                      state, decodeFun):
-        r = self._createComponent(tagSet, asn1Spec) # XXX use default tagset
-        if tagSet[0][1] == tag.tagFormatSimple:    # XXX what tag to check?
+        r = self._createComponent(tagSet, asn1Spec)  # XXX use default tagset
+        if tagSet[0][1] == tag.tagFormatSimple:      # XXX what tag to check?
             return r.clone(str(substrate)), ''
-        if r: r = r.clone(value='')
+        if r:
+            r = r.clone(value='')
         if not decodeFun:
             return r, substrate
         while substrate:
@@ -135,8 +138,9 @@ class OctetStringDecoder(AbstractDecoder):
 
     def indefLenValueDecoder(self, substrate, asn1Spec, tagSet,
                              length, state, decodeFun):
-        r = self._createComponent(tagSet, asn1Spec) # XXX use default tagset
-        if r: r = r.clone(value='')
+        r = self._createComponent(tagSet, asn1Spec)  # XXX use default tagset
+        if r:
+            r = r.clone(value='')
         if not decodeFun:
             return r, substrate
         while substrate:
@@ -156,7 +160,7 @@ class NullDecoder(AbstractDecoder):
 
     def valueDecoder(self, substrate, asn1Spec, tagSet,
                      length, state, decodeFun):
-        r = self._createComponent(tagSet, asn1Spec) # XXX use default tagset
+        r = self._createComponent(tagSet, asn1Spec)  # XXX use default tagset
         if substrate:
             raise error.PyAsn1Error('Unexpected substrate for Null')
         return r, substrate
@@ -167,39 +171,37 @@ class ObjectIdentifierDecoder(AbstractDecoder):
 
     def valueDecoder(self, substrate, asn1Spec, tagSet, length,
                      state, decodeFun):
-        r = self._createComponent(tagSet, asn1Spec) # XXX use default tagset
+        r = self._createComponent(tagSet, asn1Spec)  # XXX use default tagset
         if not substrate:
             raise error.PyAsn1Error('Empty substrate')
-        oid = [];
+        oid = []
         index = 0
-        # Get the first subid
+        # Get the first subId
         subId = ord(substrate[index])
         oid.append(int(subId / 40))
         oid.append(int(subId % 40))
 
-        index = index + 1
+        index += 1
         substrateLen = len(substrate)
 
         while index < substrateLen:
             subId = ord(substrate[index])
             if subId < 128:
                 oid.append(subId)
-                index = index + 1
+                index += 1
             else:
                 # Construct subid from a number of octets
                 nextSubId = subId
                 subId = 0
                 while nextSubId >= 128 and index < substrateLen:
                     subId = (subId << 7) + (nextSubId & 0x7F)
-                    index = index + 1
+                    index += 1
                     nextSubId = ord(substrate[index])
                 if index == substrateLen:
-                    raise error.SubstrateUnderrunError(
-                        'Short substrate for OID %s' % oid
-                    )
+                    raise error.SubstrateUnderrunError('Short substrate for OID %s' % oid)
                 subId = (subId << 7) + nextSubId
                 oid.append(subId)
-                index = index + 1
+                index += 1
         return r.clone(tuple(oid)), substrate[index:]
 
 
@@ -209,9 +211,9 @@ class SequenceDecoder(AbstractDecoder):
     def _getAsn1SpecByPosition(self, t, idx):
         if t.getComponentType() is not None:
             if hasattr(t, 'getComponentTypeMapNearPosition'):
-                return t.getComponentTypeMapNearPosition(idx) # Sequence
+                return t.getComponentTypeMapNearPosition(idx)  # Sequence
             elif hasattr(t, 'getComponentType'):  # XXX
-                return t.getComponentType() # SequenceOf
+                return t.getComponentType()  # SequenceOf
                 # or no asn1Specs
 
     def _getPositionByType(self, t, c, idx):
@@ -220,8 +222,8 @@ class SequenceDecoder(AbstractDecoder):
                 effectiveTagSet = getattr(
                     c, 'getEffectiveTagSet', c.getTagSet
                 )()
-                return t.getComponentPositionNearType(effectiveTagSet, idx) # Sequence
-        return idx # SequenceOf or w/o asn1Specs
+                return t.getComponentPositionNearType(effectiveTagSet, idx)  # Sequence
+        return idx  # SequenceOf or w/o asn1Specs
 
     def valueDecoder(self, substrate, asn1Spec, tagSet,
                      length, state, decodeFun):
@@ -231,12 +233,10 @@ class SequenceDecoder(AbstractDecoder):
             return r, substrate
         while substrate:
             asn1Spec = self._getAsn1SpecByPosition(r, idx)
-            component, substrate = decodeFun(
-                substrate, asn1Spec
-            )
+            component, substrate = decodeFun(substrate, asn1Spec)
             idx = self._getPositionByType(r, component, idx)
             r.setComponentByPosition(idx, component)
-            idx = idx + 1
+            idx += 1
         if hasattr(r, 'setDefaultComponents'):
             r.setDefaultComponents()
         r.verifySizeSpec()
@@ -250,7 +250,7 @@ class SequenceDecoder(AbstractDecoder):
             try:
                 asn1Spec = self._getAsn1SpecByPosition(r, idx)
             except error.PyAsn1Error:
-                asn1Spec = None # XXX
+                asn1Spec = None  # XXX
             if not decodeFun:
                 return r, substrate
             component, substrate = decodeFun(substrate, asn1Spec)
@@ -258,7 +258,7 @@ class SequenceDecoder(AbstractDecoder):
                 break
             idx = self._getPositionByType(r, component, idx)
             r.setComponentByPosition(idx, component)
-            idx = idx + 1
+            idx += 1
         else:
             raise error.SubstrateUnderrunError(
                 'No EOO seen before substrate ends'
@@ -275,17 +275,15 @@ class SetDecoder(SequenceDecoder):
     def _getAsn1SpecByPosition(self, t, idx):
         if t.getComponentType() is not None:
             if hasattr(t, 'getComponentTypeMap'):
-                return t.getComponentTypeMap() # Set/SetOf
+                return t.getComponentTypeMap()  # Set/SetOf
                 # or no asn1Specs
 
     def _getPositionByType(self, t, c, idx):
         if t.getComponentType() is not None:
             if hasattr(t, 'getComponentPositionByType') and t.getComponentType():
-                effectiveTagSet = getattr(
-                    c, 'getEffectiveTagSet', c.getTagSet
-                )()
+                effectiveTagSet = getattr(c, 'getEffectiveTagSet', c.getTagSet)()
                 return t.getComponentPositionByType(effectiveTagSet) # Set
-        return idx # SetOf or w/o asn1Specs
+        return idx  # SetOf or w/o asn1Specs
 
 
 class ChoiceDecoder(AbstractDecoder):
@@ -296,21 +294,16 @@ class ChoiceDecoder(AbstractDecoder):
         r = self._createComponent(tagSet, asn1Spec)
         if not decodeFun:
             return r, substrate
-        if r.getTagSet() == tagSet: # explicitly tagged Choice
-            component, substrate = decodeFun(
-                substrate, r.getComponentTypeMap()
-            )
+        if r.getTagSet() == tagSet:  # explicitly tagged Choice
+            component, substrate = decodeFun(substrate, r.getComponentTypeMap())
         else:
-            component, substrate = decodeFun(
-                substrate, r.getComponentTypeMap(), tagSet, length, state
-            )
-        effectiveTagSet = getattr(
-            component, 'getEffectiveTagSet', component.getTagSet
-        )()
+            component, substrate = decodeFun(substrate, r.getComponentTypeMap(), tagSet, length, state)
+        effectiveTagSet = getattr(component, 'getEffectiveTagSet', component.getTagSet)()
         r.setComponentByType(effectiveTagSet, component)
         return r, substrate
 
     indefLenValueDecoder = valueDecoder
+
 
 # character string types
 class UTF8StringDecoder(OctetStringDecoder):
@@ -356,6 +349,7 @@ class UniversalStringDecoder(OctetStringDecoder):
 class BMPStringDecoder(OctetStringDecoder):
     protoComponent = char.BMPString()
 
+
 # "useful" types
 class GeneralizedTimeDecoder(OctetStringDecoder):
     protoComponent = useful.GeneralizedTime()
@@ -394,9 +388,9 @@ codecMap = {
     useful.UTCTime.tagSet: UTCTimeDecoder()
 }
 
-( stDecodeTag, stDecodeLength, stGetValueDecoder, stGetValueDecoderByAsn1Spec,
-  stGetValueDecoderByTag, stTryAsExplicitTag, stDecodeValue, stDumpRawValue,
-  stErrorCondition, stStop ) = range(10)
+(stDecodeTag, stDecodeLength, stGetValueDecoder, stGetValueDecoderByAsn1Spec,
+    stGetValueDecoderByTag, stTryAsExplicitTag, stDecodeValue, stDumpRawValue,
+    stErrorCondition, stStop) = range(10)
 
 
 class Decoder:
@@ -437,7 +431,7 @@ class Decoder:
                     tagClass=tagClass, tagFormat=tagFormat, tagId=tagId
                 )
                 if tagSet is None:
-                    tagSet = tag.TagSet((), lastTag) # base tag not recovered
+                    tagSet = tag.TagSet((), lastTag)  # base tag not recovered
                 else:
                     tagSet = lastTag + tagSet
                 state = stDecodeLength
@@ -467,7 +461,7 @@ class Decoder:
                         )
                     for char in lengthString:
                         length = (length << 8) | ord(char)
-                    size = size + 1
+                    size += 1
                 state = stGetValueDecoder
                 substrate = substrate[size:]
                 if length != -1 and len(substrate) < length:
@@ -479,14 +473,14 @@ class Decoder:
                     state = stGetValueDecoderByTag
                 else:
                     state = stGetValueDecoderByAsn1Spec
-                #
-            # There're two ways of creating subtypes in ASN.1 what influences
-            # decoder operation. These methods are:
-            # 1) Either base types used in or no IMPLICIT tagging has been
-            #    applied on subtyping.
-            # 2) Subtype syntax drops base type information (by means of
-            #    IMPLICIT tagging.
-            # The first case allows for complete tag recovery from substrate
+                    #
+                    # There're two ways of creating subtypes in ASN.1 what influences
+                    # decoder operation. These methods are:
+                    # 1) Either base types used in or no IMPLICIT tagging has been
+                    #    applied on subtyping.
+                    # 2) Subtype syntax drops base type information (by means of
+                    #    IMPLICIT tagging.
+                # The first case allows for complete tag recovery from substrate
             # while the second one requires original ASN.1 type spec for
             # decoding.
             #
