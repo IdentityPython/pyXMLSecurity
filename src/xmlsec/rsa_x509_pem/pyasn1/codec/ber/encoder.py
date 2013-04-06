@@ -14,16 +14,16 @@ class AbstractItemEncoder:
     def encodeTag(self, t, isConstructed):
         v = t[0] | t[1]
         if isConstructed:
-            v = v | tag.tagFormatConstructed
+            v |= tag.tagFormatConstructed
         if t[2] < 31:
             return chr(v | t[2])
         else:
             longTag = t[2]
             s = chr(longTag & 0x7f)
-            longTag = longTag >> 7
+            longTag >>= 7
             while longTag:
                 s = chr(0x80 | (longTag & 0x7f)) + s
-                longTag = longTag >> 7
+                longTag >>= 7
             return chr(v | 0x1F) + s
 
     def encodeLength(self, length, defMode):
@@ -35,7 +35,7 @@ class AbstractItemEncoder:
             substrate = ''
             while length:
                 substrate = chr(length & 0xff) + substrate
-                length = length >> 8
+                length >>= 8
             if len(substrate) > 126:
                 raise Error('Length octets overflow (%d)' % len(substrate))
             return chr(0x80 | len(substrate)) + substrate
@@ -89,12 +89,12 @@ class IntegerEncoder(AbstractItemEncoder):
 
     def encodeValue(self, encodeFun, value, defMode, maxChunkSize):
         octets = []
-        value = long(value) # to save on ops on asn1 type
+        value = long(value)  # to save on ops on asn1 type
         while 1:
             octets.insert(0, value & 0xff)
             if value == 0 or value == -1:
                 break
-            value = value >> 8
+            value >>= 8
         if value == 0 and octets[0] & 0x80:
             octets.insert(0, 0)
         while len(octets) > 1 and \
@@ -173,7 +173,7 @@ class ObjectIdentifierEncoder(AbstractItemEncoder):
                 'Initial sub-ID overflow %s in OID %s' % (oid[index:], value)
             )
         octets = [chr(subid)]
-        index = index + 2
+        index += 2
 
         # Cycle through subids
         for subid in oid[index:]:
@@ -181,16 +181,14 @@ class ObjectIdentifierEncoder(AbstractItemEncoder):
                 # Optimize for the common case
                 octets.append(chr(subid & 0x7f))
             elif subid < 0 or subid > 0xFFFFFFFFL:
-                raise error.PyAsn1Error(
-                    'SubId overflow %s in %s' % (subid, value)
-                )
+                raise error.PyAsn1Error('SubId overflow %s in %s' % (subid, value))
             else:
                 # Pack large Sub-Object IDs
                 res = [chr(subid & 0x7f)]
-                subid = subid >> 7
+                subid >>= 7
                 while subid > 0:
                     res.insert(0, chr(0x80 | (subid & 0x7f)))
-                    subid = subid >> 7
+                    subid >>= 7
                     # Convert packed Sub-Object ID to string and add packed
                     # it to resulted Object ID
                 octets.append(string.join(res, ''))
@@ -202,10 +200,10 @@ class SequenceOfEncoder(AbstractItemEncoder):
         if hasattr(value, 'setDefaultComponents'):
             value.setDefaultComponents()
         value.verifySizeSpec()
-        substrate = '';
+        substrate = ''
         idx = len(value)
         while idx > 0:
-            idx = idx - 1
+            idx -= 1
             if value[idx] is None:  # Optional component
                 continue
             if hasattr(value, 'getDefaultComponentByPosition'):
