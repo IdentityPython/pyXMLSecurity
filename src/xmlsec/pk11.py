@@ -51,6 +51,8 @@ def parse_uri(pk11_uri):
     elif '?' in keyqs:
         (keyname, sep, qss) = keyqs.rpartition('?')
         qs = qss
+    else:
+        keyname = keyqs
 
     if qs:
         for av in qs.split('&'):
