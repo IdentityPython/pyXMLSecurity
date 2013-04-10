@@ -27,10 +27,10 @@ pyasn1
 "ASN.1 tools for Python"
 http://pyasn1.sourceforge.net/
 """
-from pyasn1.type import univ, namedtype, namedval, constraint
-from pyasn1.codec.der import encoder, decoder
+from .pyasn1.type import univ, namedtype, namedval, constraint
+from .pyasn1.codec.der import encoder, decoder
 
-from sequence_parser import SequenceParser
+from .sequence_parser import SequenceParser
 
 MAX = 16
 

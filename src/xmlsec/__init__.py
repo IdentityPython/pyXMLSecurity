@@ -3,15 +3,15 @@ from UserDict import DictMixin
 __author__ = 'leifj'
 
 import os
-import rsa_x509_pem
+import xmlsec.rsa_x509_pem as rsa_x509_pem
 import lxml.etree as etree
 import logging
 import base64
 import hashlib
 import copy
-import int_to_bytes as itb
+import xmlsec.int_to_bytes as itb
 from lxml.builder import ElementMaker
-from exceptions import XMLSigException
+from xmlsec.exceptions import XMLSigException
 import re
 import htmlentitydefs
 
@@ -143,7 +143,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
                 data = c.read()
             source = 'file'
         elif private and keyspec.startswith("pkcs11://"):
-            import pk11
+            import xmlsec.pk11
 
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)

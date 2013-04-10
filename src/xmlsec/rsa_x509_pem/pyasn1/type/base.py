@@ -9,7 +9,7 @@ except ImportError:
 from operator import getslice, setslice, delslice
 from string import join
 from types import SliceType
-import constraint
+from . import constraint
 from .. import error
 
 

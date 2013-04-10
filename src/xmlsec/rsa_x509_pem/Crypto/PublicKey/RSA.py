@@ -12,14 +12,11 @@
 
 __revision__ = "$Id: RSA.py,v 1.20 2004/05/06 12:52:54 akuchling Exp $"
 
-#from Crypto.PublicKey import pubkey
-#from Crypto.Util import number
-import pubkey
-import number
-
+from . import pubkey
+from . import number
 
 try:
-    from Crypto.PublicKey import _fastmath
+    from . import _fastmath
 except ImportError:
     _fastmath = None
 

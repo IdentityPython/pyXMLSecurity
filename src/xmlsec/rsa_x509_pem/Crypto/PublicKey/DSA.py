@@ -12,13 +12,13 @@
 
 __revision__ = "$Id: DSA.py,v 1.16 2004/05/06 12:52:54 akuchling Exp $"
 
-from Crypto.PublicKey.pubkey import *
-from Crypto.Util import number
-from Crypto.Util.number import bytes_to_long, long_to_bytes
-from Crypto.Hash import SHA
+from .pubkey import pubkey
+from . import number
+from .number import bytes_to_long, long_to_bytes, isPrime, bignum, inverse
+from Crypto.Hash import SHA # XXX Crypto.Hash is NOT bundled with xmlsec
 
 try:
-    from Crypto.PublicKey import _fastmath
+    from . import _fastmath
 except ImportError:
     _fastmath = None
 
