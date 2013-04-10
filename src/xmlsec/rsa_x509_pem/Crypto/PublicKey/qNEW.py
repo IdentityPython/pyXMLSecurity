@@ -12,9 +12,9 @@
 
 __revision__ = "$Id: qNEW.py,v 1.8 2003/04/04 15:13:35 akuchling Exp $"
 
-from Crypto.PublicKey import pubkey
-from Crypto.Util.number import *
-from Crypto.Hash import SHA
+from . import pubkey
+from .number import bytes_to_long, long_to_bytes, getPrime, isPrime
+from Crypto.Hash import SHA # XXX Crypto.Hash is NOT bundled with xmlsec
 
 
 class error(Exception):

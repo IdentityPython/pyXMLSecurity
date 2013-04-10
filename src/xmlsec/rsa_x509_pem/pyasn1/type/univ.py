@@ -5,7 +5,7 @@
 import string
 import types
 import operator
-import base, tag, constraint, namedtype, namedval
+from . import base, tag, constraint, namedtype, namedval
 from .. import error
 
 # "Simple" ASN.1 types (yet incomplete)

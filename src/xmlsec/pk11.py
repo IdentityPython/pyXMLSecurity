@@ -3,7 +3,7 @@ import threading
 
 __author__ = 'leifj'
 
-from exceptions import XMLSigException
+from xmlsec.exceptions import XMLSigException
 from urlparse import urlparse
 import os
 import logging
