@@ -5,8 +5,11 @@ import xmlsec
 import pkg_resources
 import unittest
 
-from PyKCS11 import PyKCS11Error
-from PyKCS11.LowLevel import CKR_PIN_INCORRECT
+try:
+    from PyKCS11 import PyKCS11Error
+    from PyKCS11.LowLevel import CKR_PIN_INCORRECT
+except ImportError:
+    raise unittest.SkipTest("PyKCS11 not installed")
 from xmlsec.test.case import XMLTestData, load_test_data
 
 __author__ = 'leifj'
