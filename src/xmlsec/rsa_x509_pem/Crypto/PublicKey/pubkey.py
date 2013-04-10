@@ -13,7 +13,8 @@
 __revision__ = "$Id: pubkey.py,v 1.11 2003/04/03 20:36:14 akuchling Exp $"
 
 import types, warnings
-from number import *
+#from .number import *
+from .number import bignum, bytes_to_long, long_to_bytes, getPrime, inverse
 
 # Basic public key class
 class pubkey:

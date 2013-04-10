@@ -12,8 +12,8 @@
 
 __revision__ = "$Id: ElGamal.py,v 1.9 2003/04/04 19:44:26 akuchling Exp $"
 
-from Crypto.PublicKey.pubkey import *
-from Crypto.Util import number
+from .pubkey import *
+from . import number
 
 
 class error(Exception):

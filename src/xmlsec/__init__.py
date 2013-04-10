@@ -3,15 +3,15 @@ from UserDict import DictMixin
 __author__ = 'leifj'
 
 import os
-import rsa_x509_pem
+import xmlsec.rsa_x509_pem as rsa_x509_pem
 import lxml.etree as etree
 import logging
 import base64
 import hashlib
 import copy
-import int_to_bytes as itb
+import xmlsec.int_to_bytes as itb
 from lxml.builder import ElementMaker
-from exceptions import XMLSigException
+from xmlsec.exceptions import XMLSigException
 import re
 import htmlentitydefs
 
@@ -143,7 +143,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
                 data = c.read()
             source = 'file'
         elif private and keyspec.startswith("pkcs11://"):
-            import pk11
+            import xmlsec.pk11
 
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)
@@ -563,8 +563,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
 
     :param t: XML as lxml.etree
     :param key_spec: private key reference, see _load_keyspec() for syntax.
-    :param cert_spec: None or public key reference, see _load_keyspec() for syntax.
-        None is only valid if key_spec is a pkcs11:// URL
+    :param cert_spec: None or public key reference (to add cert to document), see _load_keyspec() for syntax.
     :param reference_uri: Envelope signature reference URI
     :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
     """
@@ -583,12 +582,12 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
 
     public = _load_keyspec(cert_spec)
     if public is None:
-        raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
-
-    logging.debug("Using %s/%s bit key" % (public['keysize'], private['keysize']))
-
-    #if private['source'] == 'pkcs11':
-    #    assert 0
+        raise XMLSigException("Unable to load public key from '%s'" \
+                              % (cert_spec))
+    if public['keysize'] != private['keysize']:
+        raise XMLSigException("Public and private key sizes do not match (%s, %s)" \
+                                  % (public['keysize'], private['keysize']))
+    logging.debug("Using %s bit key" % (private['keysize']))
 
     if t.find(".//{%s}Signature" % NS['ds']) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
@@ -603,15 +602,16 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
         b_digest = _create_signature_digest(si, hash_alg)
 
         # RSA sign hash digest and insert it into the XML
-        tbs = _signed_value(b_digest, public['keysize'], do_padding, hash_alg)
+        tbs = _signed_value(b_digest, private['keysize'], do_padding, hash_alg)
         signed = private['f_private'](tbs)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
         si.addnext(DS.SignatureValue(signature))
 
-        # Insert cert_data as b64-encoded X.509 certificate into XML document
-        sv_elt = si.getnext()
-        sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(public['data'])))))
+        if public is not None:
+            # Insert cert_data as b64-encoded X.509 certificate into XML document
+            sv_elt = si.getnext()
+            sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(public['data'])))))
 
     return t
 
@@ -631,7 +631,7 @@ def _create_signature_digest(si, hash_alg):
     return b64d(digest)
 
 
-def parse_xml(data, remove_whitespace=True):
+def parse_xml(data, remove_whitespace=True, remove_comments=True):
     """
     Parse XML data into an lxml.etree and remove whitespace in the process.
 
@@ -639,5 +639,5 @@ def parse_xml(data, remove_whitespace=True):
     :param remove_whitespace: boolean
     :returns: XML as lxml.etree
     """
-    parser = etree.XMLParser(remove_blank_text=remove_whitespace)
+    parser = etree.XMLParser(remove_blank_text=remove_whitespace, remove_comments=remove_comments)
     return etree.XML(data, parser)

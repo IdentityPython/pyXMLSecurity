@@ -11,11 +11,11 @@
 import unittest
 import pkg_resources
 
-from Crypto.PublicKey import RSA
+from .Crypto.PublicKey import RSA
 
-import rsa_pem
-import x509_pem
-import __init__ as top
+from . import rsa_pem
+from . import x509_pem
+import xmlsec.rsa_x509_pem.__init__ as top
 
 
 KEY_FILE_PAIRS = (
