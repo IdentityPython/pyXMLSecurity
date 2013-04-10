@@ -11,8 +11,13 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.9dev'
 
 install_requires = [
-    'lxml'
+    'lxml',
 ]
+
+# Let some other project depend on 'xmlsec[PKCS11]'
+extras_require = {
+    'PKCS11': ["PyKCS11"],
+}
 
 setup(name='pyXMLSecurity',
     version=version,
@@ -33,5 +38,6 @@ setup(name='pyXMLSecurity',
     },
     zip_safe=False,
     install_requires=install_requires,
-    requires=install_requires
+    requires=install_requires,
+    extras_require=extras_require,
 )
