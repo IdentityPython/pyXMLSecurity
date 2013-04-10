@@ -9,6 +9,7 @@ import pkg_resources
 from xmlsec.test.case import XMLTestData, load_test_data
 from lxml.builder import ElementMaker
 
+
 def _get_all_signatures(t):
     res = []
     for sig in t.findall(".//{%s}Signature" % xmlsec.NS['ds']):
@@ -18,12 +19,12 @@ def _get_all_signatures(t):
         res.append(sv.decode('base64').encode('base64'))
     return res
 
-class TestTransforms(unittest.TestCase):
 
+class TestTransforms(unittest.TestCase):
     def setUp(self):
         datadir = pkg_resources.resource_filename(__name__, 'data')
         self.private_keyspec = os.path.join(datadir, 'test.key')
-        self.public_keyspec  = os.path.join(datadir, 'test.pem')
+        self.public_keyspec = os.path.join(datadir, 'test.pem')
 
         self.cases = load_test_data('data/signverify')
 
@@ -37,10 +38,10 @@ class TestTransforms(unittest.TestCase):
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
                              cert_spec=self.public_keyspec,
-                             )
+        )
         res = xmlsec.verify(signed,
                             self.public_keyspec,
-                            )
+        )
         self.assertTrue(res)
 
     def test_sign_SAML_assertion1(self):
@@ -53,7 +54,7 @@ class TestTransforms(unittest.TestCase):
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
                              cert_spec=self.public_keyspec,
-                             )
+        )
         expected = case.as_etree('out.xml')
 
         # extract 'SignatureValue's
@@ -74,7 +75,7 @@ class TestTransforms(unittest.TestCase):
 
         res = xmlsec.verify(case.as_etree('out.xml'),
                             self.public_keyspec,
-                            )
+        )
         self.assertTrue(res)
 
     def test_verify_SAML_assertion2(self):
@@ -92,10 +93,12 @@ class TestTransforms(unittest.TestCase):
         with self.assertRaises(xmlsec.XMLSigException):
             xmlsec.verify(case.as_etree('out.xml'),
                           self.public_keyspec,
-                          )
+            )
+
 
 def main():
     unittest.main()
+
 
 if __name__ == '__main__':
     main()

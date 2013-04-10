@@ -34,33 +34,33 @@ from sequence_parser import SequenceParser
 
 MAX = 16
 
-  
+
 class RSAPrivateParser(SequenceParser):
-  """PKCS#1 compliant RSA private key structure.
+    """PKCS#1 compliant RSA private key structure.
   """
-  componentType = namedtype.NamedTypes(
-    namedtype.NamedType('version', univ.Integer(namedValues=namedval.NamedValues(('two-prime', 0), ('multi', 1)))),
-    # n
-    namedtype.NamedType('modulus', univ.Integer()),
-    # e
-    namedtype.NamedType('publicExponent', univ.Integer()),
-    # d
-    namedtype.NamedType('privateExponent', univ.Integer()),
-    # p
-    namedtype.NamedType('prime1', univ.Integer()),
-    # q
-    namedtype.NamedType('prime2', univ.Integer()),
-    # dp
-    namedtype.NamedType('exponent1', univ.Integer()),
-    # dq
-    namedtype.NamedType('exponent2', univ.Integer()),
-    # u or inverseQ
-    namedtype.NamedType('coefficient', univ.Integer()),
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('version', univ.Integer(namedValues=namedval.NamedValues(('two-prime', 0), ('multi', 1)))),
+        # n
+        namedtype.NamedType('modulus', univ.Integer()),
+        # e
+        namedtype.NamedType('publicExponent', univ.Integer()),
+        # d
+        namedtype.NamedType('privateExponent', univ.Integer()),
+        # p
+        namedtype.NamedType('prime1', univ.Integer()),
+        # q
+        namedtype.NamedType('prime2', univ.Integer()),
+        # dp
+        namedtype.NamedType('exponent1', univ.Integer()),
+        # dq
+        namedtype.NamedType('exponent2', univ.Integer()),
+        # u or inverseQ
+        namedtype.NamedType('coefficient', univ.Integer()),
     )
 
 
 def parse(data, password=None):
-  """Return a simple dictionary of labeled numeric key elements from key data.
+    """Return a simple dictionary of labeled numeric key elements from key data.
 
   TO DO:
     support DSA signatures
@@ -83,69 +83,69 @@ def parse(data, password=None):
       ['body'] = str of key DER binary in base64
       ['type'] = str of "RSA PRIVATE"
   """
-  lines = []
-  type = None
-  encryption = False
-  # read in key lines from keydata string
-  for s in data.splitlines():
-    # skip file headers
-    if '-----' == s[:5] and "BEGIN" in s:
-      # Detect RSA or DSA keys
-      if "RSA" in s:
-        type = "RSA"
-      elif "DSA" in s:
-        type = "DSA"
-      else:
-        type = s.replace("-----", "")
+    lines = []
+    type = None
+    encryption = False
+    # read in key lines from keydata string
+    for s in data.splitlines():
+        # skip file headers
+        if '-----' == s[:5] and "BEGIN" in s:
+            # Detect RSA or DSA keys
+            if "RSA" in s:
+                type = "RSA"
+            elif "DSA" in s:
+                type = "DSA"
+            else:
+                type = s.replace("-----", "")
 
-    # skip cryptographic headers
-    elif ":" in s or " " in s:
-      # detect encryption, if any
-      if "DEK-Info: " == s[0:10]:
-        encryption = s[10:]
+        # skip cryptographic headers
+        elif ":" in s or " " in s:
+            # detect encryption, if any
+            if "DEK-Info: " == s[0:10]:
+                encryption = s[10:]
+        else:
+            # include this b64 data for decoding
+            lines.append(s.strip())
+
+    body = ''.join(lines)
+    raw_data = body.decode("base64")
+
+    # Private Key cipher (Not Handled)
+    if encryption:
+        raise NotImplementedError( \
+            "Symmetric encryption is not supported. DEK-Info: %s" % encryption)
+
+    # decode data string using RSA
+    if type == 'RSA':
+        asn1Spec = RSAPrivateParser()
     else:
-      # include this b64 data for decoding
-      lines.append(s.strip())
+        raise NotImplementedError("Only RSA is supported. Type was %s." % type)
 
-  body = ''.join(lines)
-  raw_data = body.decode("base64")
+    key = decoder.decode(raw_data, asn1Spec=asn1Spec)[0]
 
-  # Private Key cipher (Not Handled)
-  if encryption:
-    raise NotImplementedError(\
-      "Symmetric encryption is not supported. DEK-Info: %s" % encryption)
-  
-  # decode data string using RSA
-  if type == 'RSA':
-    asn1Spec = RSAPrivateParser()
-  else:
-    raise NotImplementedError("Only RSA is supported. Type was %s." % type)
-  
-  key = decoder.decode(raw_data, asn1Spec=asn1Spec)[0]
+    # generate return dict base from key dict
+    dict = key.dict()
+    # add base64 encoding and type to return dictionary
+    dict['body'] = body
+    dict['type'] = "RSA PRIVATE"
 
-  # generate return dict base from key dict
-  dict = key.dict()
-  # add base64 encoding and type to return dictionary
-  dict['body'] = body
-  dict['type'] = "RSA PRIVATE"
-
-  return dict
+    return dict
 
 
 def dict_to_tuple(dict):
-  """Return RSA PyCrypto tuple from parsed rsa private dict.
+    """Return RSA PyCrypto tuple from parsed rsa private dict.
 
   Args:
     dict: dict of {str: value} returned from `parse`
   Returns:
     tuple of (int) of RSA private key integers for PyCrypto key construction
   """
-  tuple = (
-    dict['modulus'],
-    dict['publicExponent'],
-    dict['privateExponent'],
-    dict['prime1'],
-    dict['prime2'],
-    dict['coefficient'],
+    tuple = (
+        dict['modulus'],
+        dict['publicExponent'],
+        dict['privateExponent'],
+        dict['prime1'],
+        dict['prime2'],
+        dict['coefficient'],
     )
-  return tuple
+    return tuple

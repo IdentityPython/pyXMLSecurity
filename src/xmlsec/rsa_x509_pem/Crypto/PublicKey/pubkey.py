@@ -25,9 +25,9 @@ class pubkey:
         converted to standard Python long integers before being
         written out.  It will then be reconverted as necessary on
         restoration."""
-        d=self.__dict__
+        d = self.__dict__
         for key in self.keydata:
-            if d.has_key(key): d[key]=long(d[key])
+            if d.has_key(key): d[key] = long(d[key])
         return d
 
     def __setstate__(self, d):
@@ -35,34 +35,40 @@ class pubkey:
 number representation being used, whether that is Python long
 integers, MPZ objects, or whatever."""
         for key in self.keydata:
-            if d.has_key(key): self.__dict__[key]=bignum(d[key])
+            if d.has_key(key): self.__dict__[key] = bignum(d[key])
 
     def encrypt(self, plaintext, K):
         """encrypt(plaintext:string|long, K:string|long) : tuple
         Encrypt the string or integer plaintext.  K is a random
         parameter required by some algorithms.
         """
-        wasString=0
+        wasString = 0
         if isinstance(plaintext, types.StringType):
-            plaintext=bytes_to_long(plaintext) ; wasString=1
+            plaintext = bytes_to_long(plaintext);
+            wasString = 1
         if isinstance(K, types.StringType):
-            K=bytes_to_long(K)
-        ciphertext=self._encrypt(plaintext, K)
-        if wasString: return tuple(map(long_to_bytes, ciphertext))
-        else: return ciphertext
+            K = bytes_to_long(K)
+        ciphertext = self._encrypt(plaintext, K)
+        if wasString:
+            return tuple(map(long_to_bytes, ciphertext))
+        else:
+            return ciphertext
 
     def decrypt(self, ciphertext):
         """decrypt(ciphertext:tuple|string|long): string
         Decrypt 'ciphertext' using this key.
         """
-        wasString=0
+        wasString = 0
         if not isinstance(ciphertext, types.TupleType):
-            ciphertext=(ciphertext,)
+            ciphertext = (ciphertext,)
         if isinstance(ciphertext[0], types.StringType):
-            ciphertext=tuple(map(bytes_to_long, ciphertext)) ; wasString=1
-        plaintext=self._decrypt(ciphertext)
-        if wasString: return long_to_bytes(plaintext)
-        else: return plaintext
+            ciphertext = tuple(map(bytes_to_long, ciphertext));
+            wasString = 1
+        plaintext = self._decrypt(ciphertext)
+        if wasString:
+            return long_to_bytes(plaintext)
+        else:
+            return plaintext
 
     def sign(self, M, K):
         """sign(M : string|long, K:string|long) : tuple
@@ -71,20 +77,20 @@ integers, MPZ objects, or whatever."""
         """
         if (not self.has_private()):
             raise error, 'Private key not available in this object'
-        if isinstance(M, types.StringType): M=bytes_to_long(M)
-        if isinstance(K, types.StringType): K=bytes_to_long(K)
+        if isinstance(M, types.StringType): M = bytes_to_long(M)
+        if isinstance(K, types.StringType): K = bytes_to_long(K)
         return self._sign(M, K)
 
-    def verify (self, M, signature):
+    def verify(self, M, signature):
         """verify(M:string|long, signature:tuple) : bool
         Verify that the signature is valid for the message M;
         returns true if the signature checks out.
         """
-        if isinstance(M, types.StringType): M=bytes_to_long(M)
+        if isinstance(M, types.StringType): M = bytes_to_long(M)
         return self._verify(M, signature)
 
     # alias to compensate for the old validate() name
-    def validate (self, M, signature):
+    def validate(self, M, signature):
         warnings.warn("validate() method name is obsolete; use verify()",
                       DeprecationWarning)
 
@@ -92,31 +98,37 @@ integers, MPZ objects, or whatever."""
         """blind(M : string|long, B : string|long) : string|long
         Blind message M using blinding factor B.
         """
-        wasString=0
+        wasString = 0
         if isinstance(M, types.StringType):
-            M=bytes_to_long(M) ; wasString=1
-        if isinstance(B, types.StringType): B=bytes_to_long(B)
-        blindedmessage=self._blind(M, B)
-        if wasString: return long_to_bytes(blindedmessage)
-        else: return blindedmessage
+            M = bytes_to_long(M);
+            wasString = 1
+        if isinstance(B, types.StringType): B = bytes_to_long(B)
+        blindedmessage = self._blind(M, B)
+        if wasString:
+            return long_to_bytes(blindedmessage)
+        else:
+            return blindedmessage
 
     def unblind(self, M, B):
         """unblind(M : string|long, B : string|long) : string|long
         Unblind message M using blinding factor B.
         """
-        wasString=0
+        wasString = 0
         if isinstance(M, types.StringType):
-            M=bytes_to_long(M) ; wasString=1
-        if isinstance(B, types.StringType): B=bytes_to_long(B)
-        unblindedmessage=self._unblind(M, B)
-        if wasString: return long_to_bytes(unblindedmessage)
-        else: return unblindedmessage
+            M = bytes_to_long(M);
+            wasString = 1
+        if isinstance(B, types.StringType): B = bytes_to_long(B)
+        unblindedmessage = self._unblind(M, B)
+        if wasString:
+            return long_to_bytes(unblindedmessage)
+        else:
+            return unblindedmessage
 
 
     # The following methods will usually be left alone, except for
     # signature-only algorithms.  They both return Boolean values
     # recording whether this key's algorithm can sign and encrypt.
-    def can_sign (self):
+    def can_sign(self):
         """can_sign() : bool
         Return a Boolean value recording whether this algorithm can
         generate signatures.  (This does not imply that this
@@ -125,7 +137,7 @@ integers, MPZ objects, or whatever."""
         """
         return 1
 
-    def can_encrypt (self):
+    def can_encrypt(self):
         """can_encrypt() : bool
         Return a Boolean value recording whether this algorithm can
         encrypt data.  (This does not imply that this
@@ -134,7 +146,7 @@ integers, MPZ objects, or whatever."""
         """
         return 1
 
-    def can_blind (self):
+    def can_blind(self):
         """can_blind() : bool
         Return a Boolean value recording whether this algorithm can
         blind data.  (This does not imply that this
@@ -146,26 +158,26 @@ integers, MPZ objects, or whatever."""
     # The following methods will certainly be overridden by
     # subclasses.
 
-    def size (self):
+    def size(self):
         """size() : int
         Return the maximum number of bits that can be handled by this key.
         """
         return 0
 
-    def has_private (self):
+    def has_private(self):
         """has_private() : bool
         Return a Boolean denoting whether the object contains
         private components.
         """
         return 0
 
-    def publickey (self):
+    def publickey(self):
         """publickey(): object
         Return a new key object containing only the public information.
         """
         return self
 
-    def __eq__ (self, other):
+    def __eq__(self, other):
         """__eq__(other): 0, 1
         Compare us to other for equality.
         """

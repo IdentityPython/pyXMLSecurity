@@ -15,69 +15,88 @@ import types
 import string
 from .. import error
 
+
 class AbstractConstraint:
     """Abstract base-class for constraint objects
 
        Constraints should be stored in a simple sequence in the
        namespace of their client Asn1Item sub-classes.
     """
+
     def __init__(self, *values):
         self._valueMap = {}
         self._setValues(values)
         self.__hashedValues = None
+
     def __call__(self, value, idx=None):
         try:
             self._testValue(value, idx)
         except error.ValueConstraintError, why:
             raise error.ValueConstraintError('%s failed at: %s' % (
                 self, why
-                ))
+            ))
+
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
             string.join(map(lambda x: str(x), self._values), ', ')
         )
+
     # __cmp__ must accompany __hash__
     def __cmp__(self, other):
         return self is other and 0 or cmp(
             (self.__class__, self._values), other
-            )
+        )
+
     def __eq__(self, other):
         return self is other or not cmp(
             (self.__class__, self._values), other
-            )
+        )
+
     def __hash__(self):
         if self.__hashedValues is None:
             self.__hashedValues = hash((self.__class__, self._values))
         return self.__hashedValues
-    def _setValues(self, values): self._values = values
+
+    def _setValues(self, values):
+        self._values = values
+
     def _testValue(self, value, idx):
         raise error.ValueConstraintError(value)
 
     # Constraints derivation logic
-    def getValueMap(self): return self._valueMap
+    def getValueMap(self):
+        return self._valueMap
+
     def isSuperTypeOf(self, otherConstraint):
         return otherConstraint.getValueMap().has_key(self) or \
                otherConstraint is self or otherConstraint == self
+
     def isSubTypeOf(self, otherConstraint):
         return self._valueMap.has_key(otherConstraint) or \
                otherConstraint is self or otherConstraint == self
 
+
 class SingleValueConstraint(AbstractConstraint):
     """Value must be part of defined values constraint"""
+
     def _testValue(self, value, idx):
         # XXX index vals for performance?
         if value not in self._values:
             raise error.ValueConstraintError(value)
 
+
 class ContainedSubtypeConstraint(AbstractConstraint):
     """Value must satisfy all of defined set of constraints"""
+
     def _testValue(self, value, idx):
         for c in self._values:
             c(value, idx)
 
+
 class ValueRangeConstraint(AbstractConstraint):
     """Value must be within start and stop values (inclusive)"""
+
     def _testValue(self, value, idx):
         if value < self.start or value > self.stop:
             raise error.ValueConstraintError(value)
@@ -86,7 +105,7 @@ class ValueRangeConstraint(AbstractConstraint):
         if len(values) != 2:
             raise error.PyAsn1Error(
                 '%s: bad constraint values' % (self.__class__.__name__,)
-                )
+            )
         self.start, self.stop = values
         if self.start > self.stop:
             raise error.PyAsn1Error(
@@ -96,19 +115,23 @@ class ValueRangeConstraint(AbstractConstraint):
                 )
             )
         AbstractConstraint._setValues(self, values)
-        
+
+
 class ValueSizeConstraint(ValueRangeConstraint):
     """len(value) must be within start and stop values (inclusive)"""
+
     def _testValue(self, value, idx):
         l = len(value)
         if l < self.start or l > self.stop:
             raise error.ValueConstraintError(value)
+
 
 class PermittedAlphabetConstraint(SingleValueConstraint): pass
 
 # This is a bit kludgy, meaning two op modes within a single constraing
 class InnerTypeConstraint(AbstractConstraint):
     """Value must satisfy type and presense constraints"""
+
     def _testValue(self, value, idx):
         if self.__singleTypeConstraint:
             self.__singleTypeConstraint(value)
@@ -134,6 +157,7 @@ class InnerTypeConstraint(AbstractConstraint):
 
 class ConstraintsExclusion(AbstractConstraint):
     """Value must not fit the single constraint"""
+
     def _testValue(self, value, idx):
         try:
             self._values[0](value, idx)
@@ -147,31 +171,38 @@ class ConstraintsExclusion(AbstractConstraint):
             raise error.PyAsn1Error('Single constraint expected')
         AbstractConstraint._setValues(self, values)
 
+
 class AbstractConstraintSet(AbstractConstraint):
     """Value must not satisfy the single constraint"""
+
     def __getitem__(self, idx): return self._values[idx]
 
     def __add__(self, value): return self.__class__(self, value)
+
     def __radd__(self, value): return self.__class__(self, value)
 
     def __len__(self): return len(self._values)
 
     # Constraints inclusion in sets
-    
+
     def _setValues(self, values):
         self._values = values
         for v in values:
             self._valueMap[v] = 1
             self._valueMap.update(v.getValueMap())
 
+
 class ConstraintsIntersection(AbstractConstraintSet):
     """Value must satisfy all constraints"""
+
     def _testValue(self, value, idx):
         for v in self._values:
             v(value, idx)
 
+
 class ConstraintsUnion(AbstractConstraintSet):
     """Value must satisfy at least one constraint"""
+
     def _testValue(self, value, idx):
         for v in self._values:
             try:
@@ -182,7 +213,7 @@ class ConstraintsUnion(AbstractConstraintSet):
                 return
         raise error.ValueConstraintError(
             'all of %s failed for %s' % (self._values, value)
-            )
+        )
 
 # XXX
 # add tests for type check

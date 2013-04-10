@@ -23,55 +23,57 @@ RSAKey = RSA.RSAobj
 
 
 def parse(data):
-  """Return parsed dictionary from parsed PEM file; based on header.
+    """Return parsed dictionary from parsed PEM file; based on header.
 
   Args:
     data: str of PEM file data
   Returns:
     {str:str} as returned from appropriate *_parse parser
   """
-  if "RSA PRIVATE" in data:
-    dict = rsa_pem.parse(data)
-  elif "CERTIFICATE" in data:
-    dict = x509_pem.parse(data)
-  else:
-    raise Exception("PEM data type not supported.")
-  return dict
+    if "RSA PRIVATE" in data:
+        dict = rsa_pem.parse(data)
+    elif "CERTIFICATE" in data:
+        dict = x509_pem.parse(data)
+    else:
+        raise Exception("PEM data type not supported.")
+    return dict
 
 
 def get_key(parse_dict):
-  """Return RSA object from parsed PEM key file dictionary.
+    """Return RSA object from parsed PEM key file dictionary.
 
   Args:
     parse_dict: {str:str} as returned by `parse`
   Returns:
     `RSAKey` RSA key object as specified by `parse_dict`
   """
-  if parse_dict['type'] == "RSA PRIVATE":
-    key_tuple = rsa_pem.dict_to_tuple(parse_dict)
-  elif parse_dict['type'] == "X509 CERTIFICATE":
-    key_tuple = x509_pem.dict_to_tuple(parse_dict)
-  else:
-    raise Exception("parse_dict type '%s' not supported." % parse_dict['type'])
-  key = RSA.construct(key_tuple)
-  return key
+    if parse_dict['type'] == "RSA PRIVATE":
+        key_tuple = rsa_pem.dict_to_tuple(parse_dict)
+    elif parse_dict['type'] == "X509 CERTIFICATE":
+        key_tuple = x509_pem.dict_to_tuple(parse_dict)
+    else:
+        raise Exception("parse_dict type '%s' not supported." % parse_dict['type'])
+    key = RSA.construct(key_tuple)
+    return key
+
 
 def f_public(key):
-  """Return a convenient public key function.
+    """Return a convenient public key function.
 
   Args:
     key: `RSAKey` as returned by get_key(parse_dict).
   Returns:
     function(msg) => str of RSA() using `key`
   """
-  return lambda x: key.encrypt(x, None)[0]
+    return lambda x: key.encrypt(x, None)[0]
+
 
 def f_private(key):
-  """Return a convenient public key function.
+    """Return a convenient public key function.
 
   Args:
     key: `RSAKey` as returned by get_key(parse_dict).
   Returns:
     function(msg) => str of RSA^-1() using `key`
   """
-  return key.decrypt
+    return key.decrypt

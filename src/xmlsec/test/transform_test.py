@@ -7,12 +7,12 @@ import lxml.etree as etree
 import xmlsec
 from xmlsec.test.case import XMLTestData
 
-class TestTransforms(unittest.TestCase):
 
+class TestTransforms(unittest.TestCase):
     def setUp(self):
         self.cases = {}
-        for case_n in pkg_resources.resource_listdir(__name__,"data/transform"):
-            case = XMLTestData(__name__,"data/transform/%s" % case_n)
+        for case_n in pkg_resources.resource_listdir(__name__, "data/transform"):
+            case = XMLTestData(__name__, "data/transform/%s" % case_n)
             self.cases[case_n] = case
 
     def test_enveloped1(self):
@@ -33,7 +33,7 @@ class TestTransforms(unittest.TestCase):
         """
         Test that whitespaces and newlines are removed properly.
         """
-        data   = '<a> <b> 1 </b> </a>'
+        data = '<a> <b> 1 </b> </a>'
         expect = '<a><b> 1 </b></a>'
         self.assertEqual(_c14n_parse_test(data), expect)
 
@@ -52,8 +52,10 @@ def _c14n_parse_test(data, remove_whitespace=True, remove_comments=True):
         remove_whitespace, remove_comments, out)
     return out
 
+
 def main():
     unittest.main()
+
 
 if __name__ == '__main__':
     main()

@@ -3,6 +3,7 @@ import string
 from ...type import univ
 from ..ber import encoder
 
+
 class BooleanEncoder(encoder.IntegerEncoder):
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
         if client == 0:
@@ -11,17 +12,19 @@ class BooleanEncoder(encoder.IntegerEncoder):
             substrate = '\777'
         return substrate, 0
 
+
 class BitStringEncoder(encoder.BitStringEncoder):
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
         return encoder.BitStringEncoder.encodeValue(
             self, encodeFun, client, defMode, 1000
-            )
+        )
+
 
 class OctetStringEncoder(encoder.OctetStringEncoder):
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
         return encoder.OctetStringEncoder.encodeValue(
             self, encodeFun, client, defMode, 1000
-            )
+        )
 
 # specialized RealEncoder here
 # specialized GeneralStringEncoder here
@@ -33,13 +36,14 @@ class SetOfEncoder(encoder.SequenceOfEncoder):
         return cmp(
             getattr(c1, 'getMinimalTagSet', c1.getTagSet)(),
             getattr(c2, 'getMinimalTagSet', c2.getTagSet)()
-            )
-    
+        )
+
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
         if hasattr(client, 'setDefaultComponents'):
             client.setDefaultComponents()
         client.verifySizeSpec()
-        substrate = ''; idx = len(client)
+        substrate = '';
+        idx = len(client)
         # This is certainly a hack but how else do I distinguish SetOf
         # from Set if they have the same tags&constraints?
         if hasattr(client, 'getDefaultComponentByPosition'):
@@ -62,10 +66,11 @@ class SetOfEncoder(encoder.SequenceOfEncoder):
                 idx = idx - 1
                 compSubs.append(
                     encodeFun(client[idx], defMode, maxChunkSize)
-                    )
+                )
             compSubs.sort()  # perhaps padding's not needed
             substrate = string.join(compSubs, '')
         return substrate, 1
+
 
 codecMap = encoder.codecMap.copy()
 codecMap.update({
@@ -74,12 +79,14 @@ codecMap.update({
     univ.OctetString.tagSet: OctetStringEncoder(),
     # Set & SetOf have same tags
     univ.SetOf().tagSet: SetOfEncoder()
-    })
-        
+})
+
+
 class Encoder(encoder.Encoder):
     def __call__(self, client, defMode=0, maxChunkSize=0):
         return encoder.Encoder.__call__(self, client, defMode, maxChunkSize)
-        
+
+
 encode = Encoder(codecMap)
 
 # EncoderFactory queries class instance and builds a map of tags -> encoders

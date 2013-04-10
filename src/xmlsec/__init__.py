@@ -43,6 +43,7 @@ ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 # and includes https://github.com/andrewdyates/rsa_x509_pem with
 # permission from the author.
 
+
 class CertDict(DictMixin):
     """
     Extract all X509Certificate XML elements and create a dict-like object
@@ -86,8 +87,8 @@ def _find_matching_cert(t, fp):
     """
     if t is None:
         return None
-    for hash, pem in CertDict(t).iteritems():
-        if fp == hash:
+    for cfp, pem in CertDict(t).iteritems():
+        if fp.lower() == cfp:
             return pem
     return None
 
@@ -100,6 +101,8 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
     given specification. For example, if keyspec is a a PKCS#11 reference to a
     private key then naturally the key itself is not available.
 
+    :param private:
+    :param signature_element:
     Possible keyspecs, in evaluation order :
 
       - a callable.    Return a partial dict with 'f_private' set to the keyspec.
@@ -133,8 +136,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
     if private and hasattr(keyspec, '__call__'):
         return {'keyspec': keyspec,
                 'source': 'callable',
-                'f_private': keyspec,
-        }
+                'f_private': keyspec}
     if isinstance(keyspec, basestring):
         if os.path.isfile(keyspec):
             with open(keyspec) as c:
@@ -207,7 +209,7 @@ def b64e(s):
     return s.encode('base64').replace('\n', '')
 
 
-def _signed_value(data, key_size, do_pad, hash_alg): # TODO Do proper asn1 CMS
+def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
 
     The resulting signed value will be in the form:
@@ -272,8 +274,8 @@ def _alg(elt):
 
 
 def _remove_child_comments(t):
-    root = _root(t)
-    for c in root.iter():
+    #root = _root(t)
+    for c in t.iter():
         if c.tag is etree.Comment or c.tag is etree.PI:
             _delete_elt(c)
     return t
@@ -287,27 +289,27 @@ def _process_references(t, sig=None):
         sig = t.find(".//{%s}Signature" % NS['ds'])
     hash_alg = None
     for ref in sig.findall(".//{%s}Reference" % NS['ds']):
-        object = None
+        obj = None
         uri = ref.get('URI', None)
         if uri is None or uri == '#' or uri == '':
-            ct = _remove_child_comments(copy.deepcopy(t))
-            object = _root(ct)
+            ct = _remove_child_comments(_root(copy.deepcopy(t)))
+            obj = _root(ct)
         elif uri.startswith('#'):
-            ct = _remove_child_comments(copy.deepcopy(t))
-            object = _root(_get_by_id(ct, uri[1:]))
+            ct = copy.deepcopy(t)
+            obj = _remove_child_comments(_get_by_id(ct, uri[1:]))
         else:
             raise XMLSigException("Unknown reference %s" % uri)
 
-        if object is None:
+        if obj is None:
             raise XMLSigException("Unable to dereference Reference URI='%s'" % uri)
 
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
             logging.debug("transform: %s" % _alg(tr))
-            object = _transform(_alg(tr), object, tr)
+            obj = _transform(_alg(tr), obj, tr)
 
         if _DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-obj.xml", "w") as fd:
-                fd.write(object)
+                fd.write(obj)
 
         dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
         if dm is None:
@@ -316,9 +318,9 @@ def _process_references(t, sig=None):
         logging.debug("using hash algorithm %s" % this_hash_alg)
         hash_alg = hash_alg or this_hash_alg
         if this_hash_alg != hash_alg:
-            raise XMLSigException("Unable to handle more than one hash algorithm (%s != %s)" \
+            raise XMLSigException("Unable to handle more than one hash algorithm (%s != %s)"
                                   % (this_hash_alg, hash_alg))
-        digest = _digest(object, this_hash_alg)
+        digest = _digest(obj, this_hash_alg)
         logging.debug("digest for %s: %s" % (uri, digest))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
         logging.debug(etree.tostring(dv))
@@ -330,6 +332,7 @@ def _process_references(t, sig=None):
 #
 # @param text The HTML (or XML) source text.
 # @return The plain text, as a Unicode string, if necessary.
+
 
 def _unescape(text):
     def fixup(m):
@@ -350,7 +353,7 @@ def _unescape(text):
                     text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
-        return text # leave as is
+        return text  # leave as is
 
     return re.sub("&#?\w+;", fixup, text)
 
@@ -564,18 +567,18 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
     :param reference_uri: Envelope signature reference URI
     :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
     """
-    do_padding = False # only in the case of our fallback keytype do we need to do pkcs1 padding here
+    do_padding = False  # only in the case of our fallback keytype do we need to do pkcs1 padding here
 
     private = _load_keyspec(key_spec, private=True)
     if private is None:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
 
     if private['source'] == 'file':
-        do_padding = True # need to do p1 padding in this case
+        do_padding = True  # need to do p1 padding in this case
 
     if cert_spec is None and private['source'] == 'pkcs11':
         cert_spec = private['data']
-        logging.debug("Using P11 cert_spec :\n%s" % (cert_spec))
+        logging.debug("Using P11 cert_spec :\n%s" % cert_spec)
 
     public = _load_keyspec(cert_spec)
     if public is None:
