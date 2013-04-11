@@ -439,7 +439,7 @@ class SetOf(base.AbstractConstructedAsn1Item):
     )
 
     def _cloneComponentValues(self, myClone, cloneValueFlag):
-        idx = 0;
+        idx = 0
         l = len(self._componentValues)
         while idx < l:
             c = self._componentValues[idx]
@@ -505,7 +505,7 @@ class SequenceAndSetBase(base.AbstractConstructedAsn1Item):
     componentType = namedtype.NamedTypes()
 
     def _cloneComponentValues(self, myClone, cloneValueFlag):
-        idx = 0;
+        idx = 0
         l = len(self._componentValues)
         while idx < l:
             c = self._componentValues[idx]

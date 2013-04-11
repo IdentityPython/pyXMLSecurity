@@ -126,7 +126,8 @@ class ValueSizeConstraint(ValueRangeConstraint):
             raise error.ValueConstraintError(value)
 
 
-class PermittedAlphabetConstraint(SingleValueConstraint): pass
+class PermittedAlphabetConstraint(SingleValueConstraint):
+    pass
 
 # This is a bit kludgy, meaning two op modes within a single constraing
 class InnerTypeConstraint(AbstractConstraint):
@@ -175,13 +176,17 @@ class ConstraintsExclusion(AbstractConstraint):
 class AbstractConstraintSet(AbstractConstraint):
     """Value must not satisfy the single constraint"""
 
-    def __getitem__(self, idx): return self._values[idx]
+    def __getitem__(self, idx):
+        return self._values[idx]
 
-    def __add__(self, value): return self.__class__(self, value)
+    def __add__(self, value):
+        return self.__class__(self, value)
 
-    def __radd__(self, value): return self.__class__(self, value)
+    def __radd__(self, value):
+        return self.__class__(self, value)
 
-    def __len__(self): return len(self._values)
+    def __len__(self):
+        return len(self._values)
 
     # Constraints inclusion in sets
 
