@@ -78,7 +78,7 @@ def construct(tuple):
     return obj
 
 
-class ElGamalobj(pubkey.pubkey):
+class ElGamalobj(pubkey.CryptoPubkey):
     keydata = ['p', 'g', 'y', 'x']
 
     def _encrypt(self, M, K):

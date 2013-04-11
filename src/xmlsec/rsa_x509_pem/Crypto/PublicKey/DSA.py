@@ -12,7 +12,7 @@
 
 __revision__ = "$Id: DSA.py,v 1.16 2004/05/06 12:52:54 akuchling Exp $"
 
-from .pubkey import pubkey
+from . import pubkey
 from . import number
 from .number import bytes_to_long, long_to_bytes, isPrime, bignum, inverse
 from Crypto.Hash import SHA # XXX Crypto.Hash is NOT bundled with xmlsec
@@ -112,7 +112,7 @@ def construct(tuple):
     return obj
 
 
-class DSAobj(pubkey):
+class DSAobj(pubkey.CryptoPubkey):
     keydata = ['y', 'g', 'p', 'q', 'x']
 
     def _encrypt(self, s, Kstr):
@@ -173,7 +173,7 @@ generate_py = generate
 construct_py = construct
 
 
-class DSAobj_c(pubkey):
+class DSAobj_c(pubkey.CryptoPubkey):
     keydata = ['y', 'g', 'p', 'q', 'x']
 
     def __init__(self, key):

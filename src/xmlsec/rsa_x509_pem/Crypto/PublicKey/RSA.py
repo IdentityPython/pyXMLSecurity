@@ -82,7 +82,7 @@ def construct(tuple):
     return obj
 
 
-class RSAobj(pubkey.pubkey):
+class RSAobj(pubkey.CryptoPubkey):
     keydata = ['n', 'e', 'd', 'p', 'q', 'u']
 
     def _encrypt(self, plaintext, K=''):
@@ -147,7 +147,7 @@ class RSAobj(pubkey.pubkey):
         return construct((self.n, self.e))
 
 
-class RSAobj_c(pubkey.pubkey):
+class RSAobj_c(pubkey.CryptoPubkey):
     keydata = ['n', 'e', 'd', 'p', 'q', 'u']
 
     def __init__(self, key):

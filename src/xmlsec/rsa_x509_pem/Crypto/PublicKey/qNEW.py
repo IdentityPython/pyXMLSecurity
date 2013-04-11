@@ -117,7 +117,7 @@ def construct(tuple):
     return obj
 
 
-class qNEWobj(pubkey.pubkey):
+class qNEWobj(pubkey.CryptoPubkey):
     keydata = ['p', 'q', 'g', 'y', 'x']
 
     def _sign(self, M, K=''):
