@@ -38,6 +38,19 @@ integers, MPZ objects, or whatever."""
         for key in self.keydata:
             if d.has_key(key): self.__dict__[key] = bignum(d[key])
 
+    def _encrypt(self, _plaintext, _K):
+        raise NotImplementedError("Subclass should implement _encrypt")
+    def _decrypt(self, _ciphertext):
+        raise NotImplementedError("Subclass should implement _decrypt")
+    def _sign(self, _M, _K):
+        raise NotImplementedError("Subclass should implement _sign")
+    def _verify(self, _M, _signature):
+        raise NotImplementedError("Subclass should implement _verify")
+    def _blind(self, _M, _B):
+        raise NotImplementedError("Subclass should implement _blind")
+    def _unblind(self, _M, _B):
+        raise NotImplementedError("Subclass should implement _unblind")
+
     def encrypt(self, plaintext, K):
         """encrypt(plaintext:string|long, K:string|long) : tuple
         Encrypt the string or integer plaintext.  K is a random
