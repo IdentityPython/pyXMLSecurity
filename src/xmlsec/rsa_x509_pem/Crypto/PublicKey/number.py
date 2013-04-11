@@ -61,7 +61,7 @@ def GCD(x, y):
     """GCD(x:long, y:long): long
     Return the GCD of x and y.
     """
-    x = abs(x);
+    x = abs(x)
     y = abs(y)
     while x > 0:
         x, y = y % x, x
@@ -121,8 +121,8 @@ def isPrime(N):
 
     # Rabin-Miller test
     for c in sieve[:7]:
-        a = long(c);
-        d = 1L;
+        a = long(c)
+        d = 1L
         t = n
         while (t):  # Iterate over the bits in N1
             x = (d * d) % N

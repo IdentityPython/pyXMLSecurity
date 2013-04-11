@@ -42,7 +42,7 @@ class SetOfEncoder(encoder.SequenceOfEncoder):
         if hasattr(client, 'setDefaultComponents'):
             client.setDefaultComponents()
         client.verifySizeSpec()
-        substrate = '';
+        substrate = ''
         idx = len(client)
         # This is certainly a hack but how else do I distinguish SetOf
         # from Set if they have the same tags&constraints?

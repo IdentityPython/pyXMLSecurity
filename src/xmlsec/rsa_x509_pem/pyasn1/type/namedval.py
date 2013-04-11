@@ -7,7 +7,7 @@ __all__ = ['NamedValues']
 
 class NamedValues:
     def __init__(self, *namedValues):
-        self.nameToValIdx = {};
+        self.nameToValIdx = {}
         self.valToNameIdx = {}
         self.namedValues = ()
         automaticVal = 1

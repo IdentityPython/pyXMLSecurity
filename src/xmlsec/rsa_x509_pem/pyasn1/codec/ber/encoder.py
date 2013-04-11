@@ -5,7 +5,8 @@ from ..ber import eoo
 from ... import error
 
 
-class Error(Exception): pass
+class Error(Exception):
+    pass
 
 
 class AbstractItemEncoder:
@@ -107,21 +108,21 @@ class IntegerEncoder(AbstractItemEncoder):
 class BitStringEncoder(AbstractItemEncoder):
     def encodeValue(self, encodeFun, value, defMode, maxChunkSize):
         if not maxChunkSize or len(value) <= maxChunkSize * 8:
-            r = {};
-            l = len(value);
-            p = 0;
+            r = {}
+            l = len(value)
+            p = 0
             j = 7
             while p < l:
                 i, j = divmod(p, 8)
                 r[i] = r.get(i, 0) | value[p] << (7 - j)
                 p = p + 1
-            keys = r.keys();
+            keys = r.keys()
             keys.sort()
             return chr(7 - j) + string.join(
                 map(lambda k, r=r: chr(r[k]), keys), ''
             ), 0
         else:
-            pos = 0;
+            pos = 0
             substrate = ''
             while 1:
                 # count in octets
@@ -138,7 +139,7 @@ class OctetStringEncoder(AbstractItemEncoder):
         if not maxChunkSize or len(value) <= maxChunkSize:
             return str(value), 0
         else:
-            pos = 0;
+            pos = 0
             substrate = ''
             while 1:
                 v = value.clone(value[pos:pos + maxChunkSize])

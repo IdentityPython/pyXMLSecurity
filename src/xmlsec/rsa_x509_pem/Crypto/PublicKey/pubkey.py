@@ -13,11 +13,13 @@
 __revision__ = "$Id: pubkey.py,v 1.11 2003/04/03 20:36:14 akuchling Exp $"
 
 import types, warnings
-#from .number import *
 from .number import bignum, bytes_to_long, long_to_bytes, getPrime, inverse
 
+class CryptoPubkeyError(Exception):
+    pass
+
 # Basic public key class
-class pubkey:
+class CryptoPubkey:
     def __init__(self):
         pass
 
@@ -28,7 +30,8 @@ class pubkey:
         restoration."""
         d = self.__dict__
         for key in self.keydata:
-            if d.has_key(key): d[key] = long(d[key])
+            if d.has_key(key):
+                d[key] = long(d[key])
         return d
 
     def __setstate__(self, d):
@@ -36,7 +39,21 @@ class pubkey:
 number representation being used, whether that is Python long
 integers, MPZ objects, or whatever."""
         for key in self.keydata:
-            if d.has_key(key): self.__dict__[key] = bignum(d[key])
+            if d.has_key(key):
+                self.__dict__[key] = bignum(d[key])
+
+    def _encrypt(self, _plaintext, _K):
+        raise NotImplementedError("Subclass should implement _encrypt")
+    def _decrypt(self, _ciphertext):
+        raise NotImplementedError("Subclass should implement _decrypt")
+    def _sign(self, _M, _K):
+        raise NotImplementedError("Subclass should implement _sign")
+    def _verify(self, _M, _signature):
+        raise NotImplementedError("Subclass should implement _verify")
+    def _blind(self, _M, _B):
+        raise NotImplementedError("Subclass should implement _blind")
+    def _unblind(self, _M, _B):
+        raise NotImplementedError("Subclass should implement _unblind")
 
     def encrypt(self, plaintext, K):
         """encrypt(plaintext:string|long, K:string|long) : tuple
@@ -45,7 +62,7 @@ integers, MPZ objects, or whatever."""
         """
         wasString = 0
         if isinstance(plaintext, types.StringType):
-            plaintext = bytes_to_long(plaintext);
+            plaintext = bytes_to_long(plaintext)
             wasString = 1
         if isinstance(K, types.StringType):
             K = bytes_to_long(K)
@@ -63,7 +80,7 @@ integers, MPZ objects, or whatever."""
         if not isinstance(ciphertext, types.TupleType):
             ciphertext = (ciphertext,)
         if isinstance(ciphertext[0], types.StringType):
-            ciphertext = tuple(map(bytes_to_long, ciphertext));
+            ciphertext = tuple(map(bytes_to_long, ciphertext))
             wasString = 1
         plaintext = self._decrypt(ciphertext)
         if wasString:
@@ -77,9 +94,11 @@ integers, MPZ objects, or whatever."""
         K is a random parameter required by some algorithms.
         """
         if (not self.has_private()):
-            raise error, 'Private key not available in this object'
-        if isinstance(M, types.StringType): M = bytes_to_long(M)
-        if isinstance(K, types.StringType): K = bytes_to_long(K)
+            raise CryptoPubkeyError('Private key not available in this object')
+        if isinstance(M, types.StringType):
+            M = bytes_to_long(M)
+        if isinstance(K, types.StringType):
+            K = bytes_to_long(K)
         return self._sign(M, K)
 
     def verify(self, M, signature):
@@ -87,7 +106,8 @@ integers, MPZ objects, or whatever."""
         Verify that the signature is valid for the message M;
         returns true if the signature checks out.
         """
-        if isinstance(M, types.StringType): M = bytes_to_long(M)
+        if isinstance(M, types.StringType):
+            M = bytes_to_long(M)
         return self._verify(M, signature)
 
     # alias to compensate for the old validate() name
@@ -101,9 +121,10 @@ integers, MPZ objects, or whatever."""
         """
         wasString = 0
         if isinstance(M, types.StringType):
-            M = bytes_to_long(M);
+            M = bytes_to_long(M)
             wasString = 1
-        if isinstance(B, types.StringType): B = bytes_to_long(B)
+        if isinstance(B, types.StringType):
+            B = bytes_to_long(B)
         blindedmessage = self._blind(M, B)
         if wasString:
             return long_to_bytes(blindedmessage)
@@ -116,9 +137,10 @@ integers, MPZ objects, or whatever."""
         """
         wasString = 0
         if isinstance(M, types.StringType):
-            M = bytes_to_long(M);
+            M = bytes_to_long(M)
             wasString = 1
-        if isinstance(B, types.StringType): B = bytes_to_long(B)
+        if isinstance(B, types.StringType):
+            B = bytes_to_long(B)
         unblindedmessage = self._unblind(M, B)
         if wasString:
             return long_to_bytes(unblindedmessage)

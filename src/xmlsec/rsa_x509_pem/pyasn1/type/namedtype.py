@@ -7,7 +7,7 @@ class NamedType:
     isDefaulted = 0
 
     def __init__(self, name, t):
-        self.__name = name;
+        self.__name = name
         self.__type = t
 
     def __repr__(self):
@@ -22,8 +22,10 @@ class NamedType:
         return self.__name
 
     def __getitem__(self, idx):
-        if idx == 0: return self.__name
-        if idx == 1: return self.__type
+        if idx == 0:
+            return self.__name
+        if idx == 1:
+            return self.__type
         raise IndexError()
 
 
@@ -39,8 +41,8 @@ class NamedTypes:
     def __init__(self, *namedTypes):
         self.__namedTypes = namedTypes
         self.__minTagSet = None
-        self.__typeMap = {};
-        self.__tagMap = {};
+        self.__typeMap = {}
+        self.__tagMap = {}
         self.__nameMap = {}
         self.__ambigiousTypes = {}
 
@@ -115,14 +117,16 @@ class NamedTypes:
             self.__ambigiousTypes[idx] = apply(NamedTypes, ambigiousTypes)
 
     def getTypeMapNearPosition(self, idx):
-        if not self.__ambigiousTypes: self.__buildAmbigiousTagMap()
+        if not self.__ambigiousTypes:
+            self.__buildAmbigiousTagMap()
         try:
             return self.__ambigiousTypes[idx].getTypeMap()
         except KeyError:
             raise error.PyAsn1Error('Type position out of range')
 
     def getPositionNearType(self, tagSet, idx):
-        if not self.__ambigiousTypes: self.__buildAmbigiousTagMap()
+        if not self.__ambigiousTypes:
+            self.__buildAmbigiousTagMap()
         try:
             return idx + self.__ambigiousTypes[idx].getPositionByType(tagSet)
         except KeyError:
