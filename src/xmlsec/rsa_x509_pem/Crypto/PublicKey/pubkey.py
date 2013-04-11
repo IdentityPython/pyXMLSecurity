@@ -28,7 +28,8 @@ class pubkey:
         restoration."""
         d = self.__dict__
         for key in self.keydata:
-            if d.has_key(key): d[key] = long(d[key])
+            if d.has_key(key):
+                d[key] = long(d[key])
         return d
 
     def __setstate__(self, d):
@@ -36,7 +37,8 @@ class pubkey:
 number representation being used, whether that is Python long
 integers, MPZ objects, or whatever."""
         for key in self.keydata:
-            if d.has_key(key): self.__dict__[key] = bignum(d[key])
+            if d.has_key(key):
+                self.__dict__[key] = bignum(d[key])
 
     def _encrypt(self, _plaintext, _K):
         raise NotImplementedError("Subclass should implement _encrypt")
@@ -91,8 +93,10 @@ integers, MPZ objects, or whatever."""
         """
         if (not self.has_private()):
             raise error, 'Private key not available in this object'
-        if isinstance(M, types.StringType): M = bytes_to_long(M)
-        if isinstance(K, types.StringType): K = bytes_to_long(K)
+        if isinstance(M, types.StringType):
+            M = bytes_to_long(M)
+        if isinstance(K, types.StringType):
+            K = bytes_to_long(K)
         return self._sign(M, K)
 
     def verify(self, M, signature):
@@ -100,7 +104,8 @@ integers, MPZ objects, or whatever."""
         Verify that the signature is valid for the message M;
         returns true if the signature checks out.
         """
-        if isinstance(M, types.StringType): M = bytes_to_long(M)
+        if isinstance(M, types.StringType):
+            M = bytes_to_long(M)
         return self._verify(M, signature)
 
     # alias to compensate for the old validate() name
@@ -116,7 +121,8 @@ integers, MPZ objects, or whatever."""
         if isinstance(M, types.StringType):
             M = bytes_to_long(M)
             wasString = 1
-        if isinstance(B, types.StringType): B = bytes_to_long(B)
+        if isinstance(B, types.StringType):
+            B = bytes_to_long(B)
         blindedmessage = self._blind(M, B)
         if wasString:
             return long_to_bytes(blindedmessage)
@@ -131,7 +137,8 @@ integers, MPZ objects, or whatever."""
         if isinstance(M, types.StringType):
             M = bytes_to_long(M)
             wasString = 1
-        if isinstance(B, types.StringType): B = bytes_to_long(B)
+        if isinstance(B, types.StringType):
+            B = bytes_to_long(B)
         unblindedmessage = self._unblind(M, B)
         if wasString:
             return long_to_bytes(unblindedmessage)

@@ -165,7 +165,8 @@ class SubjectPublicKeyInfo(univ.Sequence):
     )
 
 
-class UniqueIdentifier(univ.BitString): pass
+class UniqueIdentifier(univ.BitString):
+    pass
 
 
 class Time(univ.Choice):
@@ -182,7 +183,8 @@ class Validity(univ.Sequence):
     )
 
 
-class CertificateSerialNumber(univ.Integer): pass
+class CertificateSerialNumber(univ.Integer):
+    pass
 
 
 class Version(univ.Integer):

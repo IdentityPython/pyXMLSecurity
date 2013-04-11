@@ -5,7 +5,8 @@ from ..ber import eoo
 from ... import error
 
 
-class Error(Exception): pass
+class Error(Exception):
+    pass
 
 
 class AbstractItemEncoder:

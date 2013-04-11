@@ -103,7 +103,8 @@ class ElGamalobj(pubkey):
             raise error, 'Bad K value: GCD(K,p-1)!=1'
         a = pow(self.g, K, self.p)
         t = (M - self.x * a) % p1
-        while t < 0: t = t + p1
+        while t < 0:
+            t = t + p1
         b = (t * inverse(K, p1)) % p1
         return (a, b)
 

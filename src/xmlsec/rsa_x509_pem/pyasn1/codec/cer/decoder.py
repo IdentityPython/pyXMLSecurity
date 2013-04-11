@@ -27,7 +27,8 @@ codecMap.update({
 })
 
 
-class Decoder(decoder.Decoder): pass
+class Decoder(decoder.Decoder):
+    pass
 
 
 decode = Decoder(codecMap)
