@@ -7,7 +7,7 @@ class NamedType:
     isDefaulted = 0
 
     def __init__(self, name, t):
-        self.__name = name;
+        self.__name = name
         self.__type = t
 
     def __repr__(self):
@@ -39,8 +39,8 @@ class NamedTypes:
     def __init__(self, *namedTypes):
         self.__namedTypes = namedTypes
         self.__minTagSet = None
-        self.__typeMap = {};
-        self.__tagMap = {};
+        self.__typeMap = {}
+        self.__tagMap = {}
         self.__nameMap = {}
         self.__ambigiousTypes = {}
 

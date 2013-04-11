@@ -52,7 +52,7 @@ def generate(bits, randfunc, progress_func=None):
         C, N, V = 0, 2, {}
         # Compute b and n such that bits-1 = b + n*HASHBITS
         n = (bits - 1) / HASHBITS
-        b = (bits - 1) % HASHBITS;
+        b = (bits - 1) % HASHBITS
         powb = 2L << b
         powL1 = pow(long(2), bits - 1)
         while C < 4096:

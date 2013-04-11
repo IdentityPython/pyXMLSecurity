@@ -58,7 +58,7 @@ integers, MPZ objects, or whatever."""
         """
         wasString = 0
         if isinstance(plaintext, types.StringType):
-            plaintext = bytes_to_long(plaintext);
+            plaintext = bytes_to_long(plaintext)
             wasString = 1
         if isinstance(K, types.StringType):
             K = bytes_to_long(K)
@@ -76,7 +76,7 @@ integers, MPZ objects, or whatever."""
         if not isinstance(ciphertext, types.TupleType):
             ciphertext = (ciphertext,)
         if isinstance(ciphertext[0], types.StringType):
-            ciphertext = tuple(map(bytes_to_long, ciphertext));
+            ciphertext = tuple(map(bytes_to_long, ciphertext))
             wasString = 1
         plaintext = self._decrypt(ciphertext)
         if wasString:
@@ -114,7 +114,7 @@ integers, MPZ objects, or whatever."""
         """
         wasString = 0
         if isinstance(M, types.StringType):
-            M = bytes_to_long(M);
+            M = bytes_to_long(M)
             wasString = 1
         if isinstance(B, types.StringType): B = bytes_to_long(B)
         blindedmessage = self._blind(M, B)
@@ -129,7 +129,7 @@ integers, MPZ objects, or whatever."""
         """
         wasString = 0
         if isinstance(M, types.StringType):
-            M = bytes_to_long(M);
+            M = bytes_to_long(M)
             wasString = 1
         if isinstance(B, types.StringType): B = bytes_to_long(B)
         unblindedmessage = self._unblind(M, B)
