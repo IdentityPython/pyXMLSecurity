@@ -21,10 +21,6 @@ except ImportError:
     _fastmath = None
 
 
-class error(Exception):
-    pass
-
-
 def generate(bits, randfunc, progress_func=None):
     """generate(bits:int, randfunc:callable, progress_func:callable)
 
@@ -70,12 +66,12 @@ def construct(tuple):
 
     obj = RSAobj()
     if len(tuple) not in [2, 3, 5, 6]:
-        raise error, 'argument for construct() wrong length'
+        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
     for i in range(len(tuple)):
         field = obj.keydata[i]
         setattr(obj, field, tuple[i])
     if len(tuple) >= 5:
-        # Ensure p is smaller than q 
+        # Ensure p is smaller than q
         if obj.p > obj.q:
             (obj.p, obj.q) = (obj.q, obj.p)
 
@@ -91,14 +87,14 @@ class RSAobj(pubkey.pubkey):
 
     def _encrypt(self, plaintext, K=''):
         if self.n <= plaintext:
-            raise error, 'Plaintext too large'
+            raise pubkey.CryptoPubkeyError('Plaintext too large')
         return (pow(plaintext, self.e, self.n),)
 
     def _decrypt(self, ciphertext):
         if (not hasattr(self, 'd')):
-            raise error, 'Private key not available in this object'
+            raise pubkey.CryptoPubkeyError('Private key not available in this object')
         if self.n <= ciphertext[0]:
-            raise error, 'Ciphertext too large'
+            raise pubkey.CryptoPubkeyError('Ciphertext too large')
         return pow(ciphertext[0], self.d, self.n)
 
     def _sign(self, M, K=''):
@@ -164,7 +160,7 @@ class RSAobj_c(pubkey.pubkey):
             if self.__dict__.has_key(attr):
                 self.__dict__[attr]
             else:
-                raise AttributeError, '%s instance has no attribute %s' % (self.__class__, attr)
+                raise AttributeError('%s instance has no attribute %s' % (self.__class__, attr))
 
     def __getstate__(self):
         d = {}

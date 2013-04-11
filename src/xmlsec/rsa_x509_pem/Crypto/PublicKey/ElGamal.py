@@ -17,9 +17,6 @@ from . import number
 from .number import bignum, getPrime, inverse, GCD
 
 
-class error(Exception):
-    pass
-
 # Generate an ElGamal key with N bits
 def generate(bits, randfunc, progress_func=None):
     """generate(bits:int, randfunc:callable, progress_func:callable)
@@ -74,7 +71,7 @@ def construct(tuple):
 
     obj = ElGamalobj()
     if len(tuple) not in [3, 4]:
-        raise error, 'argument for construct() wrong length'
+        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
     for i in range(len(tuple)):
         field = obj.keydata[i]
         setattr(obj, field, tuple[i])
@@ -91,17 +88,17 @@ class ElGamalobj(pubkey.pubkey):
 
     def _decrypt(self, M):
         if (not hasattr(self, 'x')):
-            raise error, 'Private key not available in this object'
+            raise pubkey.CryptoPubkeyError('Private key not available in this object')
         ax = pow(M[0], self.x, self.p)
         plaintext = (M[1] * inverse(ax, self.p) ) % self.p
         return plaintext
 
     def _sign(self, M, K):
         if (not hasattr(self, 'x')):
-            raise error, 'Private key not available in this object'
+            raise pubkey.CryptoPubkeyError('Private key not available in this object')
         p1 = self.p - 1
         if (GCD(K, p1) != 1):
-            raise error, 'Bad K value: GCD(K,p-1)!=1'
+            raise pubkey.CryptoPubkeyError('Bad K value: GCD(K,p-1)!=1')
         a = pow(self.g, K, self.p)
         t = (M - self.x * a) % p1
         while t < 0:

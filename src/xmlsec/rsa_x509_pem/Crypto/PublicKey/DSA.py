@@ -23,10 +23,6 @@ except ImportError:
     _fastmath = None
 
 
-class error(Exception):
-    pass
-
-
 def generateQ(randfunc):
     S = randfunc(20)
     hash1 = SHA.new(S).digest()
@@ -43,7 +39,7 @@ def generateQ(randfunc):
         q = q + 2
     if pow(2, 159L) < q < pow(2, 160L):
         return S, q
-    raise error, 'Bad q value generated'
+    raise pubkey.CryptoPubkeyError('Bad q value generated')
 
 
 def generate(bits, randfunc, progress_func=None):
@@ -55,7 +51,7 @@ def generate(bits, randfunc, progress_func=None):
     """
 
     if bits < 160:
-        raise error, 'Key length <160 bits'
+        raise pubkey.CryptoPubkeyError('Key length <160 bits')
     obj = DSAobj()
     # Generate string S and prime q
     if progress_func:
@@ -109,7 +105,7 @@ def construct(tuple):
     """
     obj = DSAobj()
     if len(tuple) not in [4, 5]:
-        raise error, 'argument for construct() wrong length'
+        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
     for i in range(len(tuple)):
         field = obj.keydata[i]
         setattr(obj, field, tuple[i])
@@ -120,14 +116,14 @@ class DSAobj(pubkey):
     keydata = ['y', 'g', 'p', 'q', 'x']
 
     def _encrypt(self, s, Kstr):
-        raise error, 'DSA algorithm cannot encrypt data'
+        raise pubkey.CryptoPubkeyError('DSA algorithm cannot encrypt data')
 
     def _decrypt(self, s):
-        raise error, 'DSA algorithm cannot decrypt data'
+        raise pubkey.CryptoPubkeyError('DSA algorithm cannot decrypt data')
 
     def _sign(self, M, K):
         if (K < 2 or self.q <= K):
-            raise error, 'K is not between 2 and q'
+            raise pubkey.CryptoPubkeyError('K is not between 2 and q')
         r = pow(self.g, K, self.p) % self.q
         s = (inverse(K, self.q) * (M + self.x * r)) % self.q
         return (r, s)
@@ -190,7 +186,7 @@ class DSAobj_c(pubkey):
             if self.__dict__.has_key(attr):
                 self.__dict__[attr]
             else:
-                raise AttributeError, '%s instance has no attribute %s' % (self.__class__, attr)
+                raise AttributeError('%s instance has no attribute %s' % (self.__class__, attr))
 
     def __getstate__(self):
         d = {}

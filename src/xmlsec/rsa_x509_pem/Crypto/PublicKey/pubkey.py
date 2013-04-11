@@ -15,8 +15,11 @@ __revision__ = "$Id: pubkey.py,v 1.11 2003/04/03 20:36:14 akuchling Exp $"
 import types, warnings
 from .number import bignum, bytes_to_long, long_to_bytes, getPrime, inverse
 
+class CryptoPubkeyError(Exception):
+    pass
+
 # Basic public key class
-class pubkey:
+class CryptoPubkey:
     def __init__(self):
         pass
 
@@ -91,7 +94,7 @@ integers, MPZ objects, or whatever."""
         K is a random parameter required by some algorithms.
         """
         if (not self.has_private()):
-            raise error, 'Private key not available in this object'
+            raise CryptoPubkeyError('Private key not available in this object')
         if isinstance(M, types.StringType):
             M = bytes_to_long(M)
         if isinstance(K, types.StringType):

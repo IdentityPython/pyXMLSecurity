@@ -17,10 +17,6 @@ from .number import bytes_to_long, long_to_bytes, getPrime, isPrime
 from Crypto.Hash import SHA # XXX Crypto.Hash is NOT bundled with xmlsec
 
 
-class error(Exception):
-    pass
-
-
 HASHBITS = 160   # Size of SHA digests
 
 
@@ -114,7 +110,7 @@ def construct(tuple):
     """
     obj = qNEWobj()
     if len(tuple) not in [4, 5]:
-        raise error, 'argument for construct() wrong length'
+        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
     for i in range(len(tuple)):
         field = obj.keydata[i]
         setattr(obj, field, tuple[i])
@@ -126,11 +122,11 @@ class qNEWobj(pubkey.pubkey):
 
     def _sign(self, M, K=''):
         if (self.q <= K):
-            raise error, 'K is greater than q'
+            raise pubkey.CryptoPubkeyError('K is greater than q')
         if M < 0:
-            raise error, 'Illegal value of M (<0)'
+            raise pubkey.CryptoPubkeyError('Illegal value of M (<0)')
         if M >= pow(2, 161L):
-            raise error, 'Illegal value of M (too large)'
+            raise pubkey.CryptoPubkeyError('Illegal value of M (too large)')
         r = pow(self.g, K, self.p) % self.q
         s = (K - (r * M * self.x % self.q)) % self.q
         return (r, s)
@@ -140,7 +136,7 @@ class qNEWobj(pubkey.pubkey):
         if r <= 0 or r >= self.q or s <= 0 or s >= self.q:
             return 0
         if M < 0:
-            raise error, 'Illegal value of M (<0)'
+            raise pubkey.CryptoPubkeyError('Illegal value of M (<0)')
         if M <= 0 or M >= pow(2, 161L):
             return 0
         v1 = pow(self.g, s, self.p)
