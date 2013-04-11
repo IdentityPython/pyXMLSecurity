@@ -12,8 +12,9 @@
 
 __revision__ = "$Id: ElGamal.py,v 1.9 2003/04/04 19:44:26 akuchling Exp $"
 
-from .pubkey import *
+from . import pubkey
 from . import number
+from .number import bignum, getPrime, inverse, GCD
 
 
 class error(Exception):
@@ -80,7 +81,7 @@ def construct(tuple):
     return obj
 
 
-class ElGamalobj(pubkey):
+class ElGamalobj(pubkey.pubkey):
     keydata = ['p', 'g', 'y', 'x']
 
     def _encrypt(self, M, K):
@@ -99,7 +100,7 @@ class ElGamalobj(pubkey):
         if (not hasattr(self, 'x')):
             raise error, 'Private key not available in this object'
         p1 = self.p - 1
-        if (number.GCD(K, p1) != 1):
+        if (GCD(K, p1) != 1):
             raise error, 'Bad K value: GCD(K,p-1)!=1'
         a = pow(self.g, K, self.p)
         t = (M - self.x * a) % p1
