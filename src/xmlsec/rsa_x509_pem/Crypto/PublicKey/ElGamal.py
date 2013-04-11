@@ -99,7 +99,7 @@ class ElGamalobj(pubkey):
         if (not hasattr(self, 'x')):
             raise error, 'Private key not available in this object'
         p1 = self.p - 1
-        if (GCD(K, p1) != 1):
+        if (number.GCD(K, p1) != 1):
             raise error, 'Bad K value: GCD(K,p-1)!=1'
         a = pow(self.g, K, self.p)
         t = (M - self.x * a) % p1
