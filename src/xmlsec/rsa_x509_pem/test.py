@@ -113,6 +113,7 @@ class TestParse(unittest.TestCase):
             self.assertTrue(validity is not None)
             self.assertTrue(validity is validity2)
             self.assertEqual(validity['notAfter'], c.getNotAfter())
+            print c.getNotAfter()
             self.assertTrue(validity.getComponentByName('notBefore').getComponentByPosition(0))
             print "%s" % c['tbsCertificate']['subject'][0]
 
