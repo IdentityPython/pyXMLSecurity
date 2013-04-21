@@ -5,9 +5,7 @@ import copy
 import unittest
 import xmlsec
 import pkg_resources
-
-from xmlsec.test.case import XMLTestData, load_test_data
-from lxml.builder import ElementMaker
+from xmlsec.test.case import load_test_data
 
 
 def _get_all_signatures(t):
