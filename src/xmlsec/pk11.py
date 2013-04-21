@@ -143,7 +143,7 @@ _session_lock = threading.RLock()
 
 def _session(library, slot, pin=None):
     _session_lock.acquire()
-    if not _modules.has_key(library):
+    if not library in _modules:
         logging.debug("loading library %s" % library)
         lib = PyKCS11.PyKCS11Lib()
         lib.load(library)
