@@ -45,11 +45,11 @@ class TestTransforms(unittest.TestCase):
         expect = '<a foo="x ">bar <!-- d a dd a- --> </a>'
         self.assertEqual(_c14n_parse_test(data, remove_comments=False), expect)
 
+
 def _c14n_parse_test(data, remove_whitespace=True, remove_comments=True):
     xml = xmlsec.parse_xml(data, remove_whitespace=remove_whitespace, remove_comments=remove_comments)
     out = xmlsec._c14n(xml, False, with_comments=(not remove_comments))
-    print "C14N output (remove_whitespace={}, remove_comments={}) :\n{}".format( \
-        remove_whitespace, remove_comments, out)
+    print "C14N output (remove_whitespace={}, remove_comments={}) :\n{}".format(remove_whitespace, remove_comments, out)
     return out
 
 
