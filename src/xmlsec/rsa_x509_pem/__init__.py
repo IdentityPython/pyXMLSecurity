@@ -30,12 +30,12 @@ def parse(data):
     {str:str} as returned from appropriate *_parse parser
   """
     if "RSA PRIVATE" in data:
-        dict = rsa_pem.parse(data)
+        pdict = rsa_pem.parse(data)
     elif "CERTIFICATE" in data:
-        dict = x509_pem.parse(data)
+        pdict = x509_pem.parse(data)
     else:
         raise Exception("PEM data type not supported.")
-    return dict
+    return pdict
 
 
 def get_key(parse_dict):

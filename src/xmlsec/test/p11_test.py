@@ -33,7 +33,7 @@ P11_SPY = '/usr/lib/pkcs11/pkcs11-spy.so'
 try:
     import xmlsec.pk11 as pk11
 except Exception:
-    pass # catch you later
+    pass  # catch you later
 
 p11_test_files = []
 softhsm_conf = None
@@ -144,8 +144,7 @@ distinguished_name = req_distinguished_name
             '-inform', 'PEM',
             '-outform', 'DER',
             '-in', signer_cert_pem,
-            '-out', signer_cert_der
-        ])
+            '-out', signer_cert_der])
 
         logging.debug("Importing certificate into token")
 
@@ -290,11 +289,8 @@ class TestPKCS11(unittest.TestCase):
         os.environ['SOFTHSM_CONF'] = softhsm_conf
 
         signed = xmlsec.sign(case.as_etree('in.xml'),
-                             key_spec="pkcs11://%s:0/test?pin=secret1" % (P11_MODULE)
-        )
+                             key_spec="pkcs11://%s:0/test?pin=secret1" % P11_MODULE)
 
         # verify signature using the public key
-        res = xmlsec.verify(signed,
-                            signer_cert_pem,
-        )
+        res = xmlsec.verify(signed, signer_cert_pem)
         self.assertTrue(res)

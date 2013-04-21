@@ -37,11 +37,8 @@ class TestTransforms(unittest.TestCase):
 
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
-                             cert_spec=self.public_keyspec,
-        )
-        res = xmlsec.verify(signed,
-                            self.public_keyspec,
-        )
+                             cert_spec=self.public_keyspec)
+        res = xmlsec.verify(signed, self.public_keyspec)
         self.assertTrue(res)
 
     def test_sign_SAML_assertion1(self):
@@ -53,8 +50,7 @@ class TestTransforms(unittest.TestCase):
 
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
-                             cert_spec=self.public_keyspec,
-        )
+                             cert_spec=self.public_keyspec)
         expected = case.as_etree('out.xml')
 
         # extract 'SignatureValue's
@@ -74,8 +70,7 @@ class TestTransforms(unittest.TestCase):
         print("XML input :\n{}\n\n".format(case.as_buf('out.xml')))
 
         res = xmlsec.verify(case.as_etree('out.xml'),
-                            self.public_keyspec,
-        )
+                            self.public_keyspec)
         self.assertTrue(res)
 
     def test_verify_SAML_assertion2(self):
@@ -89,11 +84,8 @@ class TestTransforms(unittest.TestCase):
         case.data['out.xml'] = case.data['out.xml'].replace('>Bar<', '>Malory<')
 
         print("XML input :\n{}\n\n".format(case.as_buf('out.xml')))
-
         with self.assertRaises(xmlsec.XMLSigException):
-            xmlsec.verify(case.as_etree('out.xml'),
-                          self.public_keyspec,
-            )
+            xmlsec.verify(case.as_etree('out.xml'), self.public_keyspec)
 
 
 def main():

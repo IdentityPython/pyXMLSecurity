@@ -64,15 +64,15 @@ AttributeValue:\n\s+?
 
 # abbreviated code map
 X500_CODE_MAP = {
-    '2.5.4.3': 'CN', # commonName
-    '2.5.4.6': 'C', # countryName
-    '2.5.4.7': 'L', # localityName (City)
-    '2.5.4.8': 'ST', # stateOrProvinceName (State)
-    '2.5.4.9': 'STREET', # streetAddress
-    '2.5.4.10': 'O', # organizationName
-    '2.5.4.11': 'OU', # organizationalUnitName
-    '2.5.4.12': 'T', # title
-    '1.2.840.113549.1.9.1': 'E', # e-mailAddress
+    '2.5.4.3': 'CN',  # commonName
+    '2.5.4.6': 'C',  # countryName
+    '2.5.4.7': 'L',  # localityName (City)
+    '2.5.4.8': 'ST',  # stateOrProvinceName (State)
+    '2.5.4.9': 'STREET',  # streetAddress
+    '2.5.4.10': 'O',  # organizationName
+    '2.5.4.11': 'OU',  # organizationalUnitName
+    '2.5.4.12': 'T',  # title
+    '1.2.840.113549.1.9.1': 'E',  # e-mailAddress
 }
 
 
@@ -99,7 +99,7 @@ class AttributeValue(DirectoryString):
 class AttributeType(univ.ObjectIdentifier):
     def __str__(self):
         oid = '.'.join("%d" % x for x in self)
-        if X500_CODE_MAP.has_key(oid):
+        if oid in X500_CODE_MAP:
             return X500_CODE_MAP[oid]
         else:
             return oid
@@ -254,7 +254,7 @@ class Certificate(univ.Sequence):
     Returns:
       {str, value} where `value` is simple type like `long`
     """
-        dict = {}
+        cdict = {}
 
         # hack directly from prettyPrint
         # we just want to verify that this is RSA-SHA1 and get the public key
@@ -264,18 +264,18 @@ class Certificate(univ.Sequence):
             # rip out public key binary
         bits = RX_PUBLIC_KEY.search(text).group(1)
         binhex = hex(int(bits, 2))[2:-1]
-        bin = binhex.decode("hex")
+        bindata = binhex.decode("hex")
 
         # Get X509SubjectName string
         # fake this for now; generate later using RX
-        dict['subject'] = 'SubjectName'
+        cdict['subject'] = 'SubjectName'
 
-        # reparse RSA Public Key PEM binary
+        # re-parse RSA Public Key PEM binary
         pubkey = RSAPublicKey()
-        key = decoder.decode(bin, asn1Spec=pubkey)[0]
-        dict.update(key.dict())
+        key = decoder.decode(bindata, asn1Spec=pubkey)[0]
+        cdict.update(key.dict())
 
-        return dict
+        return cdict
 
 
 class RSAPublicKey(SequenceParser):
@@ -320,18 +320,16 @@ def parse(data):
       ['type'] = str of "X509 PRIVATE"
   """
     # initialize empty return dictionary
-    dict = {}
+    cdict = {}
 
     lines = []
     for s in data.splitlines():
         if '-----' == s[:5] and "BEGIN" in s:
             if not "CERTIFICATE" in s:
-                raise NotImplementedError( \
-                    "Only PEM Certificates are supported. Header: %s", s)
+                raise NotImplementedError("Only PEM Certificates are supported. Header: %s", s)
         elif '-----' == s[:5] and "END" in s:
             if not "CERTIFICATE" in s:
-                raise NotImplementedError( \
-                    "Only PEM Certificates are supported. Footer: %s", s)
+                raise NotImplementedError("Only PEM Certificates are supported. Footer: %s", s)
         else:
             # include this b64 data for decoding
             lines.append(s.strip())
@@ -355,19 +353,19 @@ def parse(data):
     # reparse RSA Public Key PEM binary
     key = decoder.decode(key_bin, asn1Spec=RSAPublicKey())[0]
     # add RSA key elements to return dictionary
-    dict.update(key.dict())
+    cdict.update(key.dict())
 
     # GET CERTIFICATE SUBJECT
     # =======================
     subject_text = RX_SUBJECT.search(text).group(0)
     attrs = RX_SUBJECT_ATTR.findall(subject_text)
-    dict['subject'] = rfc2253_name(attrs)
+    cdict['subject'] = rfc2253_name(attrs)
 
     # add base64 encoding and type to return dictionary
-    dict['body'] = body
-    dict['type'] = "X509 CERTIFICATE"
-    dict['cert'] = cert
-    return dict
+    cdict['body'] = body
+    cdict['type'] = "X509 CERTIFICATE"
+    cdict['cert'] = cert
+    return cdict
 
 
 def dict_to_tuple(dict):

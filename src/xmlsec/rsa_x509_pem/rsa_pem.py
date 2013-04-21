@@ -84,7 +84,7 @@ def parse(data, password=None):
       ['type'] = str of "RSA PRIVATE"
   """
     lines = []
-    type = None
+    ktype = None
     encryption = False
     # read in key lines from keydata string
     for s in data.splitlines():
@@ -92,11 +92,11 @@ def parse(data, password=None):
         if '-----' == s[:5] and "BEGIN" in s:
             # Detect RSA or DSA keys
             if "RSA" in s:
-                type = "RSA"
+                ktype = "RSA"
             elif "DSA" in s:
-                type = "DSA"
+                ktype = "DSA"
             else:
-                type = s.replace("-----", "")
+                ktype = s.replace("-----", "")
 
         # skip cryptographic headers
         elif ":" in s or " " in s:
@@ -116,20 +116,20 @@ def parse(data, password=None):
             "Symmetric encryption is not supported. DEK-Info: %s" % encryption)
 
     # decode data string using RSA
-    if type == 'RSA':
+    if ktype == 'RSA':
         asn1Spec = RSAPrivateParser()
     else:
-        raise NotImplementedError("Only RSA is supported. Type was %s." % type)
+        raise NotImplementedError("Only RSA is supported. Type was %s." % ktype)
 
     key = decoder.decode(raw_data, asn1Spec=asn1Spec)[0]
 
     # generate return dict base from key dict
-    dict = key.dict()
+    kdict = key.dict()
     # add base64 encoding and type to return dictionary
-    dict['body'] = body
-    dict['type'] = "RSA PRIVATE"
+    kdict['body'] = body
+    kdict['type'] = "RSA PRIVATE"
 
-    return dict
+    return kdict
 
 
 def dict_to_tuple(dict):

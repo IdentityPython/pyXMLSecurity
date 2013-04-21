@@ -27,12 +27,12 @@ class SequenceParser(univ.Sequence):
     Returns:
       {str, value} where `value` is simple type like `long`
     """
-        dict = {}
+        sdict = {}
         for i in range(len(self._componentValues)):
             if self._componentValues[i] is not None:
                 componentType = self.getComponentType()
                 if componentType is not None:
                     name = componentType.getNameByPosition(i)
                     value = self._componentValues[i]._value
-                    dict[name] = value
-        return dict
+                    sdict[name] = value
+        return sdict

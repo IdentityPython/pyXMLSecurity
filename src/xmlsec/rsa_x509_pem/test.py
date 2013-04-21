@@ -8,6 +8,7 @@
 #
 """Test RSA cryptographic PEM reader modules using example files.
 """
+from datetime import datetime
 import unittest
 import pkg_resources
 
@@ -50,7 +51,12 @@ X509_SUBJECT = "C=US,ST=Ohio,L=Columbus,CN=Andrew Yates,O=http://github.com/andr
 
 MSG1 = "Hello, World!"
 MSG2 = "This is a test message to sign."
-MSG_LONG = "I dedicate this essay to the two-dozen-odd people whose refutations of Cantor’s diagonal argument have come to me either as referee or as editor in the last twenty years or so. Sadly these submissions were all quite unpublishable; I sent them back with what I hope were helpful comments. A few years ago it occurred to me to wonder why so many people devote so much energy to refuting this harmless little argument — what had it done to make them angry with it? So I started to keep notes of these papers, in the hope that some pattern would emerge. These pages report the results."
+MSG_LONG = """I dedicate this essay to the two-dozen-odd people whose refutations of Cantor’s diagonal
+argument have come to me either as referee or as editor in the last twenty years or so. Sadly these
+submissions were all quite unpublishable; I sent them back with what I hope were helpful comments. A
+few years ago it occurred to me to wonder why so many people devote so much energy to refuting this
+harmless little argument — what had it done to make them angry with it? So I started to keep notes
+of these papers, in the hope that some pattern would emerge. These pages report the results."""
 
 DUMMY_SIG = (1234567890,)
 
@@ -68,53 +74,54 @@ class TestParse(unittest.TestCase):
         for key, cert in KEY_FILE_PAIRS:
             data = self.data[key]
             self.assertTrue(data)
-            dict = rsa_pem.parse(data)
-            self.assertTrue(dict)
+            kdict = rsa_pem.parse(data)
+            self.assertTrue(kdict)
             # 20 chars is enough of a sanity check
-            self.assertTrue(dict['body'][:20] in data)
-            self.assertEqual(dict['type'], "RSA PRIVATE")
+            self.assertTrue(kdict['body'][:20] in data)
+            self.assertEqual(kdict['type'], "RSA PRIVATE")
 
     def test_key_parse_elements(self):
         for key, cert in KEY_FILE_PAIRS:
             data = self.data[key]
-            dict = rsa_pem.parse(data)
+            kdict = rsa_pem.parse(data)
             for part, dtype in RSA_PARTS:
-                self.assertTrue(part in dict)
-                self.assertTrue(isinstance(dict[part], dtype))
+                self.assertTrue(part in kdict)
+                self.assertTrue(isinstance(kdict[part], dtype))
 
     def test_cert_parse(self):
         for key, cert in KEY_FILE_PAIRS:
             data = self.data[cert]
             self.assertTrue(data)
-            dict = x509_pem.parse(data)
-            self.assertTrue(dict)
+            cdict = x509_pem.parse(data)
+            self.assertTrue(cdict)
             # 20 chars is enough of a sanity check
-            self.assertTrue(dict['body'][:20] in data)
-            self.assertEqual(dict['type'], "X509 CERTIFICATE")
+            self.assertTrue(cdict['body'][:20] in data)
+            self.assertEqual(cdict['type'], "X509 CERTIFICATE")
 
     def test_cert_parse_elements(self):
         for key, cert in KEY_FILE_PAIRS:
             data = self.data[cert]
-            dict = x509_pem.parse(data)
-            self.assertEqual(dict['subject'], X509_SUBJECT)
-            self.assertTrue(dict['cert'] is not None)
+            cdict = x509_pem.parse(data)
+            self.assertEqual(cdict['subject'], X509_SUBJECT)
+            self.assertTrue(cdict['cert'] is not None)
             for part, dtype in X509_PARTS:
-                self.assertTrue(part in dict)
-                self.assertTrue(isinstance(dict[part], dtype))
+                self.assertTrue(part in cdict)
+                self.assertTrue(isinstance(cdict[part], dtype))
 
     def test_cert_parse_components(self):
         for key, cert in KEY_FILE_PAIRS:
             data = self.data[cert]
-            dict = x509_pem.parse(data)
-            self.assertTrue(dict['cert'] is not None)
-            c = dict['cert']
+            cdict = x509_pem.parse(data)
+            self.assertTrue(cdict['cert'] is not None)
+            c = cdict['cert']
             validity = c.getComponentByName('tbsCertificate').getComponentByName('validity')
             validity2 = c['tbsCertificate']['validity']
             self.assertTrue(validity is not None)
             self.assertTrue(validity is validity2)
             self.assertEqual(validity['notAfter'], c.getNotAfter())
-            print c.getNotAfter()
             self.assertTrue(validity.getComponentByName('notBefore').getComponentByPosition(0))
+            et = datetime.strptime("%s" % c.getNotAfter(), "%y%m%d%H%M%SZ")
+            print et
             print "%s" % c['tbsCertificate']['subject'][0]
 
 
@@ -164,12 +171,12 @@ class TestRSAKey(unittest.TestCase):
     def setUp(self):
         self.keys = {}
         for key, cert in KEY_FILE_PAIRS:
-            dict = rsa_pem.parse(pkg_resources.resource_stream(__name__, key).read())
-            t = rsa_pem.dict_to_tuple(dict)
+            cdict = rsa_pem.parse(pkg_resources.resource_stream(__name__, key).read())
+            t = rsa_pem.dict_to_tuple(cdict)
             self.keys[key] = RSA.construct(t)
 
-            dict = x509_pem.parse(pkg_resources.resource_stream(__name__, cert).read())
-            t = x509_pem.dict_to_tuple(dict)
+            cdict = x509_pem.parse(pkg_resources.resource_stream(__name__, cert).read())
+            t = x509_pem.dict_to_tuple(cdict)
             self.keys[cert] = RSA.construct(t)
 
     def test_key_encryption(self):
