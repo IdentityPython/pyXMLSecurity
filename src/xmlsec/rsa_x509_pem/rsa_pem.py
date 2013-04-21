@@ -15,11 +15,14 @@ source code example "pyasn1/examples/sshkey.py" [pyasn1].
 
 USE:
 
->>> data = open("cert.pem").read()
-... dict = rsa_pem.parse(data)
-... n = dict['modulus']
-... e = dict['publicExponent']
-... d = dict['privateExponent']
+.. code-block:: python
+
+data = open("cert.pem").read()
+dict = rsa_pem.parse(data)
+n = dict['modulus']
+e = dict['publicExponent']
+d = dict['privateExponent']
+
 
 REFERENCES:
 
@@ -27,15 +30,14 @@ pyasn1
 "ASN.1 tools for Python"
 http://pyasn1.sourceforge.net/
 """
-from .pyasn1.type import univ, namedtype, namedval, constraint
-from .pyasn1.codec.der import encoder, decoder
-
-from .sequence_parser import SequenceParser
+from .pyasn1.type import univ, namedtype, namedval
+from .pyasn1.codec.der import decoder
+from . import sequence_parser
 
 MAX = 16
 
 
-class RSAPrivateParser(SequenceParser):
+class RSAPrivateParser(sequence_parser.SequenceParser):
     """PKCS#1 compliant RSA private key structure.
   """
     componentType = namedtype.NamedTypes(
@@ -112,8 +114,7 @@ def parse(data, password=None):
 
     # Private Key cipher (Not Handled)
     if encryption:
-        raise NotImplementedError( \
-            "Symmetric encryption is not supported. DEK-Info: %s" % encryption)
+        raise NotImplementedError("Symmetric encryption is not supported. DEK-Info: %s" % encryption)
 
     # decode data string using RSA
     if ktype == 'RSA':
