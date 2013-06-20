@@ -1,3 +1,6 @@
+from lxml import etree
+from pyff.utils import root
+
 __author__ = 'ft'
 
 import os
@@ -38,6 +41,27 @@ class TestTransforms(unittest.TestCase):
                              cert_spec=self.public_keyspec)
         res = xmlsec.verify(signed, self.public_keyspec)
         self.assertTrue(res)
+
+    def test_sign_verify_SAML_assertion_unwrap2(self):
+        """
+        Test signing a SAML assertion, and making sure we can verify it.
+        """
+        case = self.cases['SAML_assertion1']
+        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+
+        tbs = case.as_etree('in.xml')
+        signed = xmlsec.sign(tbs,
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+        refs = xmlsec.verified(signed, self.public_keyspec)
+        self.assertTrue(len(refs) == 1)
+        print("verified XML: %s" % etree.tostring(refs[0]))
+        self.assertTrue(tbs.tag == refs[0].tag)
+        set1 = set(etree.tostring(i, method='c14n') for i in root(tbs))
+        set2 = set(etree.tostring(i, method='c14n') for i in root(refs[0]))
+        print(set1)
+        print(set2)
+        self.assertTrue(set1 == set2)
 
     def test_sign_SAML_assertion1(self):
         """

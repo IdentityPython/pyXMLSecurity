@@ -281,7 +281,7 @@ def _remove_child_comments(t):
     return t
 
 
-def _process_references(t, sig=None):
+def _process_references(t, sig=None, return_verified=True):
     """
     :returns: hash algorithm as string
     """
@@ -290,6 +290,7 @@ def _process_references(t, sig=None):
     hash_alg = None
     for ref in sig.findall(".//{%s}Reference" % NS['ds']):
         obj = None
+        verified = None
         uri = ref.get('URI', None)
         if uri is None or uri == '#' or uri == '':
             ct = _remove_child_comments(_root(copy.deepcopy(t)))
@@ -302,6 +303,9 @@ def _process_references(t, sig=None):
 
         if obj is None:
             raise XMLSigException("Unable to dereference Reference URI='%s'" % uri)
+
+        if return_verified:
+            verified = copy.deepcopy(obj)
 
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
             logging.debug("transform: %s" % _alg(tr))
@@ -325,7 +329,11 @@ def _process_references(t, sig=None):
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
         logging.debug(etree.tostring(dv))
         dv.text = digest
-    return hash_alg
+
+    if return_verified:
+        return hash_alg, verified
+    else:
+        return hash_alg
 
 ##
 # Removes HTML or XML character references and entities from a text string.
@@ -470,7 +478,7 @@ def b642cert(data):
     return rsa_x509_pem.parse(b642pem(data))
 
 
-def verify(t, keyspec):
+def _verify(t, keyspec):
     """
     Verify the signature(s) in an XML document.
 
@@ -487,8 +495,7 @@ def verify(t, keyspec):
     # Load and parse certificate, unless keyspec is a fingerprint.
     cert = _load_keyspec(keyspec)
 
-    validated = False
-
+    validated = []
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
         if sv is None:
@@ -514,7 +521,7 @@ def verify(t, keyspec):
         if this_cert is None:
             raise XMLSigException("Could not find certificate to validate signature")
 
-        hash_alg = _process_references(t, sig)
+        hash_alg, ref = _process_references(t, sig)
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         b_digest = _create_signature_digest(si, hash_alg)
 
@@ -523,9 +530,17 @@ def verify(t, keyspec):
 
         if expected != actual:
             raise XMLSigException("Signature validation failed")
-        validated = True
+        validated.append(ref)
 
     return validated
+
+
+def verify(t, keyspec):
+    return len(_verify(t, keyspec)) > 0
+
+
+def verified(t, keyspec):
+    return _verify(t, keyspec)
 
 
 ## TODO - support transforms with arguments
@@ -597,7 +612,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
             fd.write(etree.tostring(_root(t)))
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
-        hash_alg = _process_references(t, sig)
+        hash_alg = _process_references(t, sig, return_verified=False)
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         b_digest = _create_signature_digest(si, hash_alg)
 
