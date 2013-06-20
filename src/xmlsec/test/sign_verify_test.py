@@ -76,9 +76,17 @@ class TestTransforms(unittest.TestCase):
         refs = xmlsec.verified(attack, self.public_keyspec)
         self.assertTrue(len(refs) == 1)
         print("verified XML: %s" % etree.tostring(refs[0]))
+        seen_foo = False
+        seen_bar = False
         for av in refs[0].findall(".//{%s}AttributeValue" % 'urn:oasis:names:tc:SAML:2.0:assertion'):
+            print(etree.tostring(av))
+            print(av.text)
+            if av.text == 'Foo':
+                seen_foo = True
+            elif av.text == 'Bar':
+                seen_bar = True
             self.assertTrue(av.text != 'admin')
-
+        self.assertTrue(seen_foo and seen_bar)
 
     def test_sign_SAML_assertion1(self):
         """
