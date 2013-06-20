@@ -63,7 +63,7 @@ class TestTransforms(unittest.TestCase):
 
     def test_wrapping_attack(self):
         """
-        Safe from attempted wrapping attack
+        Test resistance to attempted wrapping attack
         """
         case = self.cases['SAML_assertion1']
         print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
