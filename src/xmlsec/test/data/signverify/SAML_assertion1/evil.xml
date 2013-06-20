@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:Assertion xmlns:ns0="urn:oasis:names:tc:SAML:2.0:assertion"
+               xmlns:ns1="http://www.w3.org/2000/09/xmldsig#"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               ID="drevil">
+  <ns0:AttributeStatement>
+    <ns0:Attribute FriendlyName="role" NameFormat="">
+      <ns0:AttributeValue xsi:nil="true" xsi:type="xs:string">admin</ns0:AttributeValue>
+    </ns0:Attribute>
+  </ns0:AttributeStatement>
+</ns0:Assertion>

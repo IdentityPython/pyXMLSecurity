@@ -44,7 +44,7 @@ class TestTransforms(unittest.TestCase):
 
     def test_sign_verify_SAML_assertion_unwrap2(self):
         """
-        Test signing a SAML assertion, and making sure we can verify it.
+        Test signing a SAML assertion, and return verified data.
         """
         case = self.cases['SAML_assertion1']
         print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
@@ -59,9 +59,26 @@ class TestTransforms(unittest.TestCase):
         self.assertTrue(tbs.tag == refs[0].tag)
         set1 = set(etree.tostring(i, method='c14n') for i in root(tbs))
         set2 = set(etree.tostring(i, method='c14n') for i in root(refs[0]))
-        print(set1)
-        print(set2)
         self.assertTrue(set1 == set2)
+
+    def test_wrapping_attack(self):
+        """
+        Safe from attempted wrapping attack
+        """
+        case = self.cases['SAML_assertion1']
+        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        tbs = case.as_etree('in.xml')
+        signed = xmlsec.sign(tbs,
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+        attack = case.as_etree('evil.xml')
+        attack.append(signed)
+        refs = xmlsec.verified(attack, self.public_keyspec)
+        self.assertTrue(len(refs) == 1)
+        print("verified XML: %s" % etree.tostring(refs[0]))
+        for av in refs[0].findall(".//{%s}AttributeValue" % 'urn:oasis:names:tc:SAML:2.0:assertion'):
+            self.assertTrue(av.text != 'admin')
+
 
     def test_sign_SAML_assertion1(self):
         """
