@@ -71,7 +71,10 @@ News
 * Multiple bugfixes
 * More SAML and P11 testcases
 
-0.9dev
+0.9
 ---
 
-*Release date: UNRELEASED*
+*Release date: Mon Jun 24 11:24:20 CEST 2013*
+
+* Bugfixes
+* Protection against wrapping attacks (new API!)
