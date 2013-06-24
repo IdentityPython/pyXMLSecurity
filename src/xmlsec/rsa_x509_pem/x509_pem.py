@@ -73,6 +73,7 @@ X500_CODE_MAP = {
     '2.5.4.11': 'OU',  # organizationalUnitName
     '2.5.4.12': 'T',  # title
     '1.2.840.113549.1.9.1': 'E',  # e-mailAddress
+    '2.5.4.17': 'postalAddress'
 }
 
 
@@ -300,7 +301,7 @@ def rfc2253_name(map):
   """
     pairs = []
     for code, value in map:
-        s = "%s=%s" % (X500_CODE_MAP[code], value.replace(',', '\,'))
+        s = "%s=%s" % (X500_CODE_MAP.get(code, code), value.replace(',', '\,'))
         pairs.append(s)
     name = ','.join(pairs)
     return name

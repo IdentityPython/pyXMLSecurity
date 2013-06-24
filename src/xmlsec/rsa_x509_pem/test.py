@@ -98,6 +98,12 @@ class TestParse(unittest.TestCase):
             self.assertTrue(cdict['body'][:20] in data)
             self.assertEqual(cdict['type'], "X509 CERTIFICATE")
 
+    def test_parse_haka_cert(self):
+        haka = pkg_resources.resource_stream(__name__, 'keys/haka-sign-v2.pem').read()
+        self.assertTrue(haka)
+        cdict = x509_pem.parse(haka)
+        self.assertTrue(cdict)
+
     def test_cert_parse_elements(self):
         for key, cert in KEY_FILE_PAIRS:
             data = self.data[cert]
