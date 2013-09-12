@@ -324,18 +324,23 @@ def parse(data):
     cdict = {}
 
     lines = []
+    grab = False
     for s in data.splitlines():
         if '-----' == s[:5] and "BEGIN" in s:
             if not "CERTIFICATE" in s:
                 raise NotImplementedError("Only PEM Certificates are supported. Header: %s", s)
+            grab = True
         elif '-----' == s[:5] and "END" in s:
             if not "CERTIFICATE" in s:
                 raise NotImplementedError("Only PEM Certificates are supported. Footer: %s", s)
+            grab = False
         else:
             # include this b64 data for decoding
-            lines.append(s.strip())
+            if grab:
+                lines.append(s.strip())
 
     body = ''.join(lines)
+    print body
     raw_data = body.decode("base64")
 
     cert = decoder.decode(raw_data, asn1Spec=Certificate())[0]

@@ -104,6 +104,12 @@ class TestParse(unittest.TestCase):
         cdict = x509_pem.parse(haka)
         self.assertTrue(cdict)
 
+    def test_parse_steria_cert(self):
+        haka = pkg_resources.resource_stream(__name__, 'keys/steria.pem').read()
+        self.assertTrue(haka)
+        cdict = x509_pem.parse(haka)
+        self.assertTrue(cdict)
+
     def test_cert_parse_elements(self):
         for key, cert in KEY_FILE_PAIRS:
             data = self.data[cert]
