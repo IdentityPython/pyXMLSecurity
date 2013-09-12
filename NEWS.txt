@@ -79,5 +79,15 @@ News
 * Bugfixes
 * Protection against wrapping attacks (new API!)
 
-0.10dev
-----
+0.10.0
+------
+
+*Release date: Thu Sep 12 20:16:04 CEST 2013*
+
+* fix PEM parser bug
+* switch to semantic versioning
+
+0.10.1dev
+---------
+
+* UNRELEASED
