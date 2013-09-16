@@ -319,6 +319,7 @@ def parse(data):
       ['subject'] = str of compiled subject in rfc2253 format
       ['body'] = str of X509 DER binary in base64
       ['type'] = str of "X509 PRIVATE"
+      ['pem'] = PEM format
   """
     # initialize empty return dictionary
     cdict = {}
@@ -340,7 +341,7 @@ def parse(data):
                 lines.append(s.strip())
 
     body = ''.join(lines)
-    print body
+    pem = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----\n" % "\n".join(lines)
     raw_data = body.decode("base64")
 
     cert = decoder.decode(raw_data, asn1Spec=Certificate())[0]
@@ -368,7 +369,9 @@ def parse(data):
     cdict['subject'] = rfc2253_name(attrs)
 
     # add base64 encoding and type to return dictionary
+
     cdict['body'] = body
+    cdict['pem'] = pem
     cdict['type'] = "X509 CERTIFICATE"
     cdict['cert'] = cert
     return cdict

@@ -106,7 +106,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
     Possible keyspecs, in evaluation order :
 
       - a callable.    Return a partial dict with 'f_private' set to the keyspec.
-      - a filename.    Load an X.509 certificate from the file.
+      - a filename.    Load a PEM X.509 certificate from the file.
       - a PKCS#11-URI  (see xmlsec.pk11.parse_uri()). Return a dict with 'f_private'
                        set to a function calling the 'sign' function for the key,
                        and the rest based on the (public) key returned by
@@ -168,13 +168,14 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
 
     res = {'keyspec': keyspec,
            'source': source,
-           'data': data,
            'key': key,
            'keysize': int(key.size()) + 1}
 
     if private:
         res['f_private'] = key_f_private or rsa_x509_pem.f_private(key)
+        res['data'] = data  # TODO - normalize private keyspec too!
     else:
+        res['data'] = cert_pem['pem']  # normalized PEM
         res['f_public'] = rsa_x509_pem.f_public(key)
 
     return res
@@ -597,11 +598,10 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
 
     public = _load_keyspec(cert_spec)
     if public is None:
-        raise XMLSigException("Unable to load public key from '%s'" \
-                              % (cert_spec))
+        raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
     if public['keysize'] != private['keysize']:
-        raise XMLSigException("Public and private key sizes do not match (%s, %s)" \
-                                  % (public['keysize'], private['keysize']))
+        raise XMLSigException("Public and private key sizes do not match (%s, %s)"
+                              % (public['keysize'], private['keysize']))
     logging.debug("Using %s bit key" % (private['keysize']))
 
     if t.find(".//{%s}Signature" % NS['ds']) is None:
