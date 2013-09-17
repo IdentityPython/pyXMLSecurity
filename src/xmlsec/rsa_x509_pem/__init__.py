@@ -35,7 +35,6 @@ def parse(data):
         pdict = x509_pem.parse(data)
     else:
         raise Exception("PEM data type not supported.")
-    print pdict
     return pdict
 
 

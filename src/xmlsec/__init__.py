@@ -570,7 +570,7 @@ def add_enveloped_signature(t,
                             c14n_method=TRANSFORM_C14N_INCLUSIVE,
                             digest_alg=ALGORITHM_DIGEST_SHA1,
                             transforms=None,
-                            reference_uri="",
+                            reference_uri='',
                             pos=0):
     if transforms is None:
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
