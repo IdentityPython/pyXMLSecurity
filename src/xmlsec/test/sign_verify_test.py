@@ -1,5 +1,4 @@
 from lxml import etree
-from pyff.utils import root
 
 __author__ = 'ft'
 
@@ -9,6 +8,12 @@ import unittest
 import xmlsec
 import pkg_resources
 from xmlsec.test.case import load_test_data
+
+def root(t):
+    if hasattr(t, 'getroot') and hasattr(t.getroot, '__call__'):
+        return t.getroot()
+    else:
+        return t
 
 
 def _get_all_signatures(t):
