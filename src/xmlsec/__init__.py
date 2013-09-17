@@ -566,11 +566,15 @@ def _enveloped_signature_template(c14n_method, digest_alg, transforms, reference
     )
 
 
-def add_enveloped_signature(t, c14n_method=TRANSFORM_C14N_INCLUSIVE, digest_alg=ALGORITHM_DIGEST_SHA1, transforms=None,
-                            reference_uri=""):
+def add_enveloped_signature(t,
+                            c14n_method=TRANSFORM_C14N_INCLUSIVE,
+                            digest_alg=ALGORITHM_DIGEST_SHA1,
+                            transforms=None,
+                            reference_uri="",
+                            pos=0):
     if transforms is None:
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
-    _root(t).insert(0, _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
+    _root(t).insert(pos, _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
 
 
 def sign(t, key_spec, cert_spec=None, reference_uri=''):
