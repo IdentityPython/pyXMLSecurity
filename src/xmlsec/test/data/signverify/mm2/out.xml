@@ -1,0 +1,17 @@
+<SignedDelivery xmlns="http://minameddelanden.gov.se/schema/Message"><Delivery><Header><Sender><Id xmlns="http://minameddelanden.gov.se/schema/Sender">162021003898</Id><Name xmlns="http://minameddelanden.gov.se/schema/Sender">Kommun B</Name></Sender><Recipient>192705178354</Recipient></Header><Message><Header><Id>0ffdfe95-e3ce-431e-9285-fdb26b5a3d5c</Id><Subject>Test-skicka</Subject><Supportinfo><Text>Vänd er till X om ni har frågor angående detta meddelande</Text><URL>http://www.kommun_b.se</URL><PhoneNumber>08-12121212</PhoneNumber><EmailAdress>info@kommun_b.se</EmailAdress></Supportinfo><Language>svSE</Language></Header><Body><ContentType>text/plain</ContentType><Body>RXR0IGxpdGV0IHPDpGtlcnQgbWVkZGVsYW5kZSBmcsOlbiBNaW5hTWVkZGVsYW5kZW4h</Body></Body></Message></Delivery><Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>Ng5AuHcdvwqo44n1VTGj5oHDdL8=</DigestValue></Reference></SignedInfo><SignatureValue>kzNHAYEUZSoBrpfazrJuJ2GEVYZ3g13ph8ccboRaXfZmjLFsAjBoYnj6pYd0dQ/z7dUeh4KkvAiR
+uJ5+reOiL4P6EAaxRA8P+/ANCsl4GYqCenaQHGkRZfVbDsUhRdnLc6fS5P5F15kImD/oPcemBVPN
+ADYf8UP1uIcUABetie8=</SignatureValue><KeyInfo><X509Data><X509SubjectName>2.5.4.5=#130c313632303231303033383938+CN=notarealhost.kommun-b.se,OU=Kommun B IT TEST,O=Kommun B,C=SE</X509SubjectName><X509Certificate>MIIDNDCCAp2gAwIBAgICBywwDQYJKoZIhvcNAQEFBQAwQTELMAkGA1UEBhMCU0UxEjAQBgNVBAoT
+CVN0ZXJpYSBBQjEeMBwGA1UEAxMVU3RlcmlhIEFCIEVJRCBUZXN0IHYxMB4XDTEzMDEyMTEzMDk0
+NloXDTE0MDkwMTEyMDk1NVowczELMAkGA1UEBhMCU0UxETAPBgNVBAoTCEtvbW11biBCMRkwFwYD
+VQQLExBLb21tdW4gQiBJVCBURVNUMTYwEwYDVQQFEwwxNjIwMjEwMDM4OTgwHwYDVQQDExhub3Rh
+cmVhbGhvc3Qua29tbXVuLWIuc2UwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAOV9Ud0xIzjj
+cxtGp1Wy15t/lHMb6YuqMfRn6wekeZadJ7oex3ysDDnujaQYzeBXHG1HQvc3SC0XrCSP0Prcy9F/
+y0DTNoDHbdysvps//tY7uDRU6L2B3rjbjeaNm/yL24Xr4rqmy7xOH1F0HRDg0qtOd+Cr/pTGHROr
+PBJS3QJfAgMBAAGjggEHMIIBAzAfBgNVHSMEGDAWgBRBSJ7t8lUr5oUBM3/jDueuT3QVVzAdBgNV
+HQ4EFgQUTRy7iXwVpr2kVUkMNGOUGcf8q2QwDgYDVR0PAQH/BAQDAgWgMBUGA1UdIAQOMAwwCgYI
+KoVwNgkCDgEwgZkGA1UdHwSBkTCBjjBFoEOgQYY/aHR0cDovL2NkcDMuc3RlcmlhLnNlL2NkcC9w
+a2kvU3RlcmlhJTIwQUIlMjBFSUQlMjBUZXN0JTIwdjEuY3JsMEWgQ6BBhj9odHRwOi8vY2RwMS5z
+dGVyaWEuc2UvY2RwL2VpZC9TdGVyaWElMjBBQiUyMEVJRCUyMFRlc3QlMjB2MS5jcmwwDQYJKoZI
+hvcNAQEFBQADgYEAKWqu2GO+ZrZy9tAOKvBf4qfYC/PprYS820+5KPytMtrJGROupXQEjELl2J7S
+JH2QhhyfA4zLXVTMdeWacaDDZpFvzEXUIl2CylL8dO5J9eMGPqaOXSnjP8XMwNAZVY7o7AO45oMf
+2L9lfXbvRyXDEmRf5IBkhdjRPZ64PJd4GVY=</X509Certificate></X509Data></KeyInfo></Signature></SignedDelivery>

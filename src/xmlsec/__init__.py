@@ -33,7 +33,7 @@ ASN1_BER_ALG_DESIGNATOR_PREFIX = {
 
 TRANSFORM_ENVELOPED_SIGNATURE = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature'
 TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS = 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments'
-TRANSFORM_C14N_EXCLUSIVE = 'http://www.w3.org/2001/10/xml-exc-c14n'
+TRANSFORM_C14N_EXCLUSIVE = 'http://www.w3.org/2001/10/xml-exc-c14n#'
 TRANSFORM_C14N_INCLUSIVE = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'
 
 ALGORITHM_DIGEST_SHA1 = "http://www.w3.org/2000/09/xmldsig#sha1"
@@ -271,7 +271,7 @@ def _alg(elt):
     if uri is None:
         return None
     else:
-        return uri.rstrip('#')
+        return uri
 
 
 def _remove_child_comments(t):
@@ -313,8 +313,7 @@ def _process_references(t, sig=None, return_verified=True):
             obj = _transform(_alg(tr), obj, tr)
 
         if not isinstance(obj, basestring):
-            cm_alg = _cm_alg(sig)
-            obj = _transform(cm_alg, obj, None)
+            obj = _unescape(etree.tostring(obj).decode("utf8", 'replace')).encode("utf8").strip()
 
         if _DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-obj.xml", "w") as fd:
@@ -401,7 +400,6 @@ def _enveloped_signature(t):
             fd.write(etree.tostring(t))
     return t
 
-
 def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
     """
     Perform XML canonicalization (c14n) on an lxml.etree.
@@ -426,7 +424,6 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
 
 
 def _transform(uri, t, tr=None):
-    print "transform: %s" % uri
     if uri == TRANSFORM_ENVELOPED_SIGNATURE:
         return _enveloped_signature(t)
 

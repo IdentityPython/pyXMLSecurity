@@ -146,6 +146,34 @@ class TestTransforms(unittest.TestCase):
                              cert_spec=self.public_keyspec)
         print etree.tostring(signed)
 
+    def test_mm2(self):
+        case = self.cases['mm2']
+        t = case.as_etree('in.xml')
+        xmlsec.add_enveloped_signature(t,
+                                       pos=-1,
+                                       c14n_method=xmlsec.TRANSFORM_C14N_EXCLUSIVE,
+                                       transforms=[xmlsec.TRANSFORM_ENVELOPED_SIGNATURE])
+        signed = xmlsec.sign(t,
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+
+        expected = case.as_etree('out2.xml')
+
+        print " --- Expected"
+        print etree.tostring(expected)
+        print " --- Actual"
+        print etree.tostring(signed)
+
+        # extract 'SignatureValue's
+        expected_sv = _get_all_signatures(expected)
+        signed_sv = _get_all_signatures(signed)
+
+        print "Signed   SignatureValue: %s" % (repr(signed_sv))
+        print "Expected SignatureValue: %s" % (repr(expected_sv))
+
+        self.assertEqual(signed_sv, expected_sv)
+
+
 
 def main():
     unittest.main()
