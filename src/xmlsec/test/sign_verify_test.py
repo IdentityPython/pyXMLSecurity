@@ -139,6 +139,13 @@ class TestTransforms(unittest.TestCase):
         with self.assertRaises(xmlsec.XMLSigException):
             xmlsec.verify(case.as_etree('out.xml'), self.public_keyspec)
 
+    def test_mm1(self):
+        case = self.cases['mm1']
+        signed = xmlsec.sign(case.as_etree('in.xml'),
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+        print etree.tostring(signed)
+
 
 def main():
     unittest.main()

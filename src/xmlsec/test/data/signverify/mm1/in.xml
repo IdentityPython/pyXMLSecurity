@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<arg0 xmlns:ns4="http://minameddelanden.gov.se/schema/Message">
+  <ns4:Delivery>
+    <ns4:Header>
+      <ns4:Sender>
+        <ns0:Id xmlns:ns0="http://minameddelanden.gov.se/schema/Sender">162021003898</ns0:Id>
+        <ns1:Name xmlns:ns1="http://minameddelanden.gov.se/schema/Sender">Kommun B</ns1:Name>
+      </ns4:Sender>
+      <ns4:Recipient>192705178354</ns4:Recipient>
+    </ns4:Header>
+    <ns4:Message>
+      <ns4:Header>
+        <ns4:Id>59cbd851-1fa1-11e3-a10d-542696cf5deb</ns4:Id>
+        <ns4:Subject>Test-dela-ut</ns4:Subject>
+        <ns4:Supportinfo>
+          <ns4:Text>Detta e en test, fixa utf8</ns4:Text>
+          <ns4:URL>http://www.kommun_b.se</ns4:URL>
+          <ns4:PhoneNumber>08-512121212</ns4:PhoneNumber>
+          <ns4:EmailAdress>woot@woot.com</ns4:EmailAdress>
+        </ns4:Supportinfo>
+        <ns4:Language>svSE</ns4:Language>
+      </ns4:Header>
+      <ns4:Body>
+        <ns4:ContentType>text/plain</ns4:ContentType>
+        <ns4:Body>RXR0IGxpdGV0IHPDpGtlcnQgbWVkZGVsYW5kZSBmcsOlbiBNaW5hTWVkZGVsYW5kZW4h</ns4:Body>
+      </ns4:Body>
+    </ns4:Message>
+  </ns4:Delivery>
+    <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+    <ds:SignedInfo>
+      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+      <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+      <ds:Reference URI="">
+        <ds:Transforms>
+          <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+        </ds:Transforms>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+        <ds:DigestValue/>
+      </ds:Reference>
+    </ds:SignedInfo>
+  </ds:Signature>
+</arg0>

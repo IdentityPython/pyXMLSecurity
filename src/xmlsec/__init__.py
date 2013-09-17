@@ -312,6 +312,10 @@ def _process_references(t, sig=None, return_verified=True):
             logging.debug("transform: %s" % _alg(tr))
             obj = _transform(_alg(tr), obj, tr)
 
+        if not isinstance(obj, basestring):
+            cm_alg = _cm_alg(sig)
+            obj = _transform(cm_alg, obj, None)
+
         if _DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-obj.xml", "w") as fd:
                 fd.write(obj)
@@ -422,6 +426,7 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
 
 
 def _transform(uri, t, tr=None):
+    print "transform: %s" % uri
     if uri == TRANSFORM_ENVELOPED_SIGNATURE:
         return _enveloped_signature(t)
 
@@ -524,7 +529,8 @@ def _verify(t, keyspec):
 
         hash_alg, ref = _process_references(t, sig)
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        b_digest = _create_signature_digest(si, hash_alg)
+        cm_alg = _cm_alg(si)
+        b_digest = _create_signature_digest(si, cm_alg, hash_alg)
 
         actual = _signed_value(b_digest, this_keysize, True, hash_alg)
         expected = this_f_public(b64d(sv))
@@ -574,7 +580,10 @@ def add_enveloped_signature(t,
                             pos=0):
     if transforms is None:
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
-    _root(t).insert(pos, _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
+    if pos == -1:
+        _root(t).append(_enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
+    else:
+        _root(t).insert(pos, _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
 
 
 def sign(t, key_spec, cert_spec=None, reference_uri=''):
@@ -617,10 +626,12 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
 
     for sig in t.findall(".//{%s}Signature" % NS['ds']):
         hash_alg = _process_references(t, sig, return_verified=False)
+        # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        b_digest = _create_signature_digest(si, hash_alg)
+        cm_alg = _cm_alg(si)
+        b_digest = _create_signature_digest(si, cm_alg, hash_alg)
 
-        # RSA sign hash digest and insert it into the XML
+        # sign hash digest and insert it into the XML
         tbs = _signed_value(b_digest, private['keysize'], do_padding, hash_alg)
         signed = private['f_private'](tbs)
         signature = b64e(signed)
@@ -635,14 +646,18 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
     return t
 
 
-def _create_signature_digest(si, hash_alg):
-    """
-    :param hash_alg: string such as 'sha1'
-    """
+def _cm_alg(si):
     cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
     cm_alg = _alg(cm)
     if cm is None or cm_alg is None:
         raise XMLSigException("No CanonicalizationMethod")
+    return cm_alg
+
+
+def _create_signature_digest(si, cm_alg, hash_alg):
+    """
+    :param hash_alg: string such as 'sha1'
+    """
     sic = _transform(cm_alg, si)
     logging.debug("SignedInfo C14N: %s" % sic)
     digest = _digest(sic, hash_alg)
