@@ -1,0 +1,15 @@
+<SignedDelivery xmlns="http://minameddelanden.gov.se/schema/Message"><Delivery><Header><Sender><Id xmlns="http://minameddelanden.gov.se/schema/Sender">162021003898</Id><Name xmlns="http://minameddelanden.gov.se/schema/Sender">Kommun B</Name></Sender><Recipient>192705178354</Recipient></Header><Message><Header><Id>f614c385-203c-11e3-b2eb-542696cf5deb</Id><Subject>Test-skicka</Subject><Supportinfo><Text>Vand er till X om ni har fragor angaende detta meddelande</Text><URL>http://www.kommun_b.se</URL><PhoneNumber>08-12121212</PhoneNumber><EmailAdress>info@kommun_b.se</EmailAdress></Supportinfo><Language>svSE</Language></Header><Body><ContentType>text/plain</ContentType><Body>RXR0IGxpdGV0IHPDpGtlcnQgbWVkZGVsYW5kZSBmcsOlbiBNaW5hTWVkZGVsYW5kZW4h</Body></Body></Message></Delivery><Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>4ZzK9yThkUJEY29jW4trNU7cxwY=</DigestValue></Reference></SignedInfo><SignatureValue>dJrMp9quFxj8I57raIy0zLk41B5JRWsARTPhPdAaN+oQDHNF18VtoBxwmhOxU+lIOPwweIOoc/iU
+FzRJORVviZfziK7AlgGerTlHVosEb9p4/NBKgBls9wzFrMnTuIrPnh+q5QT1RDy4/lhvSyz39Nwu
+vCSUz7yk7mIDlS4el0M=</SignatureValue><KeyInfo><X509Data><X509SubjectName>O=Internet Widgits Pty Ltd,ST=Some-State,C=AU</X509SubjectName><X509Certificate>MIICsDCCAhmgAwIBAgIJAJrzqSSwmDY9MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNVBAYTAkFVMRMw
+EQYDVQQIEwpTb21lLVN0YXRlMSEwHwYDVQQKExhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcN
+MDkxMDA2MTk0OTQxWhcNMDkxMTA1MTk0OTQxWjBFMQswCQYDVQQGEwJBVTETMBEGA1UECBMKU29t
+ZS1TdGF0ZTEhMB8GA1UEChMYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIGfMA0GCSqGSIb3DQEB
+AQUAA4GNADCBiQKBgQDJg2cms7MqjniT8Fi/XkNHZNPbNVQyMUMXE9tXOdqwYCA1cc8vQdzkihsc
+QMXy3iPw2cMggBu6gjMTOSOxECkuvX5ZCclKr8pXAJM5cY6gVOaVO2PdTZcvDBKGbiaNefiEw5hn
+oZomqZGp8wHNLAUkwtH9vjqqvxyS/vclc6k2ewIDAQABo4GnMIGkMB0GA1UdDgQWBBRePsKHKYJs
+iojE78ZWXccK9K4aJTB1BgNVHSMEbjBsgBRePsKHKYJsiojE78ZWXccK9K4aJaFJpEcwRTELMAkG
+A1UEBhMCQVUxEzARBgNVBAgTClNvbWUtU3RhdGUxITAfBgNVBAoTGEludGVybmV0IFdpZGdpdHMg
+UHR5IEx0ZIIJAJrzqSSwmDY9MAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAJSrKOEzH
+O7TL5cy6h3qh+3+JAk8HbGBW+cbX6KBCAw/mzU8flK25vnWwXS3dv2FF3Aod0/S7AWNfKib5U/SA
+9nJaz/mWeF9S0farz9AQFc8/NSzAzaVq7YbM4F6f6N2FRl7GikdXRCed45j6mrPzGzk3ECbupFnq
+yREH3+ZPSdk=</X509Certificate></X509Data></KeyInfo></Signature></SignedDelivery>
