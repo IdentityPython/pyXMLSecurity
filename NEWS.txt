@@ -87,7 +87,9 @@ News
 * fix PEM parser bug
 * switch to semantic versioning
 
-0.10.1dev
+0.10.1
 ---------
 
-* UNRELEASED
+* Release date: Fri Oct 11 17:06:53 CEST 2013*
+
+* better control over the position of the signature element
