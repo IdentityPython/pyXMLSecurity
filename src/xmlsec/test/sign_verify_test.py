@@ -28,9 +28,9 @@ def _get_all_signatures(t):
 
 class TestTransforms(unittest.TestCase):
     def setUp(self):
-        datadir = pkg_resources.resource_filename(__name__, 'data')
-        self.private_keyspec = os.path.join(datadir, 'test.key')
-        self.public_keyspec = os.path.join(datadir, 'test.pem')
+        self.datadir = pkg_resources.resource_filename(__name__, 'data')
+        self.private_keyspec = os.path.join(self.datadir, 'test.key')
+        self.public_keyspec = os.path.join(self.datadir, 'test.pem')
 
         self.cases = load_test_data('data/signverify')
 
@@ -245,6 +245,13 @@ class TestTransforms(unittest.TestCase):
         print "Expected SignatureValue: %s" % (repr(expected_sv))
 
         self.assertEqual(signed_sv, expected_sv)
+
+    def test_verify_href(self):
+        case = self.cases['href']
+        t = case.as_etree('href.xml',remove_comments=False,remove_whitespace=False)
+        href_signer = os.path.join(self.datadir, "signverify/href/href-metadata-signer-2011.crt")
+        res = xmlsec.verify(t, href_signer)
+        self.assertTrue(res)
 
 def main():
     unittest.main()

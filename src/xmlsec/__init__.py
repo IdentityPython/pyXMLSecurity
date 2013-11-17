@@ -1,10 +1,12 @@
 from UserDict import DictMixin
+from lxml.etree import _ElementTree
 
 __author__ = 'leifj'
 
 import os
 import xmlsec.rsa_x509_pem as rsa_x509_pem
 import lxml.etree as etree
+import lxml.etree as ET
 import logging
 import base64
 import hashlib
@@ -14,13 +16,14 @@ from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
 import re
 import htmlentitydefs
+import StringIO
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
 
 # Enable this to get various parts written to files in /tmp. Not for production!
-_DEBUG_WRITE_TO_FILES = False
+_DEBUG_WRITE_TO_FILES = True
 
 # ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
 ASN1_BER_ALG_DESIGNATOR_PREFIX = {
@@ -309,12 +312,19 @@ def _process_references(t, sig=None, return_verified=True):
         if return_verified:
             verified = copy.deepcopy(obj)
 
+        if _DEBUG_WRITE_TO_FILES:
+            with open("/tmp/foo-pre-transform.xml", "w") as fd:
+                fd.write(etree.tostring(obj))
+
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
             logging.debug("transform: %s" % _alg(tr))
             obj = _transform(_alg(tr), obj, tr)
 
         if not isinstance(obj, basestring):
-            obj = _unescape(etree.tostring(obj).decode("utf8", 'replace')).encode("utf8").strip()
+            if _DEBUG_WRITE_TO_FILES:
+                with open("/tmp/foo-pre-serialize.xml", "w") as fd:
+                    fd.write(etree.tostring(obj))
+            obj = _transform(TRANSFORM_C14N_INCLUSIVE, obj)
 
         if _DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-obj.xml", "w") as fd:
@@ -401,6 +411,7 @@ def _enveloped_signature(t):
             fd.write(etree.tostring(t))
     return t
 
+
 def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
     """
     Perform XML canonicalization (c14n) on an lxml.etree.
@@ -416,6 +427,9 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
     """
     cxml = etree.tostring(t, method="c14n", exclusive=exclusive, with_comments=with_comments,
                           inclusive_ns_prefixes=inclusive_prefix_list)
+    cxml = cxml.replace('xmlns="" ', '')
+    cxml = cxml.replace(' xmlns=""', '')
+    cxml = cxml.replace('xmlns=""', '')
     u = _unescape(cxml.decode("utf8", 'replace')).encode("utf8").strip()
     if u[0] != '<':
         raise XMLSigException("C14N buffer doesn't start with '<'")
@@ -584,7 +598,7 @@ def add_enveloped_signature(t,
         _root(t).insert(pos, _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
 
 
-def sign(t, key_spec, cert_spec=None, reference_uri=''):
+def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signature" % NS['ds']):
     """
     Sign an XML document. This means to 'complete' all Signature elements in the XML.
 
@@ -615,14 +629,14 @@ def sign(t, key_spec, cert_spec=None, reference_uri=''):
                               % (public['keysize'], private['keysize']))
     logging.debug("Using %s bit key" % (private['keysize']))
 
-    if t.find(".//{%s}Signature" % NS['ds']) is None:
+    if t.find(sig_path) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
 
     if _DEBUG_WRITE_TO_FILES:
         with open("/tmp/sig-ref.xml", "w") as fd:
             fd.write(etree.tostring(_root(t)))
 
-    for sig in t.findall(".//{%s}Signature" % NS['ds']):
+    for sig in t.findall(sig_path):
         hash_alg = _process_references(t, sig, return_verified=False)
         # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
@@ -656,6 +670,7 @@ def _create_signature_digest(si, cm_alg, hash_alg):
     """
     :param hash_alg: string such as 'sha1'
     """
+    logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
     sic = _transform(cm_alg, si)
     logging.debug("SignedInfo C14N: %s" % sic)
     digest = _digest(sic, hash_alg)
