@@ -23,7 +23,7 @@ NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
 
 # Enable this to get various parts written to files in /tmp. Not for production!
-_DEBUG_WRITE_TO_FILES = True
+_DEBUG_WRITE_TO_FILES = False
 
 # ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
 ASN1_BER_ALG_DESIGNATOR_PREFIX = {
