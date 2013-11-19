@@ -416,6 +416,27 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
     """
     Perform XML canonicalization (c14n) on an lxml.etree.
 
+    :param t: XML as lxml.etree
+    :param exclusive: boolean
+    :param with_comments: boolean, keep comments or not
+    :param inclusive_prefix_list: List of namespaces to include (?)
+    :returns: XML as string (utf8)
+    """
+    xml_str = etree.tostring(t)
+    doc = parse_xml(xml_str, remove_whitespace=exclusive, remove_comments=not with_comments)
+    buf = etree.tostring(doc, method='c14n', exclusive=exclusive, with_comments=with_comments, inclusive_ns_prefixes=inclusive_prefix_list)
+    u = _unescape(buf.decode("utf8", 'replace')).encode("utf8").strip()
+    if u[0] != '<':
+        raise XMLSigException("C14N buffer doesn't start with '<'")
+    if u[-1] != '>':
+        raise XMLSigException("C14N buffer doesn't end with '>'")
+    return u
+
+
+def _c14n_old(t, exclusive, with_comments, inclusive_prefix_list=None):
+    """
+    Perform XML canonicalization (c14n) on an lxml.etree.
+
     NOTE: The c14n done here is missing whitespace removal. The whitespace has to
     be removed at parse time. One way to do that is to use xmlsec.parse_xml().
 
@@ -425,11 +446,15 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
     :param inclusive_prefix_list: List of namespaces to include (?)
     :returns: XML as string (utf8)
     """
-    cxml = etree.tostring(t, method="c14n", exclusive=exclusive, with_comments=with_comments,
-                          inclusive_ns_prefixes=inclusive_prefix_list)
-    cxml = cxml.replace('xmlns="" ', '')
-    cxml = cxml.replace(' xmlns=""', '')
-    cxml = cxml.replace('xmlns=""', '')
+    doc = etree.ElementTree(t)
+    buf = StringIO.StringIO()
+    doc.write_c14n(buf, exclusive=exclusive, with_comments=with_comments, inclusive_ns_prefixes=inclusive_prefix_list)
+    cxml = buf.getvalue()
+    #cxml = etree.tostring(t, method="c14n", exclusive=exclusive, with_comments=with_comments,
+    #                      inclusive_ns_prefixes=inclusive_prefix_list)
+    #cxml = cxml.replace('xmlns="" ', '')
+    #cxml = cxml.replace(' xmlns=""', '')
+    #cxml = cxml.replace('xmlns=""', '')
     u = _unescape(cxml.decode("utf8", 'replace')).encode("utf8").strip()
     if u[0] != '<':
         raise XMLSigException("C14N buffer doesn't start with '<'")

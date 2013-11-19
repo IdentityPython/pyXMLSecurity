@@ -27,7 +27,7 @@ class XMLTestData():
         assert n in self.data, XMLTestDataException("No data named %s in test case %s" % (n, self.name))
         return self.data[n]
 
-    def as_etree(self, n, remove_whitespace=True, remove_comments=True):
+    def as_etree(self, n, remove_whitespace=False, remove_comments=False):
         return xmlsec.parse_xml(self.as_buf(n), remove_whitespace=remove_whitespace, remove_comments=remove_comments)
 
 
