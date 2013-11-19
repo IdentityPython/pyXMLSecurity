@@ -39,6 +39,7 @@ def load_test_data(path=None):
         return  # fool unittest that executes this function
     cases = {}
     for case_n in pkg_resources.resource_listdir(__name__, path):
-        case = XMLTestData(__name__, os.path.join(path, case_n))
-        cases[case_n] = case
+        if case_n[0] != '.': # ignore hidden files/directories
+            case = XMLTestData(__name__, os.path.join(path, case_n))
+            cases[case_n] = case
     return cases
