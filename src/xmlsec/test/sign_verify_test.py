@@ -246,6 +246,45 @@ class TestTransforms(unittest.TestCase):
 
         self.assertEqual(signed_sv, expected_sv)
 
+    def test_mm_with_inner_signature(self):
+        expected_digest = 'd62qF9gk1F1/JcdUrtJUqPtoMHc='
+        case = self.cases['mm6']
+        t = case.as_etree('in.xml')
+
+        xmlsec.add_enveloped_signature(t,
+                                       pos=-1,
+                                       c14n_method=xmlsec.TRANSFORM_C14N_EXCLUSIVE,
+                                       transforms=[xmlsec.TRANSFORM_ENVELOPED_SIGNATURE])
+        signed = xmlsec.sign(t,
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec,
+                             sig_path="./{http://www.w3.org/2000/09/xmldsig#}Signature")
+
+        expected = case.as_etree('out.xml')
+
+        sig = t.find("./{%s}Signature" % xmlsec.NS['ds'])
+        digest = sig.findtext('.//{%s}DigestValue' % xmlsec.NS['ds'])
+
+        print " --- Expected digest value"
+        print expected_digest
+        print " --- Actual digest value"
+        print digest
+
+        print " --- Expected"
+        print etree.tostring(expected)
+        print " --- Actual"
+        print etree.tostring(signed)
+
+        # extract 'SignatureValue's
+        expected_sv = _get_all_signatures(expected)
+        signed_sv = _get_all_signatures(signed)
+
+        print "Signed   SignatureValue: %s" % (repr(signed_sv))
+        print "Expected SignatureValue: %s" % (repr(expected_sv))
+
+        self.assertEquals(digest, expected_digest)
+        self.assertEqual(signed_sv, expected_sv)
+
     def test_verify_href(self):
         case = self.cases['href']
         t = case.as_etree('href.xml',remove_comments=False,remove_whitespace=False)
