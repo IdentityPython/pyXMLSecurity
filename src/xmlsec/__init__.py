@@ -403,8 +403,8 @@ def _delete_elt(elt):
     elt.getparent().remove(elt)
 
 
-def _enveloped_signature(t):
-    sig = t.find('.//{http://www.w3.org/2000/09/xmldsig#}Signature')
+def _enveloped_signature(t, sig_path=".//{%s}Signature" % NS['ds']):
+    sig = t.find(sig_path)
     _delete_elt(sig)
     if _DEBUG_WRITE_TO_FILES:
         with open("/tmp/foo-env.xml", "w") as fd:
@@ -412,7 +412,7 @@ def _enveloped_signature(t):
     return t
 
 
-def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
+def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     """
     Perform XML canonicalization (c14n) on an lxml.etree.
 
@@ -423,7 +423,7 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None):
     :returns: XML as string (utf8)
     """
     xml_str = etree.tostring(t)
-    doc = parse_xml(xml_str, remove_whitespace=exclusive, remove_comments=not with_comments)
+    doc = parse_xml(xml_str, remove_whitespace=exclusive, remove_comments=not with_comments, schema=schema)
     buf = etree.tostring(doc, method='c14n', exclusive=exclusive, with_comments=with_comments, inclusive_ns_prefixes=inclusive_prefix_list)
     u = _unescape(buf.decode("utf8", 'replace')).encode("utf8").strip()
     if u[0] != '<':
@@ -463,7 +463,7 @@ def _c14n_old(t, exclusive, with_comments, inclusive_prefix_list=None):
     return u
 
 
-def _transform(uri, t, tr=None):
+def _transform(uri, t, tr=None, schema=None):
     if uri == TRANSFORM_ENVELOPED_SIGNATURE:
         return _enveloped_signature(t)
 
@@ -473,7 +473,7 @@ def _transform(uri, t, tr=None):
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
             if elt is not None:
                 nslist = elt.get('PrefixList', '').split()
-        return _c14n(t, exclusive=True, with_comments=True, inclusive_prefix_list=nslist)
+        return _c14n(t, exclusive=True, with_comments=True, inclusive_prefix_list=nslist, schema=schema)
 
     if uri == TRANSFORM_C14N_EXCLUSIVE:
         nslist = None
@@ -481,10 +481,10 @@ def _transform(uri, t, tr=None):
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
             if elt is not None:
                 nslist = elt.get('PrefixList', '').split()
-        return _c14n(t, exclusive=True, with_comments=False, inclusive_prefix_list=nslist)
+        return _c14n(t, exclusive=True, with_comments=False, inclusive_prefix_list=nslist, schema=schema)
 
     if uri == TRANSFORM_C14N_INCLUSIVE:
-        return _c14n(t, exclusive=False, with_comments=False)
+        return _c14n(t, exclusive=False, with_comments=False, schema=schema)
 
     raise XMLSigException("unknown or unimplemented transform %s" % uri)
 
@@ -703,7 +703,7 @@ def _create_signature_digest(si, cm_alg, hash_alg):
     return b64d(digest)
 
 
-def parse_xml(data, remove_whitespace=True, remove_comments=True):
+def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
     """
     Parse XML data into an lxml.etree and remove whitespace in the process.
 
@@ -711,5 +711,5 @@ def parse_xml(data, remove_whitespace=True, remove_comments=True):
     :param remove_whitespace: boolean
     :returns: XML as lxml.etree
     """
-    parser = etree.XMLParser(remove_blank_text=remove_whitespace, remove_comments=remove_comments)
+    parser = etree.XMLParser(remove_blank_text=remove_whitespace, remove_comments=remove_comments, schema=schema)
     return etree.XML(data, parser)
