@@ -285,6 +285,26 @@ def _remove_child_comments(t):
             _delete_elt(c)
     return t
 
+_same_document_is_root = True
+
+
+def set_java_compat():
+    global _same_document_is_root
+    _same_document_is_root = False
+
+
+def unset_java_compat():
+    global _same_document_is_root
+    _same_document_is_root = True
+
+
+def _implicit_same_document(t, sig):
+    global _same_document_is_root
+    if _same_document_is_root:
+        return _root(copy.deepcopy(t))
+    else:
+        return copy.deepcopy(sig.getparent())
+
 
 def _process_references(t, sig=None, return_verified=True):
     """
@@ -298,7 +318,7 @@ def _process_references(t, sig=None, return_verified=True):
         verified = None
         uri = ref.get('URI', None)
         if uri is None or uri == '#' or uri == '':
-            ct = _remove_child_comments(_root(copy.deepcopy(t)))
+            ct = _remove_child_comments(_implicit_same_document(t, sig))
             obj = _root(ct)
         elif uri.startswith('#'):
             ct = copy.deepcopy(t)
@@ -493,6 +513,7 @@ _id_attributes = ['ID', 'id']
 
 
 def setID(ids):
+    global _id_attributes
     _id_attributes = ids
 
 
