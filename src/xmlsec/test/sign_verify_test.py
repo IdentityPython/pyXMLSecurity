@@ -48,6 +48,19 @@ class TestTransforms(unittest.TestCase):
         res = xmlsec.verify(signed, self.public_keyspec)
         self.assertTrue(res)
 
+    def test_sign_verify_SAML_assertion_sha256(self):
+        """
+        Test signing a SAML assertion using sha256, and making sure we can verify it.
+        """
+        case = self.cases['SAML_assertion_sha256']
+        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+
+        signed = xmlsec.sign(case.as_etree('in.xml'),
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+        res = xmlsec.verify(signed, self.public_keyspec)
+        self.assertTrue(res)
+
     def test_sign_verify_SAML_assertion_unwrap2(self):
         """
         Test signing a SAML assertion, and return verified data.
