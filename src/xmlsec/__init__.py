@@ -1,51 +1,46 @@
-from UserDict import DictMixin
-from lxml.etree import _ElementTree
 
 __author__ = 'leifj'
 
 import os
-import xmlsec.rsa_x509_pem as rsa_x509_pem
-import lxml.etree as etree
-import lxml.etree as ET
+from . import rsa_x509_pem
+from lxml import etree as etree
 import logging
 import base64
 import hashlib
 import copy
-import xmlsec.int_to_bytes as itb
+from . import int_to_bytes as itb
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
-import re
-import htmlentitydefs
-import StringIO
+from UserDict import DictMixin
+from xmlsec import constants
+from xmlsec.constants import ASN1_BER_ALG_DESIGNATOR_PREFIX, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS, \
+    TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE, TRANSFORM_C14N_INCLUSIVE, \
+    SAME_DOCUMENT_IS_ROOT, DEBUG_WRITE_TO_FILES
+from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt
+
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
 
-# Enable this to get various parts written to files in /tmp. Not for production!
-_DEBUG_WRITE_TO_FILES = False
 
-# ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
-ASN1_BER_ALG_DESIGNATOR_PREFIX = {
-    # disabled 'md2': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x02\x05\x00\x04\x10',
-    # disabled 'md5': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x05\x05\x00\x04\x10',
-    'sha1': '\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14',
-    'sha256': '\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20',
-    'sha384': '\x30\x41\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x02\x05\x00\x04\x30',
-    'sha512': '\x30\x51\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03\x05\x00\x04\x40',
-}
+def _implicit_same_document(t, sig):  # this is actually incorrect according to the xml-dsig core spec
+    return copy.deepcopy(sig.getparent())
 
-TRANSFORM_ENVELOPED_SIGNATURE = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature'
-TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS = 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments'
-TRANSFORM_C14N_EXCLUSIVE = 'http://www.w3.org/2001/10/xml-exc-c14n#'
-TRANSFORM_C14N_INCLUSIVE = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'
 
-ALGORITHM_DIGEST_SHA1 = "http://www.w3.org/2000/09/xmldsig#sha1"
-ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
+def _implicit_same_document_correct(t, sig):
+    if SAME_DOCUMENT_IS_ROOT:
+        return _root(copy.deepcopy(t))
+    else:
+        return copy.deepcopy(sig.getparent())
 
-# This code was inspired by https://github.com/andrewdyates/xmldsig
-# and includes https://github.com/andrewdyates/rsa_x509_pem with
-# permission from the author.
+
+def set_default_signature_alg(alg):
+    constants.default_signature_alg = alg
+
+
+def set_default_digest_alg(alg):
+    constants.default_digest_alg = alg
 
 
 class CertDict(DictMixin):
@@ -147,7 +142,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
                 data = c.read()
             source = 'file'
         elif private and keyspec.startswith("pkcs11://"):
-            import xmlsec.pk11
+            from xmlsec import pk11
 
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)
@@ -258,7 +253,7 @@ def _digest(data, hash_alg):
 
 
 def _get_by_id(t, id_v):
-    for id_a in _id_attributes:
+    for id_a in constants.id_attributes:
         logging.debug("Looking for #%s using id attribute '%s'" % (id_v, id_a))
         elts = t.xpath("//*[@%s='%s']" % (id_a, id_v))
         if elts is not None and len(elts) > 0:
@@ -282,33 +277,8 @@ def _remove_child_comments(t):
     #root = _root(t)
     for c in t.iter():
         if c.tag is etree.Comment or c.tag is etree.PI:
-            _delete_elt(c)
+            delete_elt(c)
     return t
-
-_same_document_is_root = True
-
-
-def set_java_compat():
-    global _same_document_is_root
-    _same_document_is_root = False
-
-
-def unset_java_compat():
-    global _same_document_is_root
-    _same_document_is_root = True
-
-
-def _implicit_same_document(t, sig): # this is actually incorrect according to the xml-dsig core spec
-    return copy.deepcopy(sig.getparent())
-
-
-def _implicit_same_document_correct(t, sig):
-    global _same_document_is_root
-    if _same_document_is_root:
-        return _root(copy.deepcopy(t))
-    else:
-        return copy.deepcopy(sig.getparent())
-
 
 def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature" % NS['ds']):
     """
@@ -335,7 +305,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         if return_verified:
             verified_objects.append(copy.deepcopy(obj))
 
-        if _DEBUG_WRITE_TO_FILES:
+        if DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
                 fd.write(etree.tostring(obj))
 
@@ -344,12 +314,12 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
 
         if not isinstance(obj, basestring):
-            if _DEBUG_WRITE_TO_FILES:
+            if DEBUG_WRITE_TO_FILES:
                 with open("/tmp/foo-pre-serialize.xml", "w") as fd:
                     fd.write(etree.tostring(obj))
             obj = _transform(TRANSFORM_C14N_INCLUSIVE, obj)
 
-        if _DEBUG_WRITE_TO_FILES:
+        if DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-obj.xml", "w") as fd:
                 fd.write(obj)
 
@@ -369,64 +339,12 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
     else:
         return None
 
-##
-# Removes HTML or XML character references and entities from a text string.
-#
-# @param text The HTML (or XML) source text.
-# @return The plain text, as a Unicode string, if necessary.
-
-
-def _unescape(text):
-    def fixup(m):
-        text = m.group(0)
-        if text[:2] == "&#":
-            # character reference
-            try:
-                if text[:3] == "&#x":
-                    return unichr(int(text[3:-1], 16))
-                else:
-                    return unichr(int(text[2:-1]))
-            except ValueError:
-                pass
-        else:
-            # named entity
-            try:
-                if not text in ('&amp;', '&lt;', '&gt;'):
-                    text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
-            except KeyError:
-                pass
-        return text  # leave as is
-
-    return re.sub("&#?\w+;", fixup, text)
-
-
-def _delete_elt(elt):
-    if elt.getparent() is None:
-        raise XMLSigException("Cannot delete root")
-    if elt.tail is not None:
-        logging.debug("tail: '%s'" % elt.tail)
-        p = elt.getprevious()
-        if p is not None:
-            logging.debug("adding tail to previous")
-            if p.tail is None:
-                p.tail = ''
-            p.tail += elt.tail
-        else:
-            logging.debug("adding tail to parent")
-            up = elt.getparent()
-            if up is None:
-                raise XMLSigException("Signature has no parent")
-            if up.text is None:
-                up.text = ''
-            up.text += elt.tail
-    elt.getparent().remove(elt)
-
 
 def _enveloped_signature(t, sig_path=".//{%s}Signature" % NS['ds']):
     sig = t.find(sig_path)
     if sig is not None:
-        _delete_elt(sig)
-    if _DEBUG_WRITE_TO_FILES:
+        delete_elt(sig)
+    if DEBUG_WRITE_TO_FILES:
         with open("/tmp/foo-env.xml", "w") as fd:
             fd.write(etree.tostring(t))
     return t
@@ -445,37 +363,7 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     xml_str = etree.tostring(t)
     doc = parse_xml(xml_str, remove_whitespace=exclusive, remove_comments=not with_comments, schema=schema)
     buf = etree.tostring(doc, method='c14n', exclusive=exclusive, with_comments=with_comments, inclusive_ns_prefixes=inclusive_prefix_list)
-    u = _unescape(buf.decode("utf8", 'replace')).encode("utf8").strip()
-    if u[0] != '<':
-        raise XMLSigException("C14N buffer doesn't start with '<'")
-    if u[-1] != '>':
-        raise XMLSigException("C14N buffer doesn't end with '>'")
-    return u
-
-
-def _c14n_old(t, exclusive, with_comments, inclusive_prefix_list=None):
-    """
-    Perform XML canonicalization (c14n) on an lxml.etree.
-
-    NOTE: The c14n done here is missing whitespace removal. The whitespace has to
-    be removed at parse time. One way to do that is to use xmlsec.parse_xml().
-
-    :param t: XML as lxml.etree
-    :param exclusive: boolean
-    :param with_comments: boolean, keep comments or not
-    :param inclusive_prefix_list: List of namespaces to include (?)
-    :returns: XML as string (utf8)
-    """
-    doc = etree.ElementTree(t)
-    buf = StringIO.StringIO()
-    doc.write_c14n(buf, exclusive=exclusive, with_comments=with_comments, inclusive_ns_prefixes=inclusive_prefix_list)
-    cxml = buf.getvalue()
-    #cxml = etree.tostring(t, method="c14n", exclusive=exclusive, with_comments=with_comments,
-    #                      inclusive_ns_prefixes=inclusive_prefix_list)
-    #cxml = cxml.replace('xmlns="" ', '')
-    #cxml = cxml.replace(' xmlns=""', '')
-    #cxml = cxml.replace('xmlns=""', '')
-    u = _unescape(cxml.decode("utf8", 'replace')).encode("utf8").strip()
+    u = unescape_xml_entities(buf.decode("utf8", 'replace')).encode("utf8").strip()
     if u[0] != '<':
         raise XMLSigException("C14N buffer doesn't start with '<'")
     if u[-1] != '>':
@@ -509,37 +397,8 @@ def _transform(uri, t, tr=None, schema=None, sig_path=".//{%s}Signature" % NS['d
     raise XMLSigException("unknown or unimplemented transform %s" % uri)
 
 
-_id_attributes = ['ID', 'id']
-
-
 def setID(ids):
-    global _id_attributes
-    _id_attributes = ids
-
-
-def pem2b64(pem):
-    return '\n'.join(pem.strip().split('\n')[1:-1])
-
-
-def b642pem(data):
-    x = data
-    r = "-----BEGIN CERTIFICATE-----\n"
-    while len(x) > 64:
-        r += x[0:64]
-        r += "\n"
-        x = x[64:]
-    r += x
-    r += "\n"
-    r += "-----END CERTIFICATE-----"
-    return r
-
-
-def pem2cert(pem):
-    return rsa_x509_pem.parse(pem)
-
-
-def b642cert(data):
-    return rsa_x509_pem.parse(b642pem(data))
+    constants.id_attributes = ids
 
 
 def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
@@ -552,7 +411,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
     :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
     :returns: True if signature(s) validated, False if there were no signatures
     """
-    if _DEBUG_WRITE_TO_FILES:
+    if DEBUG_WRITE_TO_FILES:
         with open("/tmp/foo-sig.xml", "w") as fd:
             fd.write(etree.tostring(_root(t)))
 
@@ -616,11 +475,15 @@ def _signed_info_transforms(transforms):
 
 
 # standard enveloped rsa-sha1 signature
-def _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri):
+def _enveloped_signature_template(c14n_method,
+                                  digest_alg,
+                                  transforms,
+                                  reference_uri,
+                                  signature_alg):
     return DS.Signature(
         DS.SignedInfo(
             DS.CanonicalizationMethod(Algorithm=c14n_method),
-            DS.SignatureMethod(Algorithm=ALGORITHM_SIGNATURE_RSA_SHA1),
+            DS.SignatureMethod(Algorithm=signature_alg),
             DS.Reference(
                 _signed_info_transforms(transforms),
                 DS.DigestMethod(Algorithm=digest_alg),
@@ -632,17 +495,20 @@ def _enveloped_signature_template(c14n_method, digest_alg, transforms, reference
 
 
 def add_enveloped_signature(t,
-                            c14n_method=TRANSFORM_C14N_INCLUSIVE,
-                            digest_alg=ALGORITHM_DIGEST_SHA1,
+                            c14n_method=constants.default_c14n_alg,
+                            digest_alg=constants.default_digest_alg,
+                            signature_alg=constants.default_signature_alg,
                             transforms=None,
                             reference_uri='',
                             pos=0):
     if transforms is None:
         transforms = (TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
+
+    tmpl = _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri, signature_alg)
     if pos == -1:
-        _root(t).append(_enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
+        _root(t).append(tmpl)
     else:
-        _root(t).insert(pos, _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri))
+        _root(t).insert(pos, tmpl)
 
 
 def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signature" % NS['ds']):
@@ -679,7 +545,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
     if t.find(sig_path) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
 
-    if _DEBUG_WRITE_TO_FILES:
+    if DEBUG_WRITE_TO_FILES:
         with open("/tmp/sig-ref.xml", "w") as fd:
             fd.write(etree.tostring(_root(t)))
 
@@ -740,13 +606,3 @@ def _create_signature_digest(si, cm_alg, hash_alg):
     return b64d(digest)
 
 
-def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
-    """
-    Parse XML data into an lxml.etree and remove whitespace in the process.
-
-    :param data: XML as string
-    :param remove_whitespace: boolean
-    :returns: XML as lxml.etree
-    """
-    parser = etree.XMLParser(remove_blank_text=remove_whitespace, remove_comments=remove_comments, schema=schema)
-    return etree.XML(data, parser)

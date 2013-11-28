@@ -1,0 +1,97 @@
+import logging
+
+__author__ = 'leifj'
+
+from lxml import etree as etree
+from . import rsa_x509_pem
+from xmlsec.exceptions import XMLSigException
+import htmlentitydefs
+import re
+
+
+def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
+    """
+    Parse XML data into an lxml.etree and remove whitespace in the process.
+
+    :param data: XML as string
+    :param remove_whitespace: boolean
+    :returns: XML as lxml.etree
+    """
+    parser = etree.XMLParser(remove_blank_text=remove_whitespace, remove_comments=remove_comments, schema=schema)
+    return etree.XML(data, parser)
+
+
+def pem2b64(pem):
+    return '\n'.join(pem.strip().split('\n')[1:-1])
+
+
+def b642pem(data):
+    x = data
+    r = "-----BEGIN CERTIFICATE-----\n"
+    while len(x) > 64:
+        r += x[0:64]
+        r += "\n"
+        x = x[64:]
+    r += x
+    r += "\n"
+    r += "-----END CERTIFICATE-----"
+    return r
+
+
+def pem2cert(pem):
+    return rsa_x509_pem.parse(pem)
+
+
+def b642cert(data):
+    return rsa_x509_pem.parse(b642pem(data))
+
+
+def unescape_xml_entities(text):
+    """
+    Removes HTML or XML character references and entities from a text string.
+    @param text The HTML (or XML) source text.
+    @return The plain text, as a Unicode string, if necessary.
+    """
+    def fixup(m):
+        text = m.group(0)
+        if text[:2] == "&#":
+            # character reference
+            try:
+                if text[:3] == "&#x":
+                    return unichr(int(text[3:-1], 16))
+                else:
+                    return unichr(int(text[2:-1]))
+            except ValueError:
+                pass
+        else:
+            # named entity
+            try:
+                if not text in ('&amp;', '&lt;', '&gt;'):
+                    text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+            except KeyError:
+                pass
+        return text  # leave as is
+
+    return re.sub("&#?\w+;", fixup, text)
+
+
+def delete_elt(elt):
+    if elt.getparent() is None:
+        raise XMLSigException("Cannot delete root")
+    if elt.tail is not None:
+        logging.debug("tail: '%s'" % elt.tail)
+        p = elt.getprevious()
+        if p is not None:
+            logging.debug("adding tail to previous")
+            if p.tail is None:
+                p.tail = ''
+            p.tail += elt.tail
+        else:
+            logging.debug("adding tail to parent")
+            up = elt.getparent()
+            if up is None:
+                raise XMLSigException("Signature has no parent")
+            if up.text is None:
+                up.text = ''
+            up.text += elt.tail
+    elt.getparent().remove(elt)

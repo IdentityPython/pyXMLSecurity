@@ -247,7 +247,6 @@ class TestTransforms(unittest.TestCase):
         self.assertEqual(signed_sv, expected_sv)
 
     def test_mm_with_inner_signature(self):
-        xmlsec.set_java_compat()
         expected_digest = 'd62qF9gk1F1/JcdUrtJUqPtoMHc='
         case = self.cases['mm6']
         t = case.as_etree('in.xml')
@@ -292,6 +291,7 @@ class TestTransforms(unittest.TestCase):
         href_signer = os.path.join(self.datadir, "signverify/href/href-metadata-signer-2011.crt")
         res = xmlsec.verify(t, href_signer)
         self.assertTrue(res)
+
 
 def main():
     unittest.main()
