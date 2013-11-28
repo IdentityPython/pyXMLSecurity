@@ -13,10 +13,7 @@ from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
 from UserDict import DictMixin
 from xmlsec import constants
-from xmlsec.constants import ASN1_BER_ALG_DESIGNATOR_PREFIX, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS, \
-    TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE, TRANSFORM_C14N_INCLUSIVE, \
-    SAME_DOCUMENT_IS_ROOT, DEBUG_WRITE_TO_FILES
-from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt
+from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e
 
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
@@ -29,8 +26,8 @@ def _implicit_same_document(t, sig):  # this is actually incorrect according to 
 
 
 def _implicit_same_document_correct(t, sig):
-    if SAME_DOCUMENT_IS_ROOT:
-        return _root(copy.deepcopy(t))
+    if constants.SAME_DOCUMENT_IS_ROOT:
+        return root_elt(copy.deepcopy(t))
     else:
         return copy.deepcopy(sig.getparent())
 
@@ -180,35 +177,6 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
     return res
 
 
-def _root(t):
-    if hasattr(t, 'getroot') and hasattr(t.getroot, '__call__'):
-        return t.getroot()
-    else:
-        return t
-
-
-def number_of_bits(num):
-    """
-    Return the number of bits required to represent num.
-
-    In python >= 2.7, there is num.bit_length().
-
-    NOTE: This function appears unused, so it might go away.
-    """
-    assert num >= 0
-    # this is much faster than you would think, AND it is easy to read ;)
-    return len(bin(num)) - 2
-
-
-b64d = lambda s: s.decode('base64')
-
-
-def b64e(s):
-    if type(s) in (int, long):
-        s = itb.int_to_bytes(s)
-    return s.encode('base64').replace('\n', '')
-
-
 def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
 
@@ -223,7 +191,7 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
       str: rsa-sha1 signature value of `data`
     """
 
-    prefix = ASN1_BER_ALG_DESIGNATOR_PREFIX.get(hash_alg)
+    prefix = constants.ASN1_BER_ALG_DESIGNATOR_PREFIX.get(hash_alg)
     if not prefix:
         raise XMLSigException("Unknown hash algorithm %s" % hash_alg)
     asn_digest = prefix + data
@@ -274,7 +242,7 @@ def _alg(elt):
 
 
 def _remove_child_comments(t):
-    #root = _root(t)
+    #root = root_elt(t)
     for c in t.iter():
         if c.tag is etree.Comment or c.tag is etree.PI:
             delete_elt(c)
@@ -292,7 +260,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         uri = ref.get('URI', None)
         if uri is None or uri == '#' or uri == '':
             ct = _remove_child_comments(_implicit_same_document(t, sig))
-            obj = _root(ct)
+            obj = root_elt(ct)
         elif uri.startswith('#'):
             ct = copy.deepcopy(t)
             obj = _remove_child_comments(_get_by_id(ct, uri[1:]))
@@ -305,7 +273,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         if return_verified:
             verified_objects.append(copy.deepcopy(obj))
 
-        if DEBUG_WRITE_TO_FILES:
+        if constants.DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
                 fd.write(etree.tostring(obj))
 
@@ -314,12 +282,12 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
 
         if not isinstance(obj, basestring):
-            if DEBUG_WRITE_TO_FILES:
+            if constants.DEBUG_WRITE_TO_FILES:
                 with open("/tmp/foo-pre-serialize.xml", "w") as fd:
                     fd.write(etree.tostring(obj))
-            obj = _transform(TRANSFORM_C14N_INCLUSIVE, obj)
+            obj = _transform(constants.TRANSFORM_C14N_INCLUSIVE, obj)
 
-        if DEBUG_WRITE_TO_FILES:
+        if constants.DEBUG_WRITE_TO_FILES:
             with open("/tmp/foo-obj.xml", "w") as fd:
                 fd.write(obj)
 
@@ -344,7 +312,7 @@ def _enveloped_signature(t, sig_path=".//{%s}Signature" % NS['ds']):
     sig = t.find(sig_path)
     if sig is not None:
         delete_elt(sig)
-    if DEBUG_WRITE_TO_FILES:
+    if constants.DEBUG_WRITE_TO_FILES:
         with open("/tmp/foo-env.xml", "w") as fd:
             fd.write(etree.tostring(t))
     return t
@@ -372,10 +340,10 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
 
 
 def _transform(uri, t, tr=None, schema=None, sig_path=".//{%s}Signature" % NS['ds']):
-    if uri == TRANSFORM_ENVELOPED_SIGNATURE:
+    if uri == constants.TRANSFORM_ENVELOPED_SIGNATURE:
         return _enveloped_signature(t, sig_path)
 
-    if uri == TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS:
+    if uri == constants.TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS:
         nslist = None
         if tr is not None:
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
@@ -383,7 +351,7 @@ def _transform(uri, t, tr=None, schema=None, sig_path=".//{%s}Signature" % NS['d
                 nslist = elt.get('PrefixList', '').split()
         return _c14n(t, exclusive=True, with_comments=True, inclusive_prefix_list=nslist, schema=schema)
 
-    if uri == TRANSFORM_C14N_EXCLUSIVE:
+    if uri == constants.TRANSFORM_C14N_EXCLUSIVE:
         nslist = None
         if tr is not None:
             elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
@@ -391,7 +359,7 @@ def _transform(uri, t, tr=None, schema=None, sig_path=".//{%s}Signature" % NS['d
                 nslist = elt.get('PrefixList', '').split()
         return _c14n(t, exclusive=True, with_comments=False, inclusive_prefix_list=nslist, schema=schema)
 
-    if uri == TRANSFORM_C14N_INCLUSIVE:
+    if uri == constants.TRANSFORM_C14N_INCLUSIVE:
         return _c14n(t, exclusive=False, with_comments=False, schema=schema)
 
     raise XMLSigException("unknown or unimplemented transform %s" % uri)
@@ -411,9 +379,9 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
     :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
     :returns: True if signature(s) validated, False if there were no signatures
     """
-    if DEBUG_WRITE_TO_FILES:
+    if constants.DEBUG_WRITE_TO_FILES:
         with open("/tmp/foo-sig.xml", "w") as fd:
-            fd.write(etree.tostring(_root(t)))
+            fd.write(etree.tostring(root_elt(t)))
 
     # Load and parse certificate, unless keyspec is a fingerprint.
     cert = _load_keyspec(keyspec)
@@ -502,13 +470,14 @@ def add_enveloped_signature(t,
                             reference_uri='',
                             pos=0):
     if transforms is None:
-        transforms = (TRANSFORM_ENVELOPED_SIGNATURE, TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
+        transforms = (constants.TRANSFORM_ENVELOPED_SIGNATURE,
+                      constants.TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
 
     tmpl = _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri, signature_alg)
     if pos == -1:
-        _root(t).append(tmpl)
+        root_elt(t).append(tmpl)
     else:
-        _root(t).insert(pos, tmpl)
+        root_elt(t).insert(pos, tmpl)
 
 
 def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signature" % NS['ds']):
@@ -545,9 +514,9 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
     if t.find(sig_path) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
 
-    if DEBUG_WRITE_TO_FILES:
+    if constants.DEBUG_WRITE_TO_FILES:
         with open("/tmp/sig-ref.xml", "w") as fd:
-            fd.write(etree.tostring(_root(t)))
+            fd.write(etree.tostring(root_elt(t)))
 
     for sig in t.findall(sig_path):
         logging.debug("processing sig template: %s" % etree.tostring(sig))

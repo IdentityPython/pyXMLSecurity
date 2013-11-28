@@ -8,6 +8,7 @@ import unittest
 import xmlsec
 import pkg_resources
 from xmlsec.test.case import load_test_data
+from xmlsec import constants
 
 def root(t):
     if hasattr(t, 'getroot') and hasattr(t.getroot, '__call__'):
@@ -151,8 +152,8 @@ class TestTransforms(unittest.TestCase):
         t = case.as_etree('in.xml')
         xmlsec.add_enveloped_signature(t,
                                        pos=-1,
-                                       c14n_method=xmlsec.TRANSFORM_C14N_EXCLUSIVE,
-                                       transforms=[xmlsec.TRANSFORM_ENVELOPED_SIGNATURE])
+                                       c14n_method=constants.TRANSFORM_C14N_EXCLUSIVE,
+                                       transforms=[constants.TRANSFORM_ENVELOPED_SIGNATURE])
         signed = xmlsec.sign(t,
                              key_spec=self.private_keyspec,
                              cert_spec=self.public_keyspec)
@@ -224,8 +225,8 @@ class TestTransforms(unittest.TestCase):
         t = case.as_etree('in.xml')
         xmlsec.add_enveloped_signature(t,
                                        pos=-1,
-                                       c14n_method=xmlsec.TRANSFORM_C14N_EXCLUSIVE,
-                                       transforms=[xmlsec.TRANSFORM_ENVELOPED_SIGNATURE])
+                                       c14n_method=constants.TRANSFORM_C14N_EXCLUSIVE,
+                                       transforms=[constants.TRANSFORM_ENVELOPED_SIGNATURE])
         signed = xmlsec.sign(t,
                              key_spec=self.private_keyspec,
                              cert_spec=self.public_keyspec)
@@ -253,8 +254,8 @@ class TestTransforms(unittest.TestCase):
 
         xmlsec.add_enveloped_signature(t,
                                        pos=-1,
-                                       c14n_method=xmlsec.TRANSFORM_C14N_EXCLUSIVE,
-                                       transforms=[xmlsec.TRANSFORM_ENVELOPED_SIGNATURE])
+                                       c14n_method=constants.TRANSFORM_C14N_EXCLUSIVE,
+                                       transforms=[constants.TRANSFORM_ENVELOPED_SIGNATURE])
         signed = xmlsec.sign(t,
                              key_spec=self.private_keyspec,
                              cert_spec=self.public_keyspec,

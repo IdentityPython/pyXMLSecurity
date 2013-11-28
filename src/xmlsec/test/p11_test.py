@@ -1,21 +1,25 @@
 """
 Testing the PKCS#11 shim layer
 """
+
+__author__ = 'leifj'
+
+
 import xmlsec
 import pkg_resources
 import unittest
+import logging
+import os
+import traceback
+import subprocess
+import tempfile
 
 try:
     from PyKCS11 import PyKCS11Error
     from PyKCS11.LowLevel import CKR_PIN_INCORRECT
 except ImportError:
     raise unittest.SkipTest("PyKCS11 not installed")
-from xmlsec.test.case import XMLTestData, load_test_data
-
-__author__ = 'leifj'
-
-import logging, traceback, os, subprocess, unittest, tempfile
-from StringIO import StringIO
+from xmlsec.test.case import load_test_data
 
 
 def _find_alts(alts):
@@ -69,7 +73,7 @@ def _p(args):
 def setup():
     logging.debug("Creating test pkcs11 token using softhsm")
     try:
-        import xmlsec.pk11 as pk11
+        from xmlsec import pk11 as pk11
 
         global softhsm_conf
         softhsm_db = _tf()

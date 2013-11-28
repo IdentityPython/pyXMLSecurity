@@ -4,6 +4,7 @@ __author__ = 'leifj'
 
 from lxml import etree as etree
 from . import rsa_x509_pem
+from . import int_to_bytes as itb
 from xmlsec.exceptions import XMLSigException
 import htmlentitydefs
 import re
@@ -95,3 +96,32 @@ def delete_elt(elt):
                 up.text = ''
             up.text += elt.tail
     elt.getparent().remove(elt)
+
+
+def root_elt(t):
+    if hasattr(t, 'getroot') and hasattr(t.getroot, '__call__'):
+        return t.getroot()
+    else:
+        return t
+
+
+def number_of_bits(num):
+    """
+    Return the number of bits required to represent num.
+
+    In python >= 2.7, there is num.bit_length().
+
+    NOTE: This function appears unused, so it might go away.
+    """
+    assert num >= 0
+    # this is much faster than you would think, AND it is easy to read ;)
+    return len(bin(num)) - 2
+
+
+b64d = lambda s: s.decode('base64')
+
+
+def b64e(s):
+    if type(s) in (int, long):
+        s = itb.int_to_bytes(s)
+    return s.encode('base64').replace('\n', '')
