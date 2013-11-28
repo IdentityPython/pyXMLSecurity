@@ -18,14 +18,14 @@ TRANSFORM_C14N_INCLUSIVE = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'
 ALGORITHM_DIGEST_SHA1 = "http://www.w3.org/2000/09/xmldsig#sha1"
 ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 
-ALGORITHM_DIGEST_SHA256 = "http://www.w3.org/2000/09/xmldsig#sha256"
-ALGORITHM_SIGNATURE_RSA_SHA256 = "http://www.w3.org/2000/09/xmldsig#rsa-sha256"
+ALGORITHM_DIGEST_SHA256 = "http://www.w3.org/2001/04/xmlenc#sha256"
+ALGORITHM_SIGNATURE_RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
 
-ALGORITHM_DIGEST_SHA384 = "http://www.w3.org/2000/09/xmldsig#sha384"
-ALGORITHM_SIGNATURE_RSA_SHA384 = "http://www.w3.org/2000/09/xmldsig#rsa-sha384"
+ALGORITHM_DIGEST_SHA384 = "http://www.w3.org/2001/04/xmlencsha384"
+ALGORITHM_SIGNATURE_RSA_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"
 
-ALGORITHM_DIGEST_SHA512 = "http://www.w3.org/2000/09/xmldsig#sha512"
-ALGORITHM_SIGNATURE_RSA_SHA512 = "http://www.w3.org/2000/09/xmldsig#rsa-sha512"
+ALGORITHM_DIGEST_SHA512 = "http://www.w3.org/2001/04/xmlenc#sha512"
+ALGORITHM_SIGNATURE_RSA_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
 
 # This code was inspired by https://github.com/andrewdyates/xmldsig
 # and includes https://github.com/andrewdyates/rsa_x509_pem with
