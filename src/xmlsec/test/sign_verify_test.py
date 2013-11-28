@@ -128,6 +128,27 @@ class TestTransforms(unittest.TestCase):
 
         self.assertEqual(signed_sv, expected_sv)
 
+    def test_sign_SAML_assertion_sha256(self):
+        """
+        Test signing a SAML assertion using sha256, and compare resulting signature with that of another implementation (xmlsec1).
+        """
+        case = self.cases['SAML_assertion_sha256']
+        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+
+        signed = xmlsec.sign(case.as_etree('in.xml'),
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+        expected = case.as_etree('out.xml')
+
+        # extract 'SignatureValue's
+        expected_sv = _get_all_signatures(expected)
+        signed_sv = _get_all_signatures(signed)
+
+        print "Signed   SignatureValue: %s" % (repr(signed_sv))
+        print "Expected SignatureValue: %s" % (repr(expected_sv))
+
+        self.assertEqual(signed_sv, expected_sv)
+
     def test_verify_SAML_assertion1(self):
         """
         Test that we can verify signatures created by another implementation (xmlsec1).

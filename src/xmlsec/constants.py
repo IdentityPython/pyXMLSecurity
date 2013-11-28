@@ -36,7 +36,7 @@ default_digest_alg = ALGORITHM_DIGEST_SHA1
 default_c14n_alg = TRANSFORM_C14N_INCLUSIVE
 
 # Enable this to get various parts written to files in /tmp. Not for production!
-DEBUG_WRITE_TO_FILES = False
+DEBUG_WRITE_TO_FILES = True
 
 SAME_DOCUMENT_IS_ROOT = True
 

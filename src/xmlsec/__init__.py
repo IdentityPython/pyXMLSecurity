@@ -215,8 +215,9 @@ def _digest(data, hash_alg):
     :returns: Base64 string
     """
     h = getattr(hashlib, hash_alg)()
+    logging.debug(h)
     h.update(data)
-    digest = b64e(h.digest())
+    digest = h.digest().encode("base64").rstrip("\n") #b64e(h.digest())
     return digest
 
 
@@ -247,6 +248,7 @@ def _remove_child_comments(t):
         if c.tag is etree.Comment or c.tag is etree.PI:
             delete_elt(c)
     return t
+
 
 def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature" % NS['ds']):
     """
@@ -297,7 +299,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         hash_alg = (_alg(dm).split("#"))[1]
         logging.debug("using hash algorithm %s" % hash_alg)
         digest = _digest(obj, hash_alg)
-        logging.debug("digest for %s: %s" % (uri, digest))
+        logging.debug("using digest %s (%s) for ref %s" % (digest, hash_alg, uri))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
         logging.debug(etree.tostring(dv))
         dv.text = digest
@@ -329,7 +331,7 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     :returns: XML as string (utf8)
     """
     xml_str = etree.tostring(t)
-    doc = parse_xml(xml_str, remove_whitespace=exclusive, remove_comments=not with_comments, schema=schema)
+    doc = parse_xml(xml_str, remove_whitespace=False, remove_comments=not with_comments, schema=schema)
     buf = etree.tostring(doc, method='c14n', exclusive=exclusive, with_comments=with_comments, inclusive_ns_prefixes=inclusive_prefix_list)
     u = unescape_xml_entities(buf.decode("utf8", 'replace')).encode("utf8").strip()
     if u[0] != '<':
@@ -442,7 +444,7 @@ def _signed_info_transforms(transforms):
     return DS.Transforms(*ts)
 
 
-# standard enveloped rsa-sha1 signature
+# standard enveloped signature
 def _enveloped_signature_template(c14n_method,
                                   digest_alg,
                                   transforms,
