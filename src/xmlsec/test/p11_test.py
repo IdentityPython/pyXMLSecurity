@@ -4,7 +4,6 @@ Testing the PKCS#11 shim layer
 
 __author__ = 'leifj'
 
-
 import xmlsec
 import pkg_resources
 import unittest
