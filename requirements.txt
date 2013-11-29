@@ -1,3 +1,4 @@
 lxml
 pykcs11
 nose
+pyconfig

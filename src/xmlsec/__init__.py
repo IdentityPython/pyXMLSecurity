@@ -1,4 +1,8 @@
 
+# This code was inspired by https://github.com/andrewdyates/xmldsig
+# and includes https://github.com/andrewdyates/rsa_x509_pem with
+# permission from the author.
+
 __author__ = 'leifj'
 
 import os
@@ -14,30 +18,32 @@ from xmlsec.exceptions import XMLSigException
 from UserDict import DictMixin
 from xmlsec import constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e
-
+import pyconfig
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
 
 
-def _implicit_same_document(t, sig):  # this is actually incorrect according to the xml-dsig core spec
-    return copy.deepcopy(sig.getparent())
+class Config(object):
+    default_signature_alg = pyconfig.setting("xmlsec.default_signature_alg", constants.ALGORITHM_SIGNATURE_RSA_SHA1)
+    default_digest_alg = pyconfig.setting("xmlsec.default_digest_alg", constants.ALGORITHM_DIGEST_SHA1)
+    default_c14n_alg = pyconfig.setting("xmlsec.default_c14n_alg", constants.TRANSFORM_C14N_INCLUSIVE)
+    # Enable this to get various parts written to files in /tmp. Not for production!
+    debug_write_to_files = pyconfig.setting("xmlsec.config.debug_write_to_files", False)
+    same_document_is_root = pyconfig.setting("xmlsec.same_document_is_root", False)
+    id_attributes = pyconfig.setting("xmlsec.id_attributes", ['ID', 'id'])
+    c14_strip_ws = pyconfig.setting("xmlsec.c14n_strip_ws", False)
 
 
-def _implicit_same_document_correct(t, sig):
-    if constants.SAME_DOCUMENT_IS_ROOT:
+config = Config()
+
+
+def _implicit_same_document(t, sig):
+    if config.same_document_is_root:
         return root_elt(copy.deepcopy(t))
     else:
         return copy.deepcopy(sig.getparent())
-
-
-def set_default_signature_alg(alg):
-    constants.default_signature_alg = alg
-
-
-def set_default_digest_alg(alg):
-    constants.default_digest_alg = alg
 
 
 class CertDict(DictMixin):
@@ -222,7 +228,7 @@ def _digest(data, hash_alg):
 
 
 def _get_by_id(t, id_v):
-    for id_a in constants.id_attributes:
+    for id_a in config.id_attributes:
         logging.debug("Looking for #%s using id attribute '%s'" % (id_v, id_a))
         elts = t.xpath("//*[@%s='%s']" % (id_a, id_v))
         if elts is not None and len(elts) > 0:
@@ -275,7 +281,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         if return_verified:
             verified_objects.append(copy.deepcopy(obj))
 
-        if constants.DEBUG_WRITE_TO_FILES:
+        if config.debug_write_to_files:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
                 fd.write(etree.tostring(obj))
 
@@ -284,12 +290,12 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
 
         if not isinstance(obj, basestring):
-            if constants.DEBUG_WRITE_TO_FILES:
+            if config.debug_write_to_files:
                 with open("/tmp/foo-pre-serialize.xml", "w") as fd:
                     fd.write(etree.tostring(obj))
             obj = _transform(constants.TRANSFORM_C14N_INCLUSIVE, obj)
 
-        if constants.DEBUG_WRITE_TO_FILES:
+        if config.debug_write_to_files:
             with open("/tmp/foo-obj.xml", "w") as fd:
                 fd.write(obj)
 
@@ -314,7 +320,7 @@ def _enveloped_signature(t, sig_path=".//{%s}Signature" % NS['ds']):
     sig = t.find(sig_path)
     if sig is not None:
         delete_elt(sig)
-    if constants.DEBUG_WRITE_TO_FILES:
+    if config.debug_write_to_files:
         with open("/tmp/foo-env.xml", "w") as fd:
             fd.write(etree.tostring(t))
     return t
@@ -331,8 +337,12 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     :returns: XML as string (utf8)
     """
     xml_str = etree.tostring(t)
-    doc = parse_xml(xml_str, remove_whitespace=False, remove_comments=not with_comments, schema=schema)
-    buf = etree.tostring(doc, method='c14n', exclusive=exclusive, with_comments=with_comments, inclusive_ns_prefixes=inclusive_prefix_list)
+    doc = parse_xml(xml_str, remove_whitespace=config.c14_strip_ws, remove_comments=not with_comments, schema=schema)
+    buf = etree.tostring(doc,
+                         method='c14n',
+                         exclusive=exclusive,
+                         with_comments=with_comments,
+                         inclusive_ns_prefixes=inclusive_prefix_list)
     u = unescape_xml_entities(buf.decode("utf8", 'replace')).encode("utf8").strip()
     if u[0] != '<':
         raise XMLSigException("C14N buffer doesn't start with '<'")
@@ -381,7 +391,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
     :param keyspec: X.509 cert filename, string with fingerprint or X.509 cert as string
     :returns: True if signature(s) validated, False if there were no signatures
     """
-    if constants.DEBUG_WRITE_TO_FILES:
+    if config.debug_write_to_files:
         with open("/tmp/foo-sig.xml", "w") as fd:
             fd.write(etree.tostring(root_elt(t)))
 
@@ -465,9 +475,9 @@ def _enveloped_signature_template(c14n_method,
 
 
 def add_enveloped_signature(t,
-                            c14n_method=constants.default_c14n_alg,
-                            digest_alg=constants.default_digest_alg,
-                            signature_alg=constants.default_signature_alg,
+                            c14n_method=config.default_c14n_alg,
+                            digest_alg=config.default_digest_alg,
+                            signature_alg=config.default_signature_alg,
                             transforms=None,
                             reference_uri='',
                             pos=0):
@@ -516,7 +526,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
     if t.find(sig_path) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
 
-    if constants.DEBUG_WRITE_TO_FILES:
+    if config.debug_write_to_files:
         with open("/tmp/sig-ref.xml", "w") as fd:
             fd.write(etree.tostring(root_elt(t)))
 

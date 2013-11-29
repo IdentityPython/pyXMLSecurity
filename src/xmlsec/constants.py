@@ -27,19 +27,4 @@ ALGORITHM_SIGNATURE_RSA_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha
 ALGORITHM_DIGEST_SHA512 = "http://www.w3.org/2001/04/xmlenc#sha512"
 ALGORITHM_SIGNATURE_RSA_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
 
-# This code was inspired by https://github.com/andrewdyates/xmldsig
-# and includes https://github.com/andrewdyates/rsa_x509_pem with
-# permission from the author.
-
-default_signature_alg = ALGORITHM_SIGNATURE_RSA_SHA1
-default_digest_alg = ALGORITHM_DIGEST_SHA1
-default_c14n_alg = TRANSFORM_C14N_INCLUSIVE
-
-# Enable this to get various parts written to files in /tmp. Not for production!
-DEBUG_WRITE_TO_FILES = True
-
-SAME_DOCUMENT_IS_ROOT = True
-
-id_attributes = ['ID', 'id']
-
 
