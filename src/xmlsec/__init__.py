@@ -42,7 +42,6 @@ class Config(object):
     default_signature_alg = pyconfig.setting("xmlsec.default_signature_alg", constants.ALGORITHM_SIGNATURE_RSA_SHA1)
     default_digest_alg = pyconfig.setting("xmlsec.default_digest_alg", constants.ALGORITHM_DIGEST_SHA1)
     default_c14n_alg = pyconfig.setting("xmlsec.default_c14n_alg", constants.TRANSFORM_C14N_INCLUSIVE)
-    # Enable this to get various parts written to files in /tmp. Not for production!
     debug_write_to_files = pyconfig.setting("xmlsec.config.debug_write_to_files", False)
     same_document_is_root = pyconfig.setting("xmlsec.same_document_is_root", False)
     id_attributes = pyconfig.setting("xmlsec.id_attributes", ['ID', 'id'])
