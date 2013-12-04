@@ -8,7 +8,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.11'
+version = '0.12'
 
 install_requires = [
     'lxml', 'pyconfig'

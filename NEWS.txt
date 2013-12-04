@@ -79,7 +79,7 @@ News
 * Bugfixes
 * Protection against wrapping attacks (new API!)
 
-0.10.0
+0.10
 ------
 
 *Release date: Thu Sep 12 20:16:04 CEST 2013*
@@ -87,9 +87,18 @@ News
 * fix PEM parser bug
 * switch to semantic versioning
 
-0.10.1
+0.11
 ------
 
 *Release date: Fri Oct 11 17:06:53 CEST 2013*
 
 * better control over the position of the signature element
+
+0.12
+----
+
+*Release date: Wed Dec  4 15:00:29 CET 2013*
+
+* use pyconfig to control configuration parameters
+* support sha2 algorithms
+* several bugfixes for c14n
