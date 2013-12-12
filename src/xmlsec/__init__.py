@@ -17,7 +17,7 @@ from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
 from UserDict import DictMixin
 from xmlsec import constants
-from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e
+from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, b642cert
 import pyconfig
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
