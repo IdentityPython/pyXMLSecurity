@@ -532,13 +532,16 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
         cert_spec = private['data']
         logging.debug("Using P11 cert_spec :\n%s" % cert_spec)
 
-    public = _load_keyspec(cert_spec)
-    if public is None:
-        raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
-    if public['keysize'] != private['keysize']:
-        raise XMLSigException("Public and private key sizes do not match (%s, %s)"
-                              % (public['keysize'], private['keysize']))
-    logging.debug("Using %s bit key" % (private['keysize']))
+    public = None
+    if cert_spec is not None:
+        public = _load_keyspec(cert_spec)
+        if public is None:
+            raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
+        if public['keysize'] != private['keysize']:
+            raise XMLSigException("Public and private key sizes do not match (%s, %s)"
+                                  % (public['keysize'], private['keysize']))
+        # This might be incorrect for PKCS#11 tokens if we have no public key
+        logging.debug("Using %s bit key" % (private['keysize']))
 
     if t.find(sig_path) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
