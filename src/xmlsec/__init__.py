@@ -160,7 +160,9 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
 
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)
-            source = 'pkcs11'
+            return {'keyspec': keyspec,
+                    'source': 'pkcs11',
+                    'f_private': key_f_private}
         elif signature_element is not None:
             cd = _find_matching_cert(signature_element, keyspec)
             if cd is not None:
