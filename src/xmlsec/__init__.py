@@ -115,8 +115,6 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
     given specification. For example, if keyspec is a a PKCS#11 reference to a
     private key then naturally the key itself is not available.
 
-    :param private:
-    :param signature_element:
     Possible keyspecs, in evaluation order :
 
       - a callable.    Return a partial dict with 'f_private' set to the keyspec.
@@ -133,15 +131,16 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
 
       {'keyspec': keyspec,
        'source': 'pkcs11' or 'file' or 'fingerprint' or 'keyspec',
-       'data': X.509 certificate as string,
-       'key': Parsed key from certificate,
-       'keysize': Keysize in bits,
+       'data': X.509 certificate as string if source != 'pkcs11',
+       'key': Parsed key from certificate if source != 'pkcs11',
+       'keysize': Keysize in bits if source != 'pkcs11',
        'f_public': rsa_x509_pem.f_public(key) if private == False,
        'f_private': rsa_x509_pem.f_private(key) if private == True,
       }
 
-    :param sig: Signature element as lxml.Element or None
     :param keyspec: Keyspec as string or callable. See above.
+    :param private: True of False, is keyspec a private key or not?
+    :param signature_element:
     :returns: dict, see above.
     """
     data = None
@@ -202,11 +201,17 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     (01 | FF* | 00 | prefix | digest) [RSA-SHA1]
     where "digest" is of the generated c14n xml for <SignedInfo>.
 
-    Args:
-      data: str of bytes to sign
-      key_size: int of key length in bits; => len(`data`) + 3
-    Returns:
-      str: rsa-sha1 signature value of `data`
+    :param data: str of bytes to sign
+    :param key_size: key length (if known) in bits; => len(`data`) + 3
+    :param do_pad: Do PKCS1 (?) padding of the data - requires integer key_size
+    :param hash_alg: Hash algorithm as string (e.g. 'sha1')
+    :returns: rsa-sha1 signature value of `data`
+
+    :type data: string
+    :type key_size: None | int
+    :type do_pad: bool
+    :type hash_alg: string
+    :rtype: string
     """
 
     prefix = constants.ASN1_BER_ALG_DESIGNATOR_PREFIX.get(hash_alg)
