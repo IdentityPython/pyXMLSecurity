@@ -563,7 +563,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
         b_digest = _create_signature_digest(si, cm_alg, digest_alg)
 
         # sign hash digest and insert it into the XML
-        tbs = _signed_value(b_digest, private['keysize'], do_padding, digest_alg)
+        tbs = _signed_value(b_digest, private.get('keysize'), do_padding, digest_alg)
         signed = private['f_private'](tbs)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
