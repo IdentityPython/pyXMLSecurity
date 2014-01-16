@@ -530,10 +530,6 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
     if private['source'] == 'file':
         do_padding = True  # need to do p1 padding in this case
 
-    if cert_spec is None and private['source'] == 'pkcs11':
-        cert_spec = private['data']
-        logging.debug("Using P11 cert_spec :\n%s" % cert_spec)
-
     public = None
     if cert_spec is not None:
         public = _load_keyspec(cert_spec)
