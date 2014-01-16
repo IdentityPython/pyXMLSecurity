@@ -115,8 +115,6 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
     given specification. For example, if keyspec is a a PKCS#11 reference to a
     private key then naturally the key itself is not available.
 
-    :param private:
-    :param signature_element:
     Possible keyspecs, in evaluation order :
 
       - a callable.    Return a partial dict with 'f_private' set to the keyspec.
@@ -133,15 +131,16 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
 
       {'keyspec': keyspec,
        'source': 'pkcs11' or 'file' or 'fingerprint' or 'keyspec',
-       'data': X.509 certificate as string,
-       'key': Parsed key from certificate,
-       'keysize': Keysize in bits,
+       'data': X.509 certificate as string if source != 'pkcs11',
+       'key': Parsed key from certificate if source != 'pkcs11',
+       'keysize': Keysize in bits if source != 'pkcs11',
        'f_public': rsa_x509_pem.f_public(key) if private == False,
        'f_private': rsa_x509_pem.f_private(key) if private == True,
       }
 
-    :param sig: Signature element as lxml.Element or None
     :param keyspec: Keyspec as string or callable. See above.
+    :param private: True of False, is keyspec a private key or not?
+    :param signature_element:
     :returns: dict, see above.
     """
     data = None
@@ -161,7 +160,9 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
 
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)
-            source = 'pkcs11'
+            return {'keyspec': keyspec,
+                    'source': 'pkcs11',
+                    'f_private': key_f_private}
         elif signature_element is not None:
             cd = _find_matching_cert(signature_element, keyspec)
             if cd is not None:
@@ -202,11 +203,17 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     (01 | FF* | 00 | prefix | digest) [RSA-SHA1]
     where "digest" is of the generated c14n xml for <SignedInfo>.
 
-    Args:
-      data: str of bytes to sign
-      key_size: int of key length in bits; => len(`data`) + 3
-    Returns:
-      str: rsa-sha1 signature value of `data`
+    :param data: str of bytes to sign
+    :param key_size: key length (if known) in bits; => len(`data`) + 3
+    :param do_pad: Do PKCS1 (?) padding of the data - requires integer key_size
+    :param hash_alg: Hash algorithm as string (e.g. 'sha1')
+    :returns: rsa-sha1 signature value of `data`
+
+    :type data: string
+    :type key_size: None | int
+    :type do_pad: bool
+    :type hash_alg: string
+    :rtype: string
     """
 
     prefix = constants.ASN1_BER_ALG_DESIGNATOR_PREFIX.get(hash_alg)
@@ -523,17 +530,16 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
     if private['source'] == 'file':
         do_padding = True  # need to do p1 padding in this case
 
-    if cert_spec is None and private['source'] == 'pkcs11':
-        cert_spec = private['data']
-        logging.debug("Using P11 cert_spec :\n%s" % cert_spec)
-
-    public = _load_keyspec(cert_spec)
-    if public is None:
-        raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
-    if public['keysize'] != private['keysize']:
-        raise XMLSigException("Public and private key sizes do not match (%s, %s)"
-                              % (public['keysize'], private['keysize']))
-    logging.debug("Using %s bit key" % (private['keysize']))
+    public = None
+    if cert_spec is not None:
+        public = _load_keyspec(cert_spec)
+        if public is None:
+            raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
+        if public['keysize'] != private['keysize']:
+            raise XMLSigException("Public and private key sizes do not match (%s, %s)"
+                                  % (public['keysize'], private['keysize']))
+        # This might be incorrect for PKCS#11 tokens if we have no public key
+        logging.debug("Using %s bit key" % (private['keysize']))
 
     if t.find(sig_path) is None:
         add_enveloped_signature(t, reference_uri=reference_uri)
@@ -553,7 +559,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
         b_digest = _create_signature_digest(si, cm_alg, digest_alg)
 
         # sign hash digest and insert it into the XML
-        tbs = _signed_value(b_digest, private['keysize'], do_padding, digest_alg)
+        tbs = _signed_value(b_digest, private.get('keysize'), do_padding, digest_alg)
         signed = private['f_private'](tbs)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
