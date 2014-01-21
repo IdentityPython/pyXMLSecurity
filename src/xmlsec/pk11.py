@@ -146,6 +146,7 @@ def _session(library, slot, pin=None):
     if not library in _modules:
         logging.debug("loading library %s" % library)
         lib = PyKCS11.PyKCS11Lib()
+        assert type(library) == str  # lib.load does not like unicode
         lib.load(library)
         _modules[library] = lib
     else:
@@ -155,6 +156,7 @@ def _session(library, slot, pin=None):
     session = lib.openSession(slot)
     slot = lib.getSlotList()[slot]
     if pin is not None:
+        assert type(pin) == str  # session.login does not like unicode
         session.login(pin)
     else:
         logging.warning("No pin provided - not logging in")
@@ -173,7 +175,7 @@ def signer(pk11_uri, mech=PyKCS11.MechanismRSAPKCS1):
     else:
         pin = pin_spec
 
-    session = _session(library, slot, pin)
+    session = _session(str(library), slot, str(pin))
 
     key, cert = _find_key(session, keyname)
     if key is None:
