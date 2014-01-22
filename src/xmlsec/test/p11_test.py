@@ -87,7 +87,10 @@ def setup():
     logging.debug("Creating test pkcs11 token using softhsm")
     try:
         from xmlsec import pk11 as pk11
+    except ImportError:
+        raise unittest.SkipTest("PKCS11 tests disabled: unable to import xmlsec.pk11")
 
+    try:
         global softhsm_conf
         softhsm_db = _tf()
         softhsm_conf = _tf()
@@ -175,11 +178,6 @@ distinguished_name = req_distinguished_name
             '-w', signer_cert_der,
             '--pin', 'secret1'])
 
-    except ImportError, ex:
-        print "-" * 64
-        traceback.print_exc()
-        print "-" * 64
-        logging.warning("PKCS11 tests disabled: unable to import xmlsec.pk11: %s" % ex)
     except Exception, ex:
         print "-" * 64
         traceback.print_exc()
