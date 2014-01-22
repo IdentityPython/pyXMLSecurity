@@ -40,12 +40,9 @@ except Exception:
 
 p11_test_files = []
 softhsm_conf = None
-global configured
-configured = False
 server_cert_pem = None
 server_cert_der = None
 softhsm_db = None
-
 
 def _tf():
     f = tempfile.NamedTemporaryFile(delete=False)
@@ -68,7 +65,7 @@ def _p(args):
     if rv:
         raise RuntimeError("command exited with code != 0: %d" % rv)
 
-
+@unittest.skipIf(P11_MODULE is None, "SoftHSM PKCS11 module not installed")
 def setup():
     logging.debug("Creating test pkcs11 token using softhsm")
     try:
@@ -161,8 +158,6 @@ distinguished_name = req_distinguished_name
             '-w', signer_cert_der,
             '--pin', 'secret1'])
 
-        global configured
-        configured = True
     except ImportError, ex:
         print "-" * 64
         traceback.print_exc()
@@ -179,13 +174,7 @@ def teardown(self):
     for o in self.p11_test_files:
         if os.path.exists(o):
             os.unlink(o)
-    self.configured = False
     self.p11_test_files = []
-
-
-def is_configured():
-    global configured
-    return configured
 
 
 def _get_all_signatures(t):
@@ -206,11 +195,8 @@ class TestPKCS11(unittest.TestCase):
 
         self.cases = load_test_data('data/signverify')
 
-    #@unittest.skipUnless(is_configured(),"PKCS11 unconfigured")
-    def test_is_configured(self):
-        assert is_configured()
 
-    #@unittest.skipUnless(configured,"PKCS11 unconfigured")
+    @unittest.skipIf(P11_MODULE is None, "SoftHSM PKCS11 module not installed")
     def test_open_session(self):
         session = None
         try:
@@ -224,7 +210,7 @@ class TestPKCS11(unittest.TestCase):
             if session is not None:
                 pk11._close_session(session)
 
-    #@unittest.skipUnless(configured,"PKCS11 unconfigured")
+    @unittest.skipIf(P11_MODULE is None, "SoftHSM PKCS11 module not installed")
     def test_open_session_no_pin(self):
         session = None
         try:
@@ -238,6 +224,7 @@ class TestPKCS11(unittest.TestCase):
             if session is not None:
                 pk11._close_session(session)
 
+    @unittest.skipIf(P11_MODULE is None, "SoftHSM PKCS11 module not installed")
     def test_two_sessions(self):
         session1 = None
         session2 = None
@@ -256,6 +243,7 @@ class TestPKCS11(unittest.TestCase):
             if session2 is not None:
                 pk11._close_session(session2)
 
+    @unittest.skipIf(P11_MODULE is None, "SoftHSM PKCS11 module not installed")
     def test_bad_login(self):
         os.environ['SOFTHSM_CONF'] = softhsm_conf
         try:
@@ -265,7 +253,7 @@ class TestPKCS11(unittest.TestCase):
             assert ex.value == CKR_PIN_INCORRECT
             pass
 
-    #@unittest.skipUnless(configured,"PKCS11 unconfigured")
+    @unittest.skipIf(P11_MODULE is None, "SoftHSM PKCS11 module not installed")
     def test_find_key(self):
         session = None
         try:
@@ -281,7 +269,7 @@ class TestPKCS11(unittest.TestCase):
             if session is not None:
                 pk11._close_session(session)
 
-    #@unittest.skipUnless(configured,"PKCS11 unconfigured")
+    @unittest.skipIf(P11_MODULE is None, "SoftHSM PKCS11 module not installed")
     def test_SAML_sign_with_pkcs11(self):
         """
         Test signing a SAML assertion using PKCS#11 and then verifying it using plain file.

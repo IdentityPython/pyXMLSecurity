@@ -563,7 +563,11 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
         signed = private['f_private'](tbs)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
-        si.addnext(DS.SignatureValue(signature))
+        sv = si.find(".//{%s}SignatureValue" % NS['ds'])
+        if sv is None:
+            si.addnext(DS.SignatureValue(signature))
+        else:
+            sv.text = signature
 
         if public is not None:
             # Insert cert_data as b64-encoded X.509 certificate into XML document
