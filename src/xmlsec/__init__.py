@@ -563,7 +563,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
         signed = private['f_private'](tbs)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
-        sv = si.find(".//{%s}SignatureValue" % NS['ds'])
+        sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
         if sv is None:
             si.addnext(DS.SignatureValue(signature))
         else:
