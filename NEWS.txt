@@ -102,3 +102,13 @@ News
 * use pyconfig to control configuration parameters
 * support sha2 algorithms
 * several bugfixes for c14n
+
+0.13
+----
+
+*Release date: lör 22 mar 2014 10:44:49 CET*
+
+* various unicode fixes related to pkcs#11
+* skip certain tests unless opensc is installed
+* use existing SignatureValue if present
+* various fixes from Fredrik T and Maya W
