@@ -511,7 +511,7 @@ def add_enveloped_signature(t,
         root_elt(t).insert(pos, tmpl)
 
 
-def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signature" % NS['ds']):
+def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path=".//{%s}Signature" % NS['ds']):
     """
     Sign an XML document. This means to 'complete' all Signature elements in the XML.
 
@@ -519,6 +519,8 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
     :param key_spec: private key reference, see _load_keyspec() for syntax.
     :param cert_spec: None or public key reference (to add cert to document), see _load_keyspec() for syntax.
     :param reference_uri: Envelope signature reference URI
+    :param insert_index: Insertion point for the Signature element,
+                         Signature is inserted at beginning by default
     :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
     """
     do_padding = False  # only in the case of our fallback keytype do we need to do pkcs1 padding here
@@ -542,7 +544,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', sig_path=".//{%s}Signatu
         logging.debug("Using %s bit key" % (private['keysize']))
 
     if t.find(sig_path) is None:
-        add_enveloped_signature(t, reference_uri=reference_uri)
+        add_enveloped_signature(t, reference_uri=reference_uri, pos=insert_index)
 
     if config.debug_write_to_files:
         with open("/tmp/sig-ref.xml", "w") as fd:
