@@ -586,7 +586,17 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         if public is not None:
             # Insert cert_data as b64-encoded X.509 certificate into XML document
             sv_elt = si.getnext()
-            sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(public['data'])))))
+            sv_elt.addnext(
+                DS.KeyInfo(
+                    DS.X509Data(
+                        DS.X509Certificate(
+                            pem2b64(
+                                public['data']
+                            ).decode('ascii')
+                        )
+                    )
+                )
+            )
 
     return t
 

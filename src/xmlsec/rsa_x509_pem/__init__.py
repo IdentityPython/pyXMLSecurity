@@ -8,6 +8,9 @@
 #
 """Package module into well organized interface.
 """
+
+import six
+
 from .Crypto.PublicKey import RSA
 from . import rsa_pem
 from . import x509_pem
@@ -29,9 +32,11 @@ def parse(data):
   Returns:
     {str:str} as returned from appropriate *_parse parser
   """
-    if "RSA PRIVATE" in data:
+    if isinstance(data, six.text_type):
+        data = data.encode('utf-8')
+    if b"RSA PRIVATE" in data:
         pdict = rsa_pem.parse(data)
-    elif "CERTIFICATE" in data:
+    elif b"CERTIFICATE" in data:
         pdict = x509_pem.parse(data)
     else:
         raise Exception("PEM data type not supported.")

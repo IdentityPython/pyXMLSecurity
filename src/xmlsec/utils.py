@@ -1,7 +1,7 @@
+import base64
 import logging
 
 __author__ = 'leifj'
-import base64
 
 from lxml import etree as etree
 from . import rsa_x509_pem
@@ -24,20 +24,18 @@ def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
 
 
 def pem2b64(pem):
-    return '\n'.join(pem.strip().split('\n')[1:-1])
+    return b'\n'.join(pem.strip().split(b'\n')[1:-1])
 
 
 def b642pem(data):
-    x = data
-    r = "-----BEGIN CERTIFICATE-----\n"
-    while len(x) > 64:
-        r += x[0:64]
-        r += "\n"
-        x = x[64:]
-    r += x
-    r += "\n"
-    r += "-----END CERTIFICATE-----"
-    return r
+    group_by = 64
+    lines = [b'-----BEGIN CERTIFICATE-----']
+    i = 0
+    while i < len(data):
+        lines.append(data[i:i + group_by])
+        i += group_by
+    lines.append(b'-----END CERTIFICATE-----')
+    return b'\n'.join(lines)
 
 
 def pem2cert(pem):

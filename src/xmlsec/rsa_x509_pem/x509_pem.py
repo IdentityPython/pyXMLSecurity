@@ -329,12 +329,12 @@ def parse(data):
     lines = []
     grab = False
     for s in data.splitlines():
-        if '-----' == s[:5] and "BEGIN" in s:
-            if not "CERTIFICATE" in s:
+        if b'-----' == s[:5] and b"BEGIN" in s:
+            if b"CERTIFICATE" not in s:
                 raise NotImplementedError("Only PEM Certificates are supported. Header: %s", s)
             grab = True
-        elif '-----' == s[:5] and "END" in s:
-            if not "CERTIFICATE" in s:
+        elif b'-----' == s[:5] and b"END" in s:
+            if b"CERTIFICATE" not in s:
                 raise NotImplementedError("Only PEM Certificates are supported. Footer: %s", s)
             grab = False
         else:
@@ -342,8 +342,11 @@ def parse(data):
             if grab:
                 lines.append(s.strip())
 
-    body = ''.join(lines)
-    pem = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----\n" % "\n".join(lines)
+    body = b''.join(lines)
+    pem_lines = [b"-----BEGIN CERTIFICATE-----"]
+    pem_lines.extend(lines)
+    pem_lines.append(b"-----END CERTIFICATE-----")
+    pem = b'\n'.join(pem_lines) + b'\n'
     raw_data = base64.b64decode(body)
 
     cert = decoder.decode(raw_data, asn1Spec=Certificate())[0]

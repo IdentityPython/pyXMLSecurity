@@ -93,25 +93,25 @@ def parse(data, password=None):
     # read in key lines from keydata string
     for s in data.splitlines():
         # skip file headers
-        if '-----' == s[:5] and "BEGIN" in s:
+        if b'-----' == s[:5] and b"BEGIN" in s:
             # Detect RSA or DSA keys
-            if "RSA" in s:
-                ktype = "RSA"
-            elif "DSA" in s:
-                ktype = "DSA"
+            if b"RSA" in s:
+                ktype = b"RSA"
+            elif b"DSA" in s:
+                ktype = b"DSA"
             else:
-                ktype = s.replace("-----", "")
+                ktype = s.replace(b"-----", b"")
 
         # skip cryptographic headers
-        elif ":" in s or " " in s:
+        elif b":" in s or b" " in s:
             # detect encryption, if any
-            if "DEK-Info: " == s[0:10]:
+            if b"DEK-Info: " == s[0:10]:
                 encryption = s[10:]
         else:
             # include this b64 data for decoding
             lines.append(s.strip())
 
-    body = ''.join(lines)
+    body = b''.join(lines)
     raw_data = base64.b64decode(body)
 
     # Private Key cipher (Not Handled)
@@ -119,7 +119,7 @@ def parse(data, password=None):
         raise NotImplementedError("Symmetric encryption is not supported. DEK-Info: %s" % encryption)
 
     # decode data string using RSA
-    if ktype == 'RSA':
+    if ktype == b'RSA':
         asn1Spec = RSAPrivateParser()
     else:
         raise NotImplementedError("Only RSA is supported. Type was %s." % ktype)

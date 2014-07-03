@@ -35,7 +35,7 @@ RSA_PARTS = (
     ('exponent1', int),
     ('exponent2', int),
     ('coefficient', int),
-    ('body', str),
+    ('body', bytes),
     ('type', str),
 )
 
@@ -43,20 +43,20 @@ X509_PARTS = (
     ('modulus', int),
     ('publicExponent', int),
     ('subject', str),
-    ('body', str),
+    ('body', bytes),
     ('type', str),
 )
 
 X509_SUBJECT = "C=US,ST=Ohio,L=Columbus,CN=Andrew Yates,O=http://github.com/andrewdyates"
 
-MSG1 = "Hello, World!"
-MSG2 = "This is a test message to sign."
+MSG1 = b"Hello, World!"
+MSG2 = b"This is a test message to sign."
 MSG_LONG = """I dedicate this essay to the two-dozen-odd people whose refutations of Cantor’s diagonal
 argument have come to me either as referee or as editor in the last twenty years or so. Sadly these
 submissions were all quite unpublishable; I sent them back with what I hope were helpful comments. A
 few years ago it occurred to me to wonder why so many people devote so much energy to refuting this
 harmless little argument — what had it done to make them angry with it? So I started to keep notes
-of these papers, in the hope that some pattern would emerge. These pages report the results."""
+of these papers, in the hope that some pattern would emerge. These pages report the results.""".encode('utf-8')
 
 DUMMY_SIG = (1234567890,)
 
@@ -86,7 +86,8 @@ class TestParse(unittest.TestCase):
             kdict = rsa_pem.parse(data)
             for part, dtype in RSA_PARTS:
                 self.assertTrue(part in kdict)
-                self.assertTrue(isinstance(kdict[part], dtype))
+                self.assertTrue(isinstance(kdict[part], dtype),
+                    msg='Failed type verification for RSA part "%s", type "%s"' % (part, dtype))
 
     def test_cert_parse(self):
         for key, cert in KEY_FILE_PAIRS:
@@ -118,7 +119,8 @@ class TestParse(unittest.TestCase):
             self.assertTrue(cdict['cert'] is not None)
             for part, dtype in X509_PARTS:
                 self.assertTrue(part in cdict)
-                self.assertTrue(isinstance(cdict[part], dtype))
+                self.assertTrue(isinstance(cdict[part], dtype),
+                    msg='Failed type verification for X.509 part "%s", type "%s"' % (part, dtype))
 
     def test_cert_parse_components(self):
         for key, cert in KEY_FILE_PAIRS:
@@ -299,7 +301,7 @@ class TestRSAKey(unittest.TestCase):
         try:
             plain = key.decrypt(cipher)
         except Exception as e:
-            self.assertTrue("Ciphertext too large" in e, e)
+            self.assertTrue("Ciphertext too large" in str(e), e)
         else:
             self.assertNotEqual(MSG1, plain)
 
