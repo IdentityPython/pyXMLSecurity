@@ -24,6 +24,12 @@ NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
 
+try:
+    # Added in 3.3, and backported to 2.7.7
+    from hmac import compare_digest
+except ImportError:
+    def compare_digest(a, b):
+        return a == b
 
 class Config(object):
     """
@@ -452,7 +458,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
         actual = _signed_value(b_digest, this_keysize, True, digest_alg)
         expected = this_f_public(b64d(sv))
 
-        if expected != actual:
+        if not compare_digest(expected, actual):
             raise XMLSigException("Signature validation failed")
         validated.extend(validated_objects)
 
