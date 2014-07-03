@@ -15,7 +15,10 @@ import copy
 from . import int_to_bytes as itb
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
-from UserDict import DictMixin
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 from xmlsec import constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, b642cert
 import pyconfig
@@ -64,7 +67,7 @@ def _implicit_same_document(t, sig):
         return copy.deepcopy(sig.getparent())
 
 
-class CertDict(DictMixin):
+class CertDict(Mapping):
     """
     Extract all X509Certificate XML elements and create a dict-like object
     to access the certificates.
@@ -89,6 +92,9 @@ class CertDict(DictMixin):
 
     def keys(self):
         return list(self.certs.keys())
+
+    def __len__(self):
+        return len(self.certs)
 
     def __setitem__(self, key, value):
         self.certs[key] = value
