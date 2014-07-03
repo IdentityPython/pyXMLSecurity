@@ -33,7 +33,7 @@ def generate(bits, randfunc, progress_func=None):
     # Generate the prime factors of n
     if progress_func:
         progress_func('p,q\n')
-    p = q = 1L
+    p = q = 1
     while number.size(p * q) < bits:
         p = pubkey.getPrime(bits / 2, randfunc)
         q = pubkey.getPrime(bits / 2, randfunc)
@@ -49,7 +49,7 @@ def generate(bits, randfunc, progress_func=None):
     obj.u = pubkey.inverse(obj.p, obj.q)
     obj.n = obj.p * obj.q
 
-    obj.e = 65537L
+    obj.e = 65537
     if progress_func:
         progress_func('d\n')
     obj.d = pubkey.inverse(obj.e, (obj.p - 1) * (obj.q - 1))
@@ -157,7 +157,7 @@ class RSAobj_c(pubkey.CryptoPubkey):
         if attr in self.keydata:
             return getattr(self.key, attr)
         else:
-            if self.__dict__.has_key(attr):
+            if attr in self.__dict__:
                 self.__dict__[attr]
             else:
                 raise AttributeError('%s instance has no attribute %s' % (self.__class__, attr))
@@ -171,11 +171,11 @@ class RSAobj_c(pubkey.CryptoPubkey):
 
     def __setstate__(self, state):
         n, e = state['n'], state['e']
-        if not state.has_key('d'):
+        if 'd' not in state:
             self.key = _fastmath.rsa_construct(n, e)
         else:
             d = state['d']
-            if not state.has_key('q'):
+            if 'q' not in state:
                 self.key = _fastmath.rsa_construct(n, e, d)
             else:
                 p, q, u = state['p'], state['q'], state['u']
@@ -217,7 +217,7 @@ def generate_c(bits, randfunc, progress_func=None):
     if progress_func:
         progress_func('p,q\n')
 
-    p = q = 1L
+    p = q = 1
     while number.size(p * q) < bits:
         p = pubkey.getPrime(bits / 2, randfunc)
         q = pubkey.getPrime(bits / 2, randfunc)
@@ -230,7 +230,7 @@ def generate_c(bits, randfunc, progress_func=None):
     u = pubkey.inverse(p, q)
     n = p * q
 
-    e = 65537L
+    e = 65537
     if progress_func:
         progress_func('d\n')
     d = pubkey.inverse(e, (p - 1) * (q - 1))
@@ -246,7 +246,7 @@ def generate_c(bits, randfunc, progress_func=None):
 
 
 def construct_c(tuple):
-    key = apply(_fastmath.rsa_construct, tuple)
+    key = _fastmath.rsa_construct(*tuple)
     return RSAobj_c(key)
 
 

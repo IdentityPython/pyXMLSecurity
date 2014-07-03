@@ -178,10 +178,10 @@ distinguished_name = req_distinguished_name
             '-w', signer_cert_der,
             '--pin', 'secret1'])
 
-    except Exception, ex:
-        print "-" * 64
+    except Exception as ex:
+        print("-" * 64)
         traceback.print_exc()
-        print "-" * 64
+        print("-" * 64)
         logging.warning("PKCS11 tests disabled: unable to initialize test token: %s" % ex)
 
 
@@ -218,7 +218,7 @@ class TestPKCS11(unittest.TestCase):
             os.environ['SOFTHSM_CONF'] = softhsm_conf
             session = pk11._session(P11_MODULE, 0, "secret1")
             assert session is not None
-        except Exception, ex:
+        except Exception as ex:
             traceback.print_exc()
             raise ex
         finally:
@@ -232,7 +232,7 @@ class TestPKCS11(unittest.TestCase):
             os.environ['SOFTHSM_CONF'] = softhsm_conf
             session = pk11._session(P11_MODULE, 0)
             assert session is not None
-        except Exception, ex:
+        except Exception as ex:
             traceback.print_exc()
             raise ex
         finally:
@@ -250,7 +250,7 @@ class TestPKCS11(unittest.TestCase):
             assert session1 != session2
             assert session1 is not None
             assert session2 is not None
-        except Exception, ex:
+        except Exception as ex:
             raise ex
         finally:
             if session1 is not None:
@@ -264,7 +264,7 @@ class TestPKCS11(unittest.TestCase):
         try:
             session = pk11._session(P11_MODULE, 0, "wrong")
             assert False, "We should have failed the last login"
-        except PyKCS11Error, ex:
+        except PyKCS11Error as ex:
             assert ex.value == CKR_PIN_INCORRECT
             pass
 
@@ -278,7 +278,7 @@ class TestPKCS11(unittest.TestCase):
             assert key is not None
             assert cert is not None
             assert cert.strip() == open(signer_cert_pem).read().strip()
-        except Exception, ex:
+        except Exception as ex:
             raise ex
         finally:
             if session is not None:
@@ -290,7 +290,7 @@ class TestPKCS11(unittest.TestCase):
         Test signing a SAML assertion using PKCS#11 and then verifying it using plain file.
         """
         case = self.cases['SAML_assertion1']
-        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('in.xml'))))
 
         os.environ['SOFTHSM_CONF'] = softhsm_conf
 

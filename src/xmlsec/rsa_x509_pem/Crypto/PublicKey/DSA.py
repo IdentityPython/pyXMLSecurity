@@ -37,7 +37,7 @@ def generateQ(randfunc):
         q = q * 256 + c
     while (not isPrime(q)):
         q = q + 2
-    if pow(2, 159L) < q < pow(2, 160L):
+    if pow(2, 159) < q < pow(2, 160):
         return S, q
     raise pubkey.CryptoPubkeyError('Bad q value generated')
 
@@ -68,7 +68,7 @@ def generate(bits, randfunc, progress_func=None):
                 V[k] = bytes_to_long(SHA.new(S + str(N) + str(k)).digest())
             W = V[n] % powb
             for k in range(n - 1, -1, -1):
-                W = (W << 160L) + V[k]
+                W = (W << 160) + V[k]
             X = W + powL1
             p = X - (X % (2 * obj.q) - 1)
             if powL1 <= p and isPrime(p):
@@ -183,7 +183,7 @@ class DSAobj_c(pubkey.CryptoPubkey):
         if attr in self.keydata:
             return getattr(self.key, attr)
         else:
-            if self.__dict__.has_key(attr):
+            if attr in self.__dict__:
                 self.__dict__[attr]
             else:
                 raise AttributeError('%s instance has no attribute %s' % (self.__class__, attr))
@@ -197,7 +197,7 @@ class DSAobj_c(pubkey.CryptoPubkey):
 
     def __setstate__(self, state):
         y, g, p, q = state['y'], state['g'], state['p'], state['q']
-        if not state.has_key('x'):
+        if 'x' not in state:
             self.key = _fastmath.dsa_construct(y, g, p, q)
         else:
             x = state['x']
@@ -206,7 +206,8 @@ class DSAobj_c(pubkey.CryptoPubkey):
     def _sign(self, M, K):
         return self.key._sign(M, K)
 
-    def _verify(self, M, (r, s)):
+    def _verify(self, M, xxx_todo_changeme):
+        (r, s) = xxx_todo_changeme
         return self.key._verify(M, r, s)
 
     def size(self):
@@ -232,7 +233,7 @@ def generate_c(bits, randfunc, progress_func=None):
 
 
 def construct_c(tuple):
-    key = apply(_fastmath.dsa_construct, tuple)
+    key = _fastmath.dsa_construct(*tuple)
     return DSAobj_c(key)
 
 

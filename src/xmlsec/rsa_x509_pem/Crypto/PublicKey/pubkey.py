@@ -30,8 +30,8 @@ class CryptoPubkey:
         restoration."""
         d = self.__dict__
         for key in self.keydata:
-            if d.has_key(key):
-                d[key] = long(d[key])
+            if key in d:
+                d[key] = int(d[key])
         return d
 
     def __setstate__(self, d):
@@ -39,7 +39,7 @@ class CryptoPubkey:
 number representation being used, whether that is Python long
 integers, MPZ objects, or whatever."""
         for key in self.keydata:
-            if d.has_key(key):
+            if key in d:
                 self.__dict__[key] = bignum(d[key])
 
     def _encrypt(self, _plaintext, _K):
@@ -61,10 +61,10 @@ integers, MPZ objects, or whatever."""
         parameter required by some algorithms.
         """
         wasString = 0
-        if isinstance(plaintext, types.StringType):
+        if isinstance(plaintext, bytes):
             plaintext = bytes_to_long(plaintext)
             wasString = 1
-        if isinstance(K, types.StringType):
+        if isinstance(K, bytes):
             K = bytes_to_long(K)
         ciphertext = self._encrypt(plaintext, K)
         if wasString:
@@ -77,9 +77,9 @@ integers, MPZ objects, or whatever."""
         Decrypt 'ciphertext' using this key.
         """
         wasString = 0
-        if not isinstance(ciphertext, types.TupleType):
+        if not isinstance(ciphertext, tuple):
             ciphertext = (ciphertext,)
-        if isinstance(ciphertext[0], types.StringType):
+        if isinstance(ciphertext[0], bytes):
             ciphertext = tuple(map(bytes_to_long, ciphertext))
             wasString = 1
         plaintext = self._decrypt(ciphertext)
@@ -95,9 +95,9 @@ integers, MPZ objects, or whatever."""
         """
         if (not self.has_private()):
             raise CryptoPubkeyError('Private key not available in this object')
-        if isinstance(M, types.StringType):
+        if isinstance(M, bytes):
             M = bytes_to_long(M)
-        if isinstance(K, types.StringType):
+        if isinstance(K, bytes):
             K = bytes_to_long(K)
         return self._sign(M, K)
 
@@ -106,7 +106,7 @@ integers, MPZ objects, or whatever."""
         Verify that the signature is valid for the message M;
         returns true if the signature checks out.
         """
-        if isinstance(M, types.StringType):
+        if isinstance(M, bytes):
             M = bytes_to_long(M)
         return self._verify(M, signature)
 
@@ -120,10 +120,10 @@ integers, MPZ objects, or whatever."""
         Blind message M using blinding factor B.
         """
         wasString = 0
-        if isinstance(M, types.StringType):
+        if isinstance(M, bytes):
             M = bytes_to_long(M)
             wasString = 1
-        if isinstance(B, types.StringType):
+        if isinstance(B, bytes):
             B = bytes_to_long(B)
         blindedmessage = self._blind(M, B)
         if wasString:
@@ -136,10 +136,10 @@ integers, MPZ objects, or whatever."""
         Unblind message M using blinding factor B.
         """
         wasString = 0
-        if isinstance(M, types.StringType):
+        if isinstance(M, bytes):
             M = bytes_to_long(M)
             wasString = 1
-        if isinstance(B, types.StringType):
+        if isinstance(B, bytes):
             B = bytes_to_long(B)
         unblindedmessage = self._unblind(M, B)
         if wasString:

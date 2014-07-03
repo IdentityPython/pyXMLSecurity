@@ -40,7 +40,7 @@ class TestTransforms(unittest.TestCase):
         Test signing a SAML assertion, and making sure we can verify it.
         """
         case = self.cases['SAML_assertion1']
-        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('in.xml'))))
 
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
@@ -53,7 +53,7 @@ class TestTransforms(unittest.TestCase):
         Test signing a SAML assertion using sha256, and making sure we can verify it.
         """
         case = self.cases['SAML_assertion_sha256']
-        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('in.xml'))))
 
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
@@ -66,7 +66,7 @@ class TestTransforms(unittest.TestCase):
         Test signing a SAML assertion, and return verified data.
         """
         case = self.cases['SAML_assertion1']
-        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('in.xml'))))
 
         tbs = case.as_etree('in.xml')
         signed = xmlsec.sign(tbs,
@@ -74,7 +74,7 @@ class TestTransforms(unittest.TestCase):
                              cert_spec=self.public_keyspec)
         refs = xmlsec.verified(signed, self.public_keyspec)
         self.assertTrue(len(refs) == 1)
-        print("verified XML: %s" % etree.tostring(refs[0]))
+        print(("verified XML: %s" % etree.tostring(refs[0])))
         self.assertTrue(tbs.tag == refs[0].tag)
         set1 = set(etree.tostring(i, method='c14n') for i in root(tbs))
         set2 = set(etree.tostring(i, method='c14n') for i in root(refs[0]))
@@ -85,7 +85,7 @@ class TestTransforms(unittest.TestCase):
         Test resistance to attempted wrapping attack
         """
         case = self.cases['SAML_assertion1']
-        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('in.xml'))))
         tbs = case.as_etree('in.xml')
         signed = xmlsec.sign(tbs,
                              key_spec=self.private_keyspec,
@@ -94,12 +94,12 @@ class TestTransforms(unittest.TestCase):
         attack.append(signed)
         refs = xmlsec.verified(attack, self.public_keyspec)
         self.assertTrue(len(refs) == 1)
-        print("verified XML: %s" % etree.tostring(refs[0]))
+        print(("verified XML: %s" % etree.tostring(refs[0])))
         seen_foo = False
         seen_bar = False
         for av in refs[0].findall(".//{%s}AttributeValue" % 'urn:oasis:names:tc:SAML:2.0:assertion'):
-            print(etree.tostring(av))
-            print(av.text)
+            print((etree.tostring(av)))
+            print((av.text))
             if av.text == 'Foo':
                 seen_foo = True
             elif av.text == 'Bar':
@@ -112,7 +112,7 @@ class TestTransforms(unittest.TestCase):
         Test signing a SAML assertion, and compare resulting signature with that of another implementation (xmlsec1).
         """
         case = self.cases['SAML_assertion1']
-        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('in.xml'))))
 
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
@@ -123,8 +123,8 @@ class TestTransforms(unittest.TestCase):
         expected_sv = _get_all_signatures(expected)
         signed_sv = _get_all_signatures(signed)
 
-        print "Signed   SignatureValue: %s" % (repr(signed_sv))
-        print "Expected SignatureValue: %s" % (repr(expected_sv))
+        print("Signed   SignatureValue: %s" % (repr(signed_sv)))
+        print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
         self.assertEqual(signed_sv, expected_sv)
 
@@ -133,7 +133,7 @@ class TestTransforms(unittest.TestCase):
         Test signing a SAML assertion using sha256, and compare resulting signature with that of another implementation (xmlsec1).
         """
         case = self.cases['SAML_assertion_sha256']
-        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('in.xml'))))
 
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
@@ -144,8 +144,8 @@ class TestTransforms(unittest.TestCase):
         expected_sv = _get_all_signatures(expected)
         signed_sv = _get_all_signatures(signed)
 
-        print "Signed   SignatureValue: %s" % (repr(signed_sv))
-        print "Expected SignatureValue: %s" % (repr(expected_sv))
+        print("Signed   SignatureValue: %s" % (repr(signed_sv)))
+        print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
         self.assertEqual(signed_sv, expected_sv)
 
@@ -154,7 +154,7 @@ class TestTransforms(unittest.TestCase):
         Test that we can verify signatures created by another implementation (xmlsec1).
         """
         case = self.cases['SAML_assertion1']
-        print("XML input :\n{}\n\n".format(case.as_buf('out.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('out.xml'))))
 
         res = xmlsec.verify(case.as_etree('out.xml'),
                             self.public_keyspec)
@@ -170,7 +170,7 @@ class TestTransforms(unittest.TestCase):
         # does NOT validate anymore
         case.data['out.xml'] = case.data['out.xml'].replace('>Bar<', '>Malory<')
 
-        print("XML input :\n{}\n\n".format(case.as_buf('out.xml')))
+        print(("XML input :\n{}\n\n".format(case.as_buf('out.xml'))))
         with self.assertRaises(xmlsec.XMLSigException):
             xmlsec.verify(case.as_etree('out.xml'), self.public_keyspec)
 
@@ -179,7 +179,7 @@ class TestTransforms(unittest.TestCase):
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec=self.private_keyspec,
                              cert_spec=self.public_keyspec)
-        print etree.tostring(signed)
+        print(etree.tostring(signed))
 
     def test_mm2(self):
         case = self.cases['mm2']
@@ -194,17 +194,17 @@ class TestTransforms(unittest.TestCase):
 
         expected = case.as_etree('out.xml')
 
-        print " --- Expected"
-        print etree.tostring(expected)
-        print " --- Actual"
-        print etree.tostring(signed)
+        print(" --- Expected")
+        print(etree.tostring(expected))
+        print(" --- Actual")
+        print(etree.tostring(signed))
 
         # extract 'SignatureValue's
         expected_sv = _get_all_signatures(expected)
         signed_sv = _get_all_signatures(signed)
 
-        print "Signed   SignatureValue: %s" % (repr(signed_sv))
-        print "Expected SignatureValue: %s" % (repr(expected_sv))
+        print("Signed   SignatureValue: %s" % (repr(signed_sv)))
+        print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
         self.assertEqual(signed_sv, expected_sv)
 
@@ -217,17 +217,17 @@ class TestTransforms(unittest.TestCase):
 
         expected = case.as_etree('out.xml')
 
-        print " --- Expected"
-        print etree.tostring(expected)
-        print " --- Actual"
-        print etree.tostring(signed)
+        print(" --- Expected")
+        print(etree.tostring(expected))
+        print(" --- Actual")
+        print(etree.tostring(signed))
 
         # extract 'SignatureValue's
         expected_sv = _get_all_signatures(expected)
         signed_sv = _get_all_signatures(signed)
 
-        print "Signed   SignatureValue: %s" % (repr(signed_sv))
-        print "Expected SignatureValue: %s" % (repr(expected_sv))
+        print("Signed   SignatureValue: %s" % (repr(signed_sv)))
+        print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
         self.assertEqual(signed_sv, expected_sv)
 
@@ -240,17 +240,17 @@ class TestTransforms(unittest.TestCase):
 
         expected = case.as_etree('out.xml')
 
-        print " --- Expected"
-        print etree.tostring(expected)
-        print " --- Actual"
-        print etree.tostring(signed)
+        print(" --- Expected")
+        print(etree.tostring(expected))
+        print(" --- Actual")
+        print(etree.tostring(signed))
 
         # extract 'SignatureValue's
         expected_sv = _get_all_signatures(expected)
         signed_sv = _get_all_signatures(signed)
 
-        print "Signed   SignatureValue: %s" % (repr(signed_sv))
-        print "Expected SignatureValue: %s" % (repr(expected_sv))
+        print("Signed   SignatureValue: %s" % (repr(signed_sv)))
+        print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
         self.assertEqual(signed_sv, expected_sv)
 
@@ -267,17 +267,17 @@ class TestTransforms(unittest.TestCase):
 
         expected = case.as_etree('out.xml')
 
-        print " --- Expected"
-        print etree.tostring(expected)
-        print " --- Actual"
-        print etree.tostring(signed)
+        print(" --- Expected")
+        print(etree.tostring(expected))
+        print(" --- Actual")
+        print(etree.tostring(signed))
 
         # extract 'SignatureValue's
         expected_sv = _get_all_signatures(expected)
         signed_sv = _get_all_signatures(signed)
 
-        print "Signed   SignatureValue: %s" % (repr(signed_sv))
-        print "Expected SignatureValue: %s" % (repr(expected_sv))
+        print("Signed   SignatureValue: %s" % (repr(signed_sv)))
+        print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
         self.assertEqual(signed_sv, expected_sv)
 
@@ -300,24 +300,24 @@ class TestTransforms(unittest.TestCase):
         sig = t.find("./{%s}Signature" % xmlsec.NS['ds'])
         digest = sig.findtext('.//{%s}DigestValue' % xmlsec.NS['ds'])
 
-        print " --- Expected digest value"
-        print expected_digest
-        print " --- Actual digest value"
-        print digest
+        print(" --- Expected digest value")
+        print(expected_digest)
+        print(" --- Actual digest value")
+        print(digest)
 
-        print " --- Expected"
-        print etree.tostring(expected)
-        print " --- Actual"
-        print etree.tostring(signed)
+        print(" --- Expected")
+        print(etree.tostring(expected))
+        print(" --- Actual")
+        print(etree.tostring(signed))
 
         # extract 'SignatureValue's
         expected_sv = _get_all_signatures(expected)
         signed_sv = _get_all_signatures(signed)
 
-        print "Signed   SignatureValue: %s" % (repr(signed_sv))
-        print "Expected SignatureValue: %s" % (repr(expected_sv))
+        print("Signed   SignatureValue: %s" % (repr(signed_sv)))
+        print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
-        self.assertEquals(digest, expected_digest)
+        self.assertEqual(digest, expected_digest)
         self.assertEqual(signed_sv, expected_sv)
 
     def test_verify_href(self):

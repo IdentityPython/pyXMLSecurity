@@ -4,7 +4,7 @@ import threading
 __author__ = 'leifj'
 
 from xmlsec.exceptions import XMLSigException
-from urlparse import urlparse
+from urllib.parse import urlparse
 import os
 import logging
 
@@ -16,7 +16,7 @@ try:
 except ImportError:
     raise XMLSigException("pykcs11 is required for PKCS#11 keys - cf README.rst")
 
-all_attributes = PyKCS11.CKA.keys()
+all_attributes = list(PyKCS11.CKA.keys())
 
 # remove the CKR_ATTRIBUTE_SENSITIVE attributes since we can't get
 all_attributes.remove(PyKCS11.LowLevel.CKA_PRIVATE_EXPONENT)
@@ -108,7 +108,7 @@ def _find_object(session, template):
 
 def _get_object_attributes(session, o):
     attributes = session.getAttributeValue(o, all_attributes)
-    return dict(zip(all_attributes, attributes))
+    return dict(list(zip(all_attributes, attributes)))
 
 
 def _cert_der2pem(der):

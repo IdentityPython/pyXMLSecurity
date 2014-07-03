@@ -75,14 +75,14 @@ class CertDict(DictMixin):
             m = hashlib.sha1()
             m.update(cert_der)
             fingerprint = m.hexdigest().lower()
-            fingerprint = ":".join([fingerprint[x:x + 2] for x in xrange(0, len(fingerprint), 2)])
+            fingerprint = ":".join([fingerprint[x:x + 2] for x in range(0, len(fingerprint), 2)])
             self.certs[fingerprint] = cert_pem
 
     def __getitem__(self, item):
         return self.certs[item]
 
     def keys(self):
-        return self.certs.keys()
+        return list(self.certs.keys())
 
     def __setitem__(self, key, value):
         self.certs[key] = value
@@ -101,7 +101,7 @@ def _find_matching_cert(t, fp):
     """
     if t is None:
         return None
-    for cfp, pem in CertDict(t).iteritems():
+    for cfp, pem in CertDict(t).items():
         if fp.lower() == cfp:
             return pem
     return None
@@ -150,7 +150,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
         return {'keyspec': keyspec,
                 'source': 'callable',
                 'f_private': keyspec}
-    if isinstance(keyspec, basestring):
+    if isinstance(keyspec, str):
         if os.path.isfile(keyspec):
             with open(keyspec) as c:
                 data = c.read()
@@ -308,7 +308,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             logging.debug("transform: %s" % _alg(tr))
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
 
-        if not isinstance(obj, basestring):
+        if not isinstance(obj, str):
             if config.debug_write_to_files:
                 with open("/tmp/foo-pre-serialize.xml", "w") as fd:
                     fd.write(etree.tostring(obj))

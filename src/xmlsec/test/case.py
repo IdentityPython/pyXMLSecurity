@@ -7,7 +7,7 @@ __author__ = 'leifj'
 import os
 import pkg_resources
 import lxml.etree as etree
-from StringIO import StringIO
+from io import StringIO
 import xmlsec
 
 

@@ -49,7 +49,7 @@ def is_natural(value, include_zero=False):
     bool: is value a natural number?
   """
     return all((
-        isinstance(value, (int, long)),
+        isinstance(value, int),
         value >= 0,
         not (value == 0 and not include_zero),
     ))
