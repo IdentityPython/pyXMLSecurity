@@ -7,7 +7,7 @@ from lxml import etree as etree
 from . import rsa_x509_pem
 from . import int_to_bytes as itb
 from xmlsec.exceptions import XMLSigException
-import html.entities
+from six.moves import html_entities
 import re
 
 
@@ -67,7 +67,7 @@ def unescape_xml_entities(text):
             # named entity
             try:
                 if not text in ('&amp;', '&lt;', '&gt;'):
-                    text = chr(html.entities.name2codepoint[text[1:-1]])
+                    text = chr(html_entities.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text  # leave as is
