@@ -360,7 +360,9 @@ def parse(data):
         raise NotImplementedError("Only RSA X509 certificates are supported.")
         # rip out RSA public key binary
     key_bits = RX_PUBLIC_KEY.search(text).group(1)
-    key_binhex = hex(int(key_bits, 2))[2:]
+    # 'hex' produces a string with a 0x prefix and, on Python 2, a 'L' suffix.
+    # Strip these.
+    key_binhex = hex(int(key_bits, 2)).lstrip('0x').rstrip('L')
     key_bin = base64.b16decode(key_binhex.upper())
     # reparse RSA Public Key PEM binary
     key = decoder.decode(key_bin, asn1Spec=RSAPublicKey())[0]
