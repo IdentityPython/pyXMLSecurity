@@ -1,30 +1,27 @@
 # CER encoder
-import string
-from ...type import univ
-from ..ber import encoder
-
+from pyasn1.type import univ
+from pyasn1.codec.ber import encoder
+from pyasn1.compat.octets import int2oct, null
 
 class BooleanEncoder(encoder.IntegerEncoder):
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
         if client == 0:
-            substrate = '\000'
+            substrate = int2oct(0)
         else:
-            substrate = '\777'
+            substrate = int2oct(255)
         return substrate, 0
-
 
 class BitStringEncoder(encoder.BitStringEncoder):
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
         return encoder.BitStringEncoder.encodeValue(
             self, encodeFun, client, defMode, 1000
-        )
-
+            )
 
 class OctetStringEncoder(encoder.OctetStringEncoder):
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
         return encoder.OctetStringEncoder.encodeValue(
             self, encodeFun, client, defMode, 1000
-        )
+            )
 
 # specialized RealEncoder here
 # specialized GeneralStringEncoder here
@@ -32,21 +29,14 @@ class OctetStringEncoder(encoder.OctetStringEncoder):
 # specialized UTCTimeEncoder here
 
 class SetOfEncoder(encoder.SequenceOfEncoder):
-    def _cmpSetComponents(self, c1, c2):
-        return cmp(
-            getattr(c1, 'getMinimalTagSet', c1.getTagSet)(),
-            getattr(c2, 'getMinimalTagSet', c2.getTagSet)()
-        )
-
     def encodeValue(self, encodeFun, client, defMode, maxChunkSize):
-        if hasattr(client, 'setDefaultComponents'):
+        if isinstance(client, univ.SequenceAndSetBase):
             client.setDefaultComponents()
         client.verifySizeSpec()
-        substrate = ''
-        idx = len(client)
+        substrate = null; idx = len(client)
         # This is certainly a hack but how else do I distinguish SetOf
         # from Set if they have the same tags&constraints?
-        if hasattr(client, 'getDefaultComponentByPosition'):
+        if isinstance(client, univ.SequenceAndSetBase):
             # Set
             comps = []
             while idx > 0:
@@ -56,9 +46,10 @@ class SetOfEncoder(encoder.SequenceOfEncoder):
                 if client.getDefaultComponentByPosition(idx) == client[idx]:
                     continue
                 comps.append(client[idx])
-            comps.sort(self._cmpSetComponents)
+            comps.sort(key=lambda x: isinstance(x, univ.Choice) and \
+                                     x.getMinTagSet() or x.getTagSet())
             for c in comps:
-                substrate = substrate + encodeFun(c, defMode, maxChunkSize)
+                substrate += encodeFun(c, defMode, maxChunkSize)
         else:
             # SetOf
             compSubs = []
@@ -66,27 +57,31 @@ class SetOfEncoder(encoder.SequenceOfEncoder):
                 idx = idx - 1
                 compSubs.append(
                     encodeFun(client[idx], defMode, maxChunkSize)
-                )
+                    )
             compSubs.sort()  # perhaps padding's not needed
-            substrate = string.join(compSubs, '')
+            substrate = null
+            for compSub in compSubs:
+                substrate += compSub
         return substrate, 1
 
-
-codecMap = encoder.codecMap.copy()
-codecMap.update({
+tagMap = encoder.tagMap.copy()
+tagMap.update({
     univ.Boolean.tagSet: BooleanEncoder(),
     univ.BitString.tagSet: BitStringEncoder(),
     univ.OctetString.tagSet: OctetStringEncoder(),
-    # Set & SetOf have same tags
-    univ.SetOf().tagSet: SetOfEncoder()
-})
+    univ.SetOf().tagSet: SetOfEncoder()  # conflcts with Set
+    })
 
+typeMap = encoder.typeMap.copy()
+typeMap.update({
+    univ.Set.typeId: SetOfEncoder(),
+    univ.SetOf.typeId: SetOfEncoder()
+    })
 
 class Encoder(encoder.Encoder):
     def __call__(self, client, defMode=0, maxChunkSize=0):
         return encoder.Encoder.__call__(self, client, defMode, maxChunkSize)
 
-
-encode = Encoder(codecMap)
+encode = Encoder(tagMap, typeMap)
 
 # EncoderFactory queries class instance and builds a map of tags -> encoders

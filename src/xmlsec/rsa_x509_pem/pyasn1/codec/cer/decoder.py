@@ -1,34 +1,35 @@
 # CER decoder
-from ...type import univ
-from ..ber import decoder
-from ... import error
+from pyasn1.type import univ
+from pyasn1.codec.ber import decoder
+from pyasn1.compat.octets import oct2int
+from pyasn1 import error
 
-
-class BooleanDecoder(decoder.AbstractDecoder):
+class BooleanDecoder(decoder.AbstractSimpleDecoder):
     protoComponent = univ.Boolean(0)
-
-    def valueDecoder(self, substrate, asn1Spec, tagSet, length,
-                     state, decodeFun):
-        if not substrate:
+    def valueDecoder(self, fullSubstrate, substrate, asn1Spec, tagSet, length,
+                     state, decodeFun, substrateFun):
+        head, tail = substrate[:length], substrate[length:]
+        if not head:
             raise error.PyAsn1Error('Empty substrate')
-        byte = ord(substrate[0])
+        byte = oct2int(head[0])
+        # CER/DER specifies encoding of TRUE as 0xFF and FALSE as 0x0, while
+        # BER allows any non-zero value as TRUE; cf. sections 8.2.2. and 11.1 
+        # in http://www.itu.int/ITU-T/studygroups/com17/languages/X.690-0207.pdf
         if byte == 0xff:
             value = 1
         elif byte == 0x00:
             value = 0
-        return self._createComponent(
-            tagSet, asn1Spec
-        ).clone(value), substrate[1:]
+        else:
+            raise error.PyAsn1Error('Boolean CER violation: %s' % byte)
+        return self._createComponent(asn1Spec, tagSet, value), tail
 
+tagMap = decoder.tagMap.copy()
+tagMap.update({
+    univ.Boolean.tagSet: BooleanDecoder()
+    })
 
-codecMap = decoder.codecMap.copy()
-codecMap.update({
-    univ.Boolean.tagSet: BooleanDecoder(),
-})
+typeMap = decoder.typeMap
 
+class Decoder(decoder.Decoder): pass
 
-class Decoder(decoder.Decoder):
-    pass
-
-
-decode = Decoder(codecMap)
+decode = Decoder(tagMap, decoder.typeMap)
