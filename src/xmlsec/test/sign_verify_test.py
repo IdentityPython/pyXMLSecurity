@@ -169,7 +169,7 @@ class TestTransforms(unittest.TestCase):
 
         # modify the givenName in the XML and make sure the signature
         # does NOT validate anymore
-        case.data['out.xml'] = case.data['out.xml'].replace('>Bar<', '>Malory<')
+        case.data['out.xml'] = case.data['out.xml'].replace(b'>Bar<', b'>Malory<')
 
         print(("XML input :\n{}\n\n".format(case.as_buf('out.xml'))))
         with self.assertRaises(xmlsec.XMLSigException):

@@ -25,24 +25,24 @@ class TestTransforms(unittest.TestCase):
         """
         Test that whitespaces and newlines are removed properly.
         """
-        data = '<foo>\n   <bar>1 </bar   >       \n</foo> \n  \n    '
-        expect = '<foo><bar>1 </bar></foo>'
+        data = b'<foo>\n   <bar>1 </bar   >       \n</foo> \n  \n    '
+        expect = b'<foo><bar>1 </bar></foo>'
         self.assertEqual(_c14n_parse_test(data), expect)
 
     def test_c14n_2(self):
         """
         Test that whitespaces and newlines are removed properly.
         """
-        data = '<a> <b> 1 </b> </a>'
-        expect = '<a><b> 1 </b></a>'
+        data = b'<a> <b> 1 </b> </a>'
+        expect = b'<a><b> 1 </b></a>'
         self.assertEqual(_c14n_parse_test(data), expect)
 
     def test_c14n_with_comments(self):
         """
         Test that whitespaces and newlines are removed properly with comments retained.
         """
-        data = '<a    foo="x ">bar <!-- d a dd a- --> </a >'
-        expect = '<a foo="x ">bar <!-- d a dd a- --> </a>'
+        data = b'<a    foo="x ">bar <!-- d a dd a- --> </a >'
+        expect = b'<a foo="x ">bar <!-- d a dd a- --> </a>'
         self.assertEqual(_c14n_parse_test(data, remove_comments=False), expect)
 
 

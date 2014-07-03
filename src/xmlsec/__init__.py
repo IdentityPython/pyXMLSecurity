@@ -229,9 +229,9 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     if do_pad:
         # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
         # WARNING: key size is in bits, not bytes!
-        padded_size = key_size / 8 - 1
+        padded_size = key_size // 8 - 1
         pad_size = padded_size - len(asn_digest) - 2
-        pad = '\x01' + '\xFF' * pad_size + '\x00'
+        pad = b'\x01' + b'\xFF' * pad_size + b'\x00'
         return pad + asn_digest
     else:
         return asn_digest
@@ -314,7 +314,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             logging.debug("transform: %s" % _alg(tr))
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
 
-        if not isinstance(obj, str):
+        if not isinstance(obj, bytes):
             if config.debug_write_to_files:
                 with open("/tmp/foo-pre-serialize.xml", "w") as fd:
                     fd.write(etree.tostring(obj))
@@ -369,9 +369,9 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
                          with_comments=with_comments,
                          inclusive_ns_prefixes=inclusive_prefix_list)
     u = unescape_xml_entities(buf.decode("utf8", 'replace')).encode("utf8").strip()
-    if u[0] != '<':
+    if not u.startswith(b'<'):
         raise XMLSigException("C14N buffer doesn't start with '<'")
-    if u[-1] != '>':
+    if not u.endswith(b'>'):
         raise XMLSigException("C14N buffer doesn't end with '>'")
     return u
 
@@ -573,7 +573,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         logging.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
         if sv is None:
-            si.addnext(DS.SignatureValue(signature))
+            si.addnext(DS.SignatureValue(signature.decode('ascii')))
         else:
             sv.text = signature
 
