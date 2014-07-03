@@ -12,6 +12,8 @@ from datetime import datetime
 import unittest
 import pkg_resources
 
+import six
+
 from .Crypto.PublicKey import RSA
 
 from . import rsa_pem
@@ -26,23 +28,23 @@ KEY_FILE_PAIRS = (
 )
 
 RSA_PARTS = (
-    ('version', int),
-    ('modulus', int),
-    ('publicExponent', int),
-    ('privateExponent', int),
-    ('prime1', int),
-    ('prime2', int),
-    ('exponent1', int),
-    ('exponent2', int),
-    ('coefficient', int),
+    ('version', six.integer_types),
+    ('modulus', six.integer_types),
+    ('publicExponent', six.integer_types),
+    ('privateExponent', six.integer_types),
+    ('prime1', six.integer_types),
+    ('prime2', six.integer_types),
+    ('exponent1', six.integer_types),
+    ('exponent2', six.integer_types),
+    ('coefficient', six.integer_types),
     ('body', bytes),
     ('type', str),
 )
 
 X509_PARTS = (
-    ('modulus', int),
-    ('publicExponent', int),
-    ('subject', str),
+    ('modulus', six.integer_types),
+    ('publicExponent', six.integer_types),
+    ('subject', six.text_type),
     ('body', bytes),
     ('type', str),
 )
@@ -56,7 +58,9 @@ argument have come to me either as referee or as editor in the last twenty years
 submissions were all quite unpublishable; I sent them back with what I hope were helpful comments. A
 few years ago it occurred to me to wonder why so many people devote so much energy to refuting this
 harmless little argument — what had it done to make them angry with it? So I started to keep notes
-of these papers, in the hope that some pattern would emerge. These pages report the results.""".encode('utf-8')
+of these papers, in the hope that some pattern would emerge. These pages report the results."""
+if six.PY3:
+    MSG_LONG = MSG_LONG.encode('utf-8')
 
 DUMMY_SIG = (1234567890,)
 
@@ -87,7 +91,8 @@ class TestParse(unittest.TestCase):
             for part, dtype in RSA_PARTS:
                 self.assertTrue(part in kdict)
                 self.assertTrue(isinstance(kdict[part], dtype),
-                    msg='Failed type verification for RSA part "%s", type "%s"' % (part, dtype))
+                    msg='Failed type verification for RSA part "%s" (expected "%s", got "%s")' %
+                        (part, dtype, kdict[part].__class__.__name__))
 
     def test_cert_parse(self):
         for key, cert in KEY_FILE_PAIRS:
@@ -120,7 +125,8 @@ class TestParse(unittest.TestCase):
             for part, dtype in X509_PARTS:
                 self.assertTrue(part in cdict)
                 self.assertTrue(isinstance(cdict[part], dtype),
-                    msg='Failed type verification for X.509 part "%s", type "%s"' % (part, dtype))
+                    msg='Failed type verification for X.509 part "%s" (expected "%s", got "%s")' %
+                        (part, dtype, cdict[part].__class__))
 
     def test_cert_parse_components(self):
         for key, cert in KEY_FILE_PAIRS:
