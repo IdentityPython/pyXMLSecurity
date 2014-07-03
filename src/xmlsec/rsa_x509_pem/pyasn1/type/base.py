@@ -76,7 +76,10 @@ class AbstractSimpleAsn1Item(Asn1ItemBase):
             return self.__class__.__name__ + '()'
         else:
             return self.__class__.__name__ + '(%s)' % (self.prettyOut(self._value),)
-    def __str__(self): return str(self._value)
+    def __str__(self):
+        if isinstance(self._value, bytes) and sys.version_info[0] < 3:
+            return self._value.decode('utf-8')
+        return str(self._value)
     def __eq__(self, other):
         return self is other and True or self._value == other
     def __ne__(self, other): return self._value != other
@@ -118,7 +121,10 @@ class AbstractSimpleAsn1Item(Asn1ItemBase):
         return self.__class__(value, tagSet, subtypeSpec)
 
     def prettyIn(self, value): return value
-    def prettyOut(self, value): return str(value)
+    def prettyOut(self, value):
+        if isinstance(value, bytes):
+            return value.decode('utf-8')
+        return str(value)
 
     def prettyPrint(self, scope=0):
         if self._value is noValue:

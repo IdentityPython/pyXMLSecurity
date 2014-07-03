@@ -375,7 +375,7 @@ class OctetString(base.AbstractSimpleAsn1Item):
         if [ x for x in numbers if x < 32 or x > 126 ]:
             return '0x' + ''.join([ '%.2x' % x for x in numbers ])
         else:
-            return str(value)
+            return value.decode('utf-8')
 
     def __repr__(self):
         if self._value is base.noValue:
@@ -819,19 +819,18 @@ class SequenceAndSetBase(base.AbstractConstructedAsn1Item):
                         )
 
     def prettyPrint(self, scope=0):
-        scope = scope + 1
+        scope += 1
         r = self.__class__.__name__ + ':\n'
         for idx in range(len(self._componentValues)):
             if self._componentValues[idx] is not None:
-                r = r + ' '*scope
+                r += ' ' * scope
                 componentType = self.getComponentType()
                 if componentType is None:
-                    r = r + '<no-name>'
+                    r += '<no-name>'
                 else:
                     r = r + componentType.getNameByPosition(idx)
-                r = '%s=%s\n' % (
-                    r, self._componentValues[idx].prettyPrint(scope)
-                    )
+                value = self._componentValues[idx].prettyPrint(scope)
+                r = '%s=%s\n' % (r, value)
         return r
 
 class Sequence(SequenceAndSetBase):
