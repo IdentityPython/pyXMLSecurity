@@ -55,7 +55,7 @@ CERT_FILE = "keys/cacert_pass_helloworld.pem"
 RSA_ID = "1.2.840.113549.1.1.1"
 RSA_SHA1_ID = "1.2.840.113549.1.1.5"
 
-RX_PUBLIC_KEY = re.compile("subjectPublicKey='([01]+)'B")
+RX_PUBLIC_KEY = re.compile("subjectPublicKey=(?:\")?'([01]+)'(?:\")?B")
 RX_SUBJECT = re.compile(" +subject=Name:.*?\n\n\n", re.M | re.S)
 RX_SUBJECT_ATTR = re.compile("""
 RelativeDistinguishedName:.*?
@@ -357,7 +357,7 @@ def parse(data):
         raise NotImplementedError("Only RSA X509 certificates are supported.")
         # rip out RSA public key binary
     key_bits = RX_PUBLIC_KEY.search(text).group(1)
-    key_binhex = hex(int(key_bits, 2))[2:-1]
+    key_binhex = hex(int(key_bits, 2))[2:]
     key_bin = base64.b16decode(key_binhex.upper())
     # reparse RSA Public Key PEM binary
     key = decoder.decode(key_bin, asn1Spec=RSAPublicKey())[0]
