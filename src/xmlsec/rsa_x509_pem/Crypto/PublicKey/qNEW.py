@@ -13,7 +13,7 @@
 __revision__ = "$Id: qNEW.py,v 1.8 2003/04/04 15:13:35 akuchling Exp $"
 
 from . import pubkey
-from .number import bytes_to_long, long_to_bytes, getPrime, isPrime
+from .number import bignum, bytes_to_long, long_to_bytes, getPrime, isPrime
 from Crypto.Hash import SHA # XXX Crypto.Hash is NOT bundled with xmlsec
 
 
@@ -50,7 +50,7 @@ def generate(bits, randfunc, progress_func=None):
         n = (bits - 1) / HASHBITS
         b = (bits - 1) % HASHBITS
         powb = 2 << b
-        powL1 = pow(int(2), bits - 1)
+        powL1 = pow(bignum(2), bits - 1)
         while C < 4096:
             # The V array will contain (bits-1) bits of random
             # data, that are assembled to produce a candidate
@@ -59,7 +59,7 @@ def generate(bits, randfunc, progress_func=None):
                 V[k] = bytes_to_long(SHA.new(S + str(N) + str(k)).digest())
             p = V[n] % powb
             for k in range(n - 1, -1, -1):
-                p = (p << int(HASHBITS) ) + V[k]
+                p = (p << bignum(HASHBITS) ) + V[k]
             p = p + powL1         # Ensure the high bit is set
 
             # Ensure that p-1 is a multiple of q

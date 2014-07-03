@@ -206,8 +206,8 @@ class DSAobj_c(pubkey.CryptoPubkey):
     def _sign(self, M, K):
         return self.key._sign(M, K)
 
-    def _verify(self, M, xxx_todo_changeme):
-        (r, s) = xxx_todo_changeme
+    def _verify(self, M, r_s):
+        (r, s) = r_s
         return self.key._verify(M, r, s)
 
     def size(self):

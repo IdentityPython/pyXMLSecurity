@@ -8,6 +8,9 @@
 """
 __authors__ = ['"Andrew D. Yates" <andrewyates.name@gmail.com>']
 
+import base64
+
+import six
 
 def bytes_to_int(s):
     """Return converted bytestring to integer.
@@ -18,7 +21,20 @@ def bytes_to_int(s):
     int: numeric interpretation of binary string `s`
   """
     # int type casts may return a long type
-    return int(s.encode('hex'), 16)
+    return int(base64.b16encode(s), 16)
+
+
+def is_natural(value, include_zero=False):
+    """Return if value is a natural integer in Python.
+
+  Returns:
+    bool: is value a natural number?
+  """
+    return all((
+        isinstance(value, six.integer_types),
+        value >= 0,
+        not (value == 0 and not include_zero),
+    ))
 
 
 def int_to_bytes(num):
@@ -39,17 +55,4 @@ def int_to_bytes(num):
     # align hexadecimal string to byte boundaries
     if len(hexed) % 2 == 1:
         hexed = '0%s' % hexed
-    return hexed.decode('hex')
-
-
-def is_natural(value, include_zero=False):
-    """Return if value is a natural integer in Python.
-  
-  Returns:
-    bool: is value a natural number?
-  """
-    return all((
-        isinstance(value, int),
-        value >= 0,
-        not (value == 0 and not include_zero),
-    ))
+    return base64.b16decode(hexed.upper())

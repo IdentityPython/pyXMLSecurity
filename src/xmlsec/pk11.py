@@ -108,7 +108,7 @@ def _find_object(session, template):
 
 def _get_object_attributes(session, o):
     attributes = session.getAttributeValue(o, all_attributes)
-    return dict(list(zip(all_attributes, attributes)))
+    return dict(zip(all_attributes, attributes))
 
 
 def _cert_der2pem(der):

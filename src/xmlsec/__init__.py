@@ -19,6 +19,7 @@ try:
     from collections.abc import Mapping
 except ImportError:
     from collections import Mapping
+from six.moves import range
 from xmlsec import constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, b642cert
 import pyconfig

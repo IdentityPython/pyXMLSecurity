@@ -12,7 +12,8 @@
 
 __revision__ = "$Id: number.py,v 1.13 2003/04/04 18:21:07 akuchling Exp $"
 
-bignum = int
+import six
+bignum = six.integer_types[-1]
 try:
     from Crypto.PublicKey import _fastmath
 except ImportError:
@@ -72,7 +73,7 @@ def inverse(u, v):
     """inverse(u:long, u:long):long
     Return the inverse of u mod v.
     """
-    u3, v3 = int(u), int(v)
+    u3, v3 = bignum(u), bignum(v)
     u1, v1 = 1, 0
     while v3 > 0:
         q = u3 / v3
@@ -121,7 +122,7 @@ def isPrime(N):
 
     # Rabin-Miller test
     for c in sieve[:7]:
-        a = int(c)
+        a = bignum(c)
         d = 1
         t = n
         while (t):  # Iterate over the bits in N1
@@ -162,7 +163,7 @@ def long_to_bytes(n, blocksize=0):
     """
     # after much testing, this algorithm was deemed to be the fastest
     s = b''
-    n = int(n)
+    n = bignum(n)
     pack = struct.pack
     while n > 0:
         s = pack('>I', n & 0xffffffff) + s

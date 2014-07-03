@@ -7,6 +7,7 @@ from lxml import etree as etree
 from . import rsa_x509_pem
 from . import int_to_bytes as itb
 from xmlsec.exceptions import XMLSigException
+import six
 from six.moves import html_entities
 import re
 
@@ -58,16 +59,16 @@ def unescape_xml_entities(text):
             # character reference
             try:
                 if text[:3] == "&#x":
-                    return chr(int(text[3:-1], 16))
+                    return six.unichr(int(text[3:-1], 16))
                 else:
-                    return chr(int(text[2:-1]))
+                    return six.unichr(int(text[2:-1]))
             except ValueError:
                 pass
         else:
             # named entity
             try:
                 if not text in ('&amp;', '&lt;', '&gt;'):
-                    text = chr(html_entities.name2codepoint[text[1:-1]])
+                    text = six.unichr(html_entities.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text  # leave as is
@@ -121,6 +122,6 @@ b64d = lambda s: base64.b64decode(s)
 
 
 def b64e(s):
-    if isinstance(s, int):
+    if isinstance(s, six.integer_types):
         s = itb.int_to_bytes(s)
     return base64.b64encode(s).replace(b'\n', b'')

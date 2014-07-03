@@ -12,7 +12,7 @@
 
 __revision__ = "$Id: pubkey.py,v 1.11 2003/04/03 20:36:14 akuchling Exp $"
 
-import types, warnings
+import warnings
 from .number import bignum, bytes_to_long, long_to_bytes, getPrime, inverse
 
 class CryptoPubkeyError(Exception):
@@ -31,7 +31,7 @@ class CryptoPubkey:
         d = self.__dict__
         for key in self.keydata:
             if key in d:
-                d[key] = int(d[key])
+                d[key] = bignum(d[key])
         return d
 
     def __setstate__(self, d):
