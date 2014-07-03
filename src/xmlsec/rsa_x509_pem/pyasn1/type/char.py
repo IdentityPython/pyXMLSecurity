@@ -1,5 +1,5 @@
 # ASN.1 "character string" types
-from pyasn1.type import univ, tag
+from . import univ, tag
 
 class UTF8String(univ.OctetString):
     tagSet = univ.OctetString.tagSet.tagImplicitly(
@@ -21,7 +21,7 @@ class TeletexString(univ.OctetString):
     tagSet = univ.OctetString.tagSet.tagImplicitly(
         tag.Tag(tag.tagClassUniversal, tag.tagFormatSimple, 20)
         )
-    
+
 
 class VideotexString(univ.OctetString):
     tagSet = univ.OctetString.tagSet.tagImplicitly(

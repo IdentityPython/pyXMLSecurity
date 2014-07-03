@@ -1,4 +1,4 @@
-from pyasn1.type import base, tag
+from ...type import base, tag
 
 class EndOfOctets(base.AbstractSimpleAsn1Item):
     defaultValue = 0

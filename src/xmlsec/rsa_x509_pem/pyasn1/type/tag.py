@@ -1,6 +1,6 @@
 # ASN.1 types tags
 from operator import getitem
-from pyasn1 import error
+from .. import error
 
 tagClassUniversal = 0x00
 tagClassApplication = 0x40
@@ -51,7 +51,7 @@ class Tag:
             self.__tag[2]|tagId
             )
     def asTuple(self): return self.__tag  # __getitem__() is slow
-    
+
 class TagSet:
     def __init__(self, baseTag=(), *superTags):
         self.__baseTag = baseTag
@@ -62,7 +62,7 @@ class TagSet:
             _uniq = _uniq + t.uniq
         self.uniq = _uniq
         self.__lenOfSuperTags = len(superTags)
-        
+
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
@@ -118,5 +118,5 @@ class TagSet:
                 return
             idx = idx - 1
         return 1
-    
+
 def initTagSet(tag): return TagSet(tag, tag)
