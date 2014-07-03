@@ -2,6 +2,7 @@ from lxml import etree
 
 __author__ = 'ft'
 
+import base64
 import os
 import copy
 import unittest
@@ -23,7 +24,7 @@ def _get_all_signatures(t):
         sv = sig.findtext(".//{%s}SignatureValue" % xmlsec.NS['ds'])
         assert sv is not None
         # base64-dance to normalize newlines
-        res.append(sv.decode('base64').encode('base64'))
+        res.append(base64.b64encode(base64.b64decode(sv)))
     return res
 
 

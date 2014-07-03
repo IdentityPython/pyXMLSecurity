@@ -30,6 +30,8 @@ pyasn1
 "ASN.1 tools for Python"
 http://pyasn1.sourceforge.net/
 """
+import base64
+
 from .pyasn1.type import univ, namedtype, namedval
 from .pyasn1.codec.der import decoder
 from . import sequence_parser
@@ -110,7 +112,7 @@ def parse(data, password=None):
             lines.append(s.strip())
 
     body = ''.join(lines)
-    raw_data = body.decode("base64")
+    raw_data = base64.b64decode(body)
 
     # Private Key cipher (Not Handled)
     if encryption:

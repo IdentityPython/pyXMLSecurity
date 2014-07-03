@@ -242,7 +242,7 @@ def _digest(data, hash_alg):
     h = getattr(hashlib, hash_alg)()
     logging.debug(h)
     h.update(data)
-    digest = h.digest().encode("base64").rstrip("\n") #b64e(h.digest())
+    digest = base64.b64encode(h.digest())
     return digest
 
 

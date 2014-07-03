@@ -1,6 +1,7 @@
 import logging
 
 __author__ = 'leifj'
+import base64
 
 from lxml import etree as etree
 from . import rsa_x509_pem
@@ -118,10 +119,10 @@ def number_of_bits(num):
     return len(bin(num)) - 2
 
 
-b64d = lambda s: s.decode('base64')
+b64d = lambda s: base64.b64decode(s)
 
 
 def b64e(s):
-    if type(s) in (int, int):
+    if isinstance(s, int):
         s = itb.int_to_bytes(s)
-    return s.encode('base64').replace('\n', '')
+    return base64.b64encode(s).replace(b'\n', b'')

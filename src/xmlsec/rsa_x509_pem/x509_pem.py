@@ -39,6 +39,8 @@ X500email
 "1.2.840.113549.1.9.1 - e-mailAddress"
 http://www.alvestrand.no/objectid/1.2.840.113549.1.9.1.html
 """
+import base64
+import binascii
 import re
 
 from .pyasn1.type import tag, namedtype, namedval, univ, constraint, char, useful
@@ -265,7 +267,7 @@ class Certificate(univ.Sequence):
             # rip out public key binary
         bits = RX_PUBLIC_KEY.search(text).group(1)
         binhex = hex(int(bits, 2))[2:-1]
-        bindata = binhex.decode("hex")
+        bindata = binascii.unhexlify(binhex)
 
         # Get X509SubjectName string
         # fake this for now; generate later using RX
@@ -342,7 +344,7 @@ def parse(data):
 
     body = ''.join(lines)
     pem = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----\n" % "\n".join(lines)
-    raw_data = body.decode("base64")
+    raw_data = base64.b64decode(body)
 
     cert = decoder.decode(raw_data, asn1Spec=Certificate())[0]
 
@@ -356,7 +358,7 @@ def parse(data):
         # rip out RSA public key binary
     key_bits = RX_PUBLIC_KEY.search(text).group(1)
     key_binhex = hex(int(key_bits, 2))[2:-1]
-    key_bin = key_binhex.decode("hex")
+    key_bin = base64.b16decode(key_binhex.upper())
     # reparse RSA Public Key PEM binary
     key = decoder.decode(key_bin, asn1Spec=RSAPublicKey())[0]
     # add RSA key elements to return dictionary
