@@ -264,10 +264,13 @@ class Certificate(univ.Sequence):
         text = self.prettyPrint()
         if not (RSA_ID in text or RSA_SHA1_ID in text):
             raise NotImplementedError("Only RSA-SHA1 X509 certificates are supported.")
-            # rip out public key binary
+        # rip out public key binary
         bits = RX_PUBLIC_KEY.search(text).group(1)
-        binhex = hex(int(bits, 2))[2:-1]
-        bindata = binascii.unhexlify(binhex)
+
+        # 'hex' produces a string with a 0x prefix and, on Python 2, a 'L' suffix.
+        # Strip these.
+        binhex = hex(int(bits, 2)).lstrip('0x').rstrip('L')
+        bindata = base64.b16decode(binhex.upper())
 
         # Get X509SubjectName string
         # fake this for now; generate later using RX
