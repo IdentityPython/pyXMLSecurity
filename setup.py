@@ -32,6 +32,7 @@ setup(name='pyXMLSecurity',
     url='http://blogs.mnt.se',
     license='BSD',
     packages=find_packages('src'),
+    setup_requires=['nose>=1.0'],
     package_dir = {'': 'src'},
     include_package_data=True,
     package_data = {
