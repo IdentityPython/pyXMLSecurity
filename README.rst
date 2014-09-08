@@ -1,6 +1,19 @@
 python XML Security
 ===================
 
+.. image:: https://travis-ci.org/leifj/pyXMLSecurity.svg?branch=master
+    :target: https://travis-ci.org/leifj/pyXMLSecurity
+    :alt: Build Status
+.. image:: https://landscape.io/github/leifj/pyXMLSecurity/master/landscape.png
+   :target: https://landscape.io/github/leifj/pyXMLSecurity/master
+   :alt: Code Health
+.. image:: https://coveralls.io/repos/leifj/pyXMLSecurity/badge.png?branch=master
+   :target: https://coveralls.io/r/leifj/pyXMLSecurity?branch=master
+   :alt: Coverage
+.. image:: https://pypip.in/license/pyXMLSecurity/badge.svg
+    :target: https://pypi.python.org/pypi/pyXMLSecurity/
+    :alt: License
+
 
 This is a python implementation of XML-Security - XML-DSIG only right now. There are no
 dependencies except lxml currently.
