@@ -101,7 +101,12 @@ def _sign_and_close(session, key, data, mech):
 
 def _find_object(session, template):
     for o in session.findObjects(template):
-        logging.debug("Found pkcs11 object: %s" % o)
+        try:
+            logging.debug("Found pkcs11 object: %s" % o)
+        except PyKCS11.PyKCS11Error as exc:
+            # Fetching attributes might be restricted (CKR_ATTRIBUTE_SENSITIVE)
+            logging.debug("Found pkcs11 object, but can't print it (%s)" % exc)
+            pass
         return o
     return None
 
@@ -155,7 +160,6 @@ def _session(library, slot, pin=None):
 
     lib = _modules[library]
     session = lib.openSession(slot)
-    slot = lib.getSlotList()[slot]
     if pin is not None:
         assert type(pin) == str  # session.login does not like unicode
         session.login(pin)
