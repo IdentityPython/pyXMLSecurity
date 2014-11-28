@@ -160,7 +160,6 @@ def _session(library, slot, pin=None):
 
     lib = _modules[library]
     session = lib.openSession(slot)
-    slot = lib.getSlotList()[slot]
     if pin is not None:
         assert type(pin) == str  # session.login does not like unicode
         session.login(pin)
