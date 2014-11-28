@@ -148,6 +148,7 @@ def _session(library, slot, pin=None):
         lib = PyKCS11.PyKCS11Lib()
         assert type(library) == str  # lib.load does not like unicode
         lib.load(library)
+        lib.lib.C_Initialize()
         _modules[library] = lib
     else:
         logging.debug("already loaded: %s: %s" % (library, _modules[library]))
