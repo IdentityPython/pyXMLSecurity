@@ -112,3 +112,11 @@ News
 * skip certain tests unless opensc is installed
 * use existing SignatureValue if present
 * various fixes from Fredrik T and Maya W
+
+0.14
+----
+*Release date: Mon Dec  1 08:58:54 CET 2014*
+
+* Add explicit call to C_Initialize
+* Various bugs fixed - from Fredrik T
+* Allow caller control over session close
