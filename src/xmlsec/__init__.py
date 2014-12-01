@@ -355,14 +355,18 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     :param inclusive_prefix_list: List of namespaces to include (?)
     :returns: XML as string (utf8)
     """
-    xml_str = etree.tostring(t)
-    doc = parse_xml(xml_str, remove_whitespace=config.c14n_strip_ws, remove_comments=not with_comments, schema=schema)
+    doc = t
+    if root_elt(doc).getparent() is not None:
+        xml_str = etree.tostring(doc)
+        doc = parse_xml(xml_str, remove_whitespace=config.c14n_strip_ws, remove_comments=not with_comments, schema=schema)
+        del xml_str
+
     buf = etree.tostring(doc,
                          method='c14n',
                          exclusive=exclusive,
                          with_comments=with_comments,
                          inclusive_ns_prefixes=inclusive_prefix_list)
-    u = unescape_xml_entities(buf.decode("utf8", 'replace')).encode("utf8").strip()
+    u = unescape_xml_entities(buf.decode("utf8", 'strict')).encode("utf8").strip()
     if u[0] != '<':
         raise XMLSigException("C14N buffer doesn't start with '<'")
     if u[-1] != '>':

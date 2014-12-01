@@ -54,41 +54,41 @@ def unescape_xml_entities(text):
     @return The plain text, as a Unicode string, if necessary.
     """
     def fixup(m):
-        text = m.group(0)
-        if text[:2] == "&#":
+        txt = m.group(0)
+        if txt[:2] == "&#":
             # character reference
             try:
-                if text[:3] == "&#x":
-                    return unichr(int(text[3:-1], 16))
+                if txt[:3] == "&#x":
+                    return unichr(int(txt[3:-1], 16))
                 else:
-                    return unichr(int(text[2:-1]))
+                    return unichr(int(txt[2:-1]))
             except ValueError:
                 pass
         else:
             # named entity
             try:
-                if not text in ('&amp;', '&lt;', '&gt;'):
-                    text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                if not txt in ('&amp;', '&lt;', '&gt;'):
+                    txt = unichr(htmlentitydefs.name2codepoint[txt[1:-1]])
             except KeyError:
                 pass
-        return text  # leave as is
-
-    return re.sub("&#?\w+;", fixup, text)
+        return txt  # leave as is
+    return re.compile("&#?\w+;").sub(fixup, text)
+    #return re.sub("&#?\w+;", fixup, text)
 
 
 def delete_elt(elt):
     if elt.getparent() is None:
         raise XMLSigException("Cannot delete root")
     if elt.tail is not None:
-        logging.debug("tail: '%s'" % elt.tail)
+        #logging.debug("tail: '%s'" % elt.tail)
         p = elt.getprevious()
         if p is not None:
-            logging.debug("adding tail to previous")
+            #logging.debug("adding tail to previous")
             if p.tail is None:
                 p.tail = ''
             p.tail += elt.tail
         else:
-            logging.debug("adding tail to parent")
+            #logging.debug("adding tail to parent")
             up = elt.getparent()
             if up is None:
                 raise XMLSigException("Signature has no parent")
