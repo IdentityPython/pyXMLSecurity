@@ -33,6 +33,8 @@ setup(name='pyXMLSecurity',
     license='BSD',
     packages=find_packages('src'),
     setup_requires=['nose>=1.0'],
+    tests_require=['nose>=1.0', 'mock'],
+    test_suite="nose.collector",
     package_dir = {'': 'src'},
     include_package_data=True,
     package_data = {
