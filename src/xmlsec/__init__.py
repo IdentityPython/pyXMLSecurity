@@ -6,6 +6,7 @@
 __author__ = 'leifj'
 
 import os
+import io
 from . import rsa_x509_pem
 from lxml import etree as etree
 import logging
@@ -152,7 +153,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
                 'f_private': keyspec}
     if isinstance(keyspec, basestring):
         if os.path.isfile(keyspec):
-            with open(keyspec) as c:
+            with io.open(keyspec) as c:
                 data = c.read()
             source = 'file'
         elif private and keyspec.startswith("pkcs11://"):
