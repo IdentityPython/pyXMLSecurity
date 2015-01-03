@@ -11,6 +11,7 @@
 from datetime import datetime
 import unittest
 import pkg_resources
+from threading import Thread
 
 from .Crypto.PublicKey import RSA
 
@@ -109,6 +110,39 @@ class TestParse(unittest.TestCase):
         self.assertTrue(haka)
         cdict = x509_pem.parse(haka)
         self.assertTrue(cdict)
+
+    class DelayedExceptionThread(Thread):
+
+        def __init__(self, inner):
+            self._i = inner
+            self.exception = None
+
+            super(TestParse.DelayedExceptionThread, self).__init__()
+
+        def run(self):
+            try:
+                self._i()
+            except Exception, ex:
+                self.exception = ex
+
+    def _thread_it(self, testcase, n=10):
+        w = []
+        for i in range(0, n):
+            w.append(TestParse.DelayedExceptionThread(testcase))
+        for i in range(0, n):
+            w[i].start()
+        for i in range(0, n):
+            w[i].join()
+        for i in range(0, n):
+            assert not(w[i].isAlive())
+            if w[i].exception is not None:
+                raise w[i].exception
+
+    def test_100_parse_haka_cert(self):
+        self._thread_it(self.test_parse_haka_cert, n=100)
+
+    def test_100_cert_parse(self):
+        self._thread_it(self.test_cert_parse, n=100)
 
     def test_cert_parse_elements(self):
         for key, cert in KEY_FILE_PAIRS:

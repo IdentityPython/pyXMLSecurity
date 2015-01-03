@@ -424,42 +424,48 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
 
     validated = []
     for sig in t.findall(sig_path):
-        sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
-        if sv is None:
-            raise XMLSigException("No SignatureValue")
+        try:
+            sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
+            if sv is None:
+                raise XMLSigException("No SignatureValue")
 
-        this_f_public = None
-        this_keysize = None
-        if cert is None:
-            # keyspec is fingerprint - look for matching certificate in XML
-            this_cert = _load_keyspec(keyspec, signature_element=sig)
+            this_f_public = None
+            this_keysize = None
+            if cert is None:
+                # keyspec is fingerprint - look for matching certificate in XML
+                this_cert = _load_keyspec(keyspec, signature_element=sig)
+                if this_cert is None:
+                    raise XMLSigException("Could not find certificate fingerprint to validate signature")
+                this_f_public = this_cert['f_public']
+                this_keysize = this_cert['keysize']
+            else:
+                # Non-fingerprint keyspec, use pre-parsed values
+                this_cert = cert
+                this_f_public = cert['f_public']
+                this_keysize = cert['keysize']
+
             if this_cert is None:
                 raise XMLSigException("Could not find certificate to validate signature")
-            this_f_public = this_cert['f_public']
-            this_keysize = this_cert['keysize']
-        else:
-            # Non-fingerprint keyspec, use pre-parsed values
-            this_cert = cert
-            this_f_public = cert['f_public']
-            this_keysize = cert['keysize']
 
-        logging.debug("key size: %d bits" % this_cert['keysize'])
+            logging.debug("key size: %d bits" % this_cert['keysize'])
 
-        if this_cert is None:
-            raise XMLSigException("Could not find certificate to validate signature")
+            si = sig.find(".//{%s}SignedInfo" % NS['ds'])
+            cm_alg = _cm_alg(si)
+            digest_alg = _sig_digest(si)
 
-        si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        cm_alg = _cm_alg(si)
-        digest_alg = _sig_digest(si)
+            validated_objects = _process_references(t, sig, sig_path)
+            b_digest = _create_signature_digest(si, cm_alg, digest_alg)
+            actual = _signed_value(b_digest, this_keysize, True, digest_alg)
+            expected = this_f_public(b64d(sv))
 
-        validated_objects = _process_references(t, sig, sig_path)
-        b_digest = _create_signature_digest(si, cm_alg, digest_alg)
-        actual = _signed_value(b_digest, this_keysize, True, digest_alg)
-        expected = this_f_public(b64d(sv))
+            if expected != actual:
+                raise XMLSigException("Failed to validate %s" % etree.tostring(sig))
+            validated.extend(validated_objects)
+        except XMLSigException, ex:
+            logging.error(ex)
 
-        if expected != actual:
-            raise XMLSigException("Signature validation failed")
-        validated.extend(validated_objects)
+    if not validated:
+        raise XMLSigException("No valid ds:Signature elements found")
 
     return validated
 

@@ -43,6 +43,9 @@ import re
 
 from .pyasn1.type import tag, namedtype, namedval, univ, constraint, char, useful
 from .pyasn1.codec.der import decoder
+from .utils import SingleAccessCallable
+
+der_decode = SingleAccessCallable(decoder.decode)
 
 from .sequence_parser import SequenceParser
 
@@ -273,7 +276,7 @@ class Certificate(univ.Sequence):
 
         # re-parse RSA Public Key PEM binary
         pubkey = RSAPublicKey()
-        key = decoder.decode(bindata, asn1Spec=pubkey)[0]
+        key = der_decode(bindata, asn1Spec=pubkey)[0]
         cdict.update(key.dict())
 
         return cdict
@@ -344,7 +347,7 @@ def parse(data):
     pem = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----\n" % "\n".join(lines)
     raw_data = body.decode("base64")
 
-    cert = decoder.decode(raw_data, asn1Spec=Certificate())[0]
+    cert = der_decode(raw_data, asn1Spec=Certificate())[0]
 
     # dump parsed PEM data to text
     text = cert.prettyPrint()
@@ -358,7 +361,7 @@ def parse(data):
     key_binhex = hex(int(key_bits, 2))[2:-1]
     key_bin = key_binhex.decode("hex")
     # reparse RSA Public Key PEM binary
-    key = decoder.decode(key_bin, asn1Spec=RSAPublicKey())[0]
+    key = der_decode(key_bin, asn1Spec=RSAPublicKey())[0]
     # add RSA key elements to return dictionary
     cdict.update(key.dict())
 

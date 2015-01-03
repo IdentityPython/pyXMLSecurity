@@ -32,6 +32,10 @@ http://pyasn1.sourceforge.net/
 """
 from .pyasn1.type import univ, namedtype, namedval
 from .pyasn1.codec.der import decoder
+from .utils import SingleAccessCallable
+
+der_decode = SingleAccessCallable(decoder.decode)
+
 from . import sequence_parser
 
 MAX = 16
@@ -122,7 +126,7 @@ def parse(data, password=None):
     else:
         raise NotImplementedError("Only RSA is supported. Type was %s." % ktype)
 
-    key = decoder.decode(raw_data, asn1Spec=asn1Spec)[0]
+    key = der_decode(raw_data, asn1Spec=asn1Spec)[0]
 
     # generate return dict base from key dict
     kdict = key.dict()

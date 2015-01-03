@@ -3,8 +3,8 @@ import logging
 __author__ = 'leifj'
 
 from lxml import etree as etree
-from . import rsa_x509_pem
-from . import int_to_bytes as itb
+from rsa_x509_pem import parse as pem_parse
+from int_to_bytes import int_to_bytes
 from xmlsec.exceptions import XMLSigException
 import htmlentitydefs
 import re
@@ -40,11 +40,11 @@ def b642pem(data):
 
 
 def pem2cert(pem):
-    return rsa_x509_pem.parse(pem)
+    return pem_parse(pem)
 
 
 def b642cert(data):
-    return rsa_x509_pem.parse(b642pem(data))
+    return pem_parse(b642pem(data))
 
 
 def unescape_xml_entities(text):
@@ -123,5 +123,5 @@ b64d = lambda s: s.decode('base64')
 
 def b64e(s):
     if type(s) in (int, long):
-        s = itb.int_to_bytes(s)
+        s = int_to_bytes(s)
     return s.encode('base64').replace('\n', '')
