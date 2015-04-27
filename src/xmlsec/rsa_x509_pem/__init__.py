@@ -9,6 +9,8 @@
 """Package module into well organized interface.
 """
 from .Crypto.PublicKey import RSA
+from .Crypto.PublicKey.number import bytes_to_long as btl
+from .Crypto.PublicKey.number import long_to_bytes as ltb
 from . import rsa_pem
 from . import x509_pem
 
@@ -76,3 +78,10 @@ def f_private(key):
     function(msg) => str of RSA^-1() using `key`
   """
     return key.decrypt
+
+def f_sign(key):
+    b_len = (key.size() + 1)/8
+    def _sign(msg):
+       (sig,) = key.sign(btl(msg),None)
+       return ltb(sig,b_len)
+    return _sign

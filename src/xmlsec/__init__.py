@@ -188,7 +188,7 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
            'keysize': int(key.size()) + 1}
 
     if private:
-        res['f_private'] = key_f_private or rsa_x509_pem.f_private(key)
+        res['f_private'] = key_f_private or rsa_x509_pem.f_sign(key)
         res['data'] = data  # TODO - normalize private keyspec too!
     else:
         res['data'] = cert_pem['pem']  # normalized PEM

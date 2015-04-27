@@ -18,6 +18,12 @@ from .Crypto.PublicKey import RSA
 from . import rsa_pem
 from . import x509_pem
 import xmlsec.rsa_x509_pem.__init__ as top
+from xmlsec.int_to_bytes import int_to_bytes as itb
+from xmlsec.int_to_bytes import bytes_to_int as bti
+from Crypto.PublicKey.number import long_to_bytes as ltb
+from Crypto.PublicKey.number import bytes_to_long as btl
+from xmlsec import _signed_value
+from xmlsec import constants
 
 
 KEY_FILE_PAIRS = (
@@ -224,6 +230,22 @@ class TestRSAKey(unittest.TestCase):
             cdict = x509_pem.parse(pkg_resources.resource_stream(__name__, cert).read())
             t = x509_pem.dict_to_tuple(cdict)
             self.keys[cert] = RSA.construct(t)
+
+    def test_seq_sign(self):
+        from hashlib import sha256
+        for key_name, v in KEY_FILE_PAIRS:
+            key = self.keys[key_name]
+            e_len = (key.size() + 1)/8
+            for i in range(0,1000):
+                msg = "%d" % i
+                d = sha256()
+                d.update(msg)
+                b_digest = d.digest()
+                tbs = _signed_value(b_digest, key.size()+1, True, "sha256")
+                (sig,) = key.sign(btl(tbs),None)
+                buf = ltb(sig, e_len)
+                buflen = len(buf)
+                self.assertEquals(buflen,e_len)
 
     def test_key_encryption(self):
         for key_name, v in KEY_FILE_PAIRS:
