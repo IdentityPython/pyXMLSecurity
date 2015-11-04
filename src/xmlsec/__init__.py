@@ -276,7 +276,7 @@ def _remove_child_comments(t):
     return t
 
 
-def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature" % NS['ds']):
+def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=False):
     """
     :returns: hash algorithm as string
     """
@@ -299,7 +299,11 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             raise XMLSigException("Unable to dereference Reference URI='%s'" % uri)
 
         if return_verified:
-            verified_objects.append(copy.deepcopy(obj))
+            obj_copy = copy.deepcopy(obj)
+            if drop_signature:
+                for sig in obj_copy.findall(sig_path):
+                    sig.getparent().remove(sig)
+            verified_objects.append(obj_copy)
 
         if config.debug_write_to_files:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
@@ -405,7 +409,7 @@ def setID(ids):
     constants.id_attributes = ids
 
 
-def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
+def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=False):
     """
     Verify the signature(s) in an XML document.
 
@@ -453,7 +457,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
             cm_alg = _cm_alg(si)
             digest_alg = _sig_digest(si)
 
-            validated_objects = _process_references(t, sig, sig_path)
+            validated_objects = _process_references(t, sig, sig_path=sig_path, drop_signature=drop_signature)
             b_digest = _create_signature_digest(si, cm_alg, digest_alg)
             actual = _signed_value(b_digest, this_keysize, True, digest_alg)
             expected = this_f_public(b64d(sv))
@@ -474,8 +478,8 @@ def verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
     return len(_verify(t, keyspec, sig_path)) > 0
 
 
-def verified(t, keyspec, sig_path=".//{%s}Signature" % NS['ds']):
-    return _verify(t, keyspec, sig_path)
+def verified(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=False):
+    return _verify(t, keyspec, sig_path, drop_signature)
 
 
 ## TODO - support transforms with arguments
