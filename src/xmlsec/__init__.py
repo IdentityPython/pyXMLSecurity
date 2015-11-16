@@ -161,8 +161,10 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
 
             key_f_private, data = pk11.signer(keyspec)
             logging.debug("Using pkcs11 signing key: %s" % key_f_private)
+            cert_pem = rsa_x509_pem.parse(data)
             return {'keyspec': keyspec,
                     'source': 'pkcs11',
+                    'data': cert_pem['pem'],
                     'f_private': key_f_private}
         elif signature_element is not None:
             cd = _find_matching_cert(signature_element, keyspec)
@@ -173,11 +175,11 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
             data = keyspec
             source = 'keyspec'
 
+    #print "Certificate data (source '%s') :\n%s" % (source, data)
+
     if data is None:
         return None
         #raise XMLSigException("Unable to find a useful key from keyspec '%s'" % (keyspec))
-
-    #logging.debug("Certificate data (source '%s') :\n%s" % (source, data))
 
     cert_pem = rsa_x509_pem.parse(data)
     key = rsa_x509_pem.get_key(cert_pem)
@@ -541,6 +543,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
     do_padding = False  # only in the case of our fallback keytype do we need to do pkcs1 padding here
 
     private = _load_keyspec(key_spec, private=True)
+
     if private is None:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
 
@@ -587,10 +590,11 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         else:
             sv.text = signature
 
-        if public is not None:
-            # Insert cert_data as b64-encoded X.509 certificate into XML document
-            sv_elt = si.getnext()
-            sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(public['data'])))))
+        for cert_src in (public, private):
+            if cert_src is not None and 'data' in cert_src:
+                # Insert cert_data as b64-encoded X.509 certificate into XML document
+                sv_elt = si.getnext()
+                sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_src['data'])))))
 
     return t
 

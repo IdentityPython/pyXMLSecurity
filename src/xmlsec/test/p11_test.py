@@ -12,6 +12,7 @@ import os
 import traceback
 import subprocess
 import tempfile
+from lxml import etree
 
 try:
     from PyKCS11 import PyKCS11Error
@@ -297,6 +298,23 @@ class TestPKCS11(unittest.TestCase):
         signed = xmlsec.sign(case.as_etree('in.xml'),
                              key_spec="pkcs11://%s:0/test?pin=secret1" % P11_MODULE)
 
+        # verify signature using the public key
+        res = xmlsec.verify(signed, signer_cert_pem)
+        self.assertTrue(res)
+
+    def test_SAML_sign_with_pkcs11_cert(self):
+        """
+        Test signing a SAML assertion using PKCS#11 and then verifying it using plain file.
+        """
+        case = self.cases['SAML_assertion1']
+        print("XML input :\n{}\n\n".format(case.as_buf('in2.xml')))
+
+        os.environ['SOFTHSM_CONF'] = softhsm_conf
+
+        signed = xmlsec.sign(case.as_etree('in2.xml'),
+                             key_spec="pkcs11://%s:0/test?pin=secret1" % P11_MODULE)
+
+        print("XML output :\n{}\n\n".format(etree.tostring(signed)))
         # verify signature using the public key
         res = xmlsec.verify(signed, signer_cert_pem)
         self.assertTrue(res)

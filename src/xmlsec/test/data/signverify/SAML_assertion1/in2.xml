@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns0:Assertion xmlns:ns0="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:ns1="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="11111" IssueInstant="2009-10-30T13:20:28Z" Version="2.0">
+  <ns1:Signature Id="Signature1">
+    <ns1:SignedInfo>
+      <ns1:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+      <ns1:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+      <ns1:Reference URI="#11111">
+        <ns1:Transforms>
+          <ns1:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+          <ns1:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+        </ns1:Transforms>
+        <ns1:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+        <ns1:DigestValue/>
+      </ns1:Reference>
+    </ns1:SignedInfo>
+    <ns1:SignatureValue/>
+  </ns1:Signature>
+  <ns0:AttributeStatement>
+    <ns0:Attribute FriendlyName="givenName" NameFormat="">
+      <ns0:AttributeValue xsi:nil="true" xsi:type="xs:string">Bar</ns0:AttributeValue>
+    </ns0:Attribute>
+    <ns0:Attribute FriendlyName="surName" NameFormat="">
+      <ns0:AttributeValue xsi:nil="true" xsi:type="xs:string">Foo</ns0:AttributeValue>
+    </ns0:Attribute>
+  </ns0:AttributeStatement>
+</ns0:Assertion>
