@@ -1,13 +1,20 @@
 language: python
+sudo: false
 python: 
    - "2.7"
-install: 
-   - "pip install ."
-   - "pip install -r requirements.txt"
-   - "pip install coveralls"
+addons:
+   apt:
+      packages:
+         - libxml2-dev
+         - libxslt-dev
+         - libsofthsm
+         - softhsm
+         - opensc
+         - libengine-pkcs11-openssl
+before_install: 
+   - pip install .
+   - pip install -r requirements.txt
+   - pip install coveralls
 script: "coverage run --source=xmlsec setup.py nosetests"
-before_install:
-   - sudo apt-get update -qq
-   - sudo apt-get install -qq libxml2-dev libxslt-dev libsofthsm softhsm opensc libengine-pkcs11-openssl
 after_success:
    coveralls
