@@ -115,8 +115,22 @@ News
 
 0.14
 ----
+
 *Release date: Mon Dec  1 08:58:54 CET 2014*
 
 * Add explicit call to C_Initialize
 * Various bugs fixed - from Fredrik T
 * Allow caller control over session close
+
+0.15
+----
+
+*Release date: mån 16 nov 2015 13:40:26 CET*
+
+* xmlsign: a simple sign cmdline tool
+* optionally drop signatures when validating
+* avoid logging keysize in p11 case
+* put a lock around pyasn1 parser
+* make cert loading thread safe
+* bugfixes
+
