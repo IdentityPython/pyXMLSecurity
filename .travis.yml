@@ -15,7 +15,8 @@ before_install:
    - sudo apt-get -qq update 
    - sudo apt-get -y install libxml2-dev libxslt-dev libsofthsm softhsm opensc libengine-pkcs11-openssl
    - pip install .
-   - pip install -r requirements.txt
+   - pip install nose
+   - sh scripts/install-pykcs11.sh
    - pip install coveralls
 script: "coverage run --source=xmlsec setup.py nosetests"
 after_success:
