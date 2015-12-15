@@ -5,9 +5,6 @@
 
 __author__ = 'leifj'
 
-import os
-import io
-from . import rsa_x509_pem
 from lxml import etree as etree
 import logging
 import base64
@@ -19,6 +16,7 @@ from xmlsec.exceptions import XMLSigException
 from UserDict import DictMixin
 from xmlsec import constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, b642cert
+import xmlsec.crypto
 import pyconfig
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
@@ -106,97 +104,6 @@ def _find_matching_cert(t, fp):
         if fp.lower() == cfp:
             return pem
     return None
-
-
-def _load_keyspec(keyspec, private=False, signature_element=None):
-    """
-    Load a key referenced by a keyspec (see below).
-
-    To 'load' a key means different things based on what can be loaded through a
-    given specification. For example, if keyspec is a a PKCS#11 reference to a
-    private key then naturally the key itself is not available.
-
-    Possible keyspecs, in evaluation order :
-
-      - a callable.    Return a partial dict with 'f_private' set to the keyspec.
-      - a filename.    Load a PEM X.509 certificate from the file.
-      - a PKCS#11-URI  (see xmlsec.pk11.parse_uri()). Return a dict with 'f_private'
-                       set to a function calling the 'sign' function for the key,
-                       and the rest based on the (public) key returned by
-                       xmlsec.pk11.signer().
-      - a fingerprint. If signature_element is provided, the key is located using
-                       the fingerprint (provided as string).
-      - X.509 string.  An X.509 certificate as string.
-
-    Resulting dictionary (used except for 'callable') :
-
-      {'keyspec': keyspec,
-       'source': 'pkcs11' or 'file' or 'fingerprint' or 'keyspec',
-       'data': X.509 certificate as string if source != 'pkcs11',
-       'key': Parsed key from certificate if source != 'pkcs11',
-       'keysize': Keysize in bits if source != 'pkcs11',
-       'f_public': rsa_x509_pem.f_public(key) if private == False,
-       'f_private': rsa_x509_pem.f_private(key) if private == True,
-      }
-
-    :param keyspec: Keyspec as string or callable. See above.
-    :param private: True of False, is keyspec a private key or not?
-    :param signature_element:
-    :returns: dict, see above.
-    """
-    data = None
-    source = None
-    key_f_private = None
-    if private and hasattr(keyspec, '__call__'):
-        return {'keyspec': keyspec,
-                'source': 'callable',
-                'f_private': keyspec}
-    if isinstance(keyspec, basestring):
-        if os.path.isfile(keyspec):
-            with io.open(keyspec) as c:
-                data = c.read()
-            source = 'file'
-        elif private and keyspec.startswith("pkcs11://"):
-            from xmlsec import pk11
-
-            key_f_private, data = pk11.signer(keyspec)
-            logging.debug("Using pkcs11 signing key: %s" % key_f_private)
-            cert_pem = rsa_x509_pem.parse(data)
-            return {'keyspec': keyspec,
-                    'source': 'pkcs11',
-                    'data': cert_pem['pem'],
-                    'f_private': key_f_private}
-        elif signature_element is not None:
-            cd = _find_matching_cert(signature_element, keyspec)
-            if cd is not None:
-                data = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % cd
-                source = 'signature_element'
-        elif '-----BEGIN' in keyspec:
-            data = keyspec
-            source = 'keyspec'
-
-    #print "Certificate data (source '%s') :\n%s" % (source, data)
-
-    if data is None:
-        return None
-        #raise XMLSigException("Unable to find a useful key from keyspec '%s'" % (keyspec))
-
-    cert_pem = rsa_x509_pem.parse(data)
-    key = rsa_x509_pem.get_key(cert_pem)
-
-    res = {'keyspec': keyspec,
-           'source': source,
-           'key': key,
-           'keysize': int(key.size()) + 1}
-
-    if private:
-        res['f_private'] = key_f_private or rsa_x509_pem.f_sign(key)
-        res['data'] = data  # TODO - normalize private keyspec too!
-    else:
-        res['data'] = cert_pem['pem']  # normalized PEM
-        res['f_public'] = rsa_x509_pem.f_public(key)
-
-    return res
 
 
 def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
@@ -426,7 +333,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             fd.write(etree.tostring(root_elt(t)))
 
     # Load and parse certificate, unless keyspec is a fingerprint.
-    cert = _load_keyspec(keyspec)
+    cert = xmlsec.crypto.from_keyspec(keyspec)
 
     validated = []
     for sig in t.findall(sig_path):
@@ -439,16 +346,16 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             this_keysize = None
             if cert is None:
                 # keyspec is fingerprint - look for matching certificate in XML
-                this_cert = _load_keyspec(keyspec, signature_element=sig)
+                this_cert = xmlsec.crypto.from_keyspec(keyspec)
                 if this_cert is None:
                     raise XMLSigException("Could not find certificate fingerprint to validate signature")
-                this_f_public = this_cert['f_public']
-                this_keysize = this_cert['keysize']
+                this_f_public = this_cert.public
+                this_keysize = this_cert.keysize
             else:
                 # Non-fingerprint keyspec, use pre-parsed values
                 this_cert = cert
-                this_f_public = cert['f_public']
-                this_keysize = cert['keysize']
+                this_f_public = this_cert['f_public']
+                this_keysize = this_cert['keysize']
 
             if this_cert is None:
                 raise XMLSigException("Could not find certificate to validate signature")
@@ -533,8 +440,9 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
     Sign an XML document. This means to 'complete' all Signature elements in the XML.
 
     :param t: XML as lxml.etree
-    :param key_spec: private key reference, see _load_keyspec() for syntax.
-    :param cert_spec: None or public key reference (to add cert to document), see _load_keyspec() for syntax.
+    :param key_spec: private key reference, see xmlsec.crypto.from_keyspec() for syntax.
+    :param cert_spec: None or public key reference (to add cert to document),
+                      see xmlsec.crypto.from_keyspec() for syntax.
     :param reference_uri: Envelope signature reference URI
     :param insert_index: Insertion point for the Signature element,
                          Signature is inserted at beginning by default
@@ -542,7 +450,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
     """
     do_padding = False  # only in the case of our fallback keytype do we need to do pkcs1 padding here
 
-    private = _load_keyspec(key_spec, private=True)
+    private = xmlsec.crypto.from_keyspec(key_spec, private=True)
 
     if private is None:
         raise XMLSigException("Unable to load private key from '%s'" % key_spec)
@@ -552,7 +460,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
 
     public = None
     if cert_spec is not None:
-        public = _load_keyspec(cert_spec)
+        public = xmlsec.crypto.from_keyspec(cert_spec)
         if public is None:
             raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
         if 'keysize' in public and 'keysize' in private:
