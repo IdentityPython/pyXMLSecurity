@@ -7,13 +7,11 @@ __author__ = 'leifj'
 
 from lxml import etree as etree
 import logging
-import base64
 import hashlib
 import copy
 from . import int_to_bytes as itb
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
-from UserDict import DictMixin
 from xmlsec import constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, b642cert
 import xmlsec.crypto
@@ -55,55 +53,6 @@ def _implicit_same_document(t, sig):
         return root_elt(copy.deepcopy(t))
     else:
         return copy.deepcopy(sig.getparent())
-
-
-class CertDict(DictMixin):
-    """
-    Extract all X509Certificate XML elements and create a dict-like object
-    to access the certificates.
-    """
-
-    def __init__(self, t):
-        """
-        :param t: XML as lxml.etree
-        """
-        self.certs = {}
-        for cd in t.findall(".//{%s}X509Certificate" % NS['ds']):
-            cert_pem = cd.text
-            cert_der = base64.b64decode(cert_pem)
-            m = hashlib.sha1()
-            m.update(cert_der)
-            fingerprint = m.hexdigest().lower()
-            fingerprint = ":".join([fingerprint[x:x + 2] for x in xrange(0, len(fingerprint), 2)])
-            self.certs[fingerprint] = cert_pem
-
-    def __getitem__(self, item):
-        return self.certs[item]
-
-    def keys(self):
-        return self.certs.keys()
-
-    def __setitem__(self, key, value):
-        self.certs[key] = value
-
-    def __delitem__(self, key):
-        del self.certs[key]
-
-
-def _find_matching_cert(t, fp):
-    """
-    Find certificate using fingerprint.
-
-    :param t: XML as lxml.etree or None
-    :param fp: fingerprint as string
-    :returns: PEM formatted certificate as string or None
-    """
-    if t is None:
-        return None
-    for cfp, pem in CertDict(t).iteritems():
-        if fp.lower() == cfp:
-            return pem
-    return None
 
 
 def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
@@ -342,25 +291,19 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             if sv is None:
                 raise XMLSigException("No SignatureValue")
 
-            this_f_public = None
-            this_keysize = None
             if cert is None:
                 # keyspec is fingerprint - look for matching certificate in XML
                 this_cert = xmlsec.crypto.from_keyspec(keyspec)
                 if this_cert is None:
                     raise XMLSigException("Could not find certificate fingerprint to validate signature")
-                this_f_public = this_cert.public
-                this_keysize = this_cert.keysize
             else:
                 # Non-fingerprint keyspec, use pre-parsed values
                 this_cert = cert
-                this_f_public = this_cert['f_public']
-                this_keysize = this_cert['keysize']
 
             if this_cert is None:
                 raise XMLSigException("Could not find certificate to validate signature")
 
-            logging.debug("key size: %d bits" % this_cert['keysize'])
+            logging.debug("key size: {!s} bits".format(this_cert.keysize))
 
             si = sig.find(".//{%s}SignedInfo" % NS['ds'])
             cm_alg = _cm_alg(si)
@@ -368,11 +311,9 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
 
             validated_objects = _process_references(t, sig, sig_path=sig_path, drop_signature=drop_signature)
             b_digest = _create_signature_digest(si, cm_alg, digest_alg)
-            actual = _signed_value(b_digest, this_keysize, True, digest_alg)
-            expected = this_f_public(b64d(sv))
-
-            if expected != actual:
-                raise XMLSigException("Failed to validate %s" % etree.tostring(sig))
+            actual = _signed_value(b_digest, this_cert.keysize, True, digest_alg)
+            if not this_cert.verify(b64d(sv), actual):
+                raise XMLSigException("Failed to validate {!s}".format(etree.tostring(sig)))
             validated.extend(validated_objects)
         except XMLSigException, ex:
             logging.error(ex)
@@ -448,27 +389,19 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
                          Signature is inserted at beginning by default
     :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
     """
-    do_padding = False  # only in the case of our fallback keytype do we need to do pkcs1 padding here
-
     private = xmlsec.crypto.from_keyspec(key_spec, private=True)
-
-    if private is None:
-        raise XMLSigException("Unable to load private key from '%s'" % key_spec)
-
-    if private['source'] == 'file':
-        do_padding = True  # need to do p1 padding in this case
 
     public = None
     if cert_spec is not None:
         public = xmlsec.crypto.from_keyspec(cert_spec)
         if public is None:
             raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
-        if 'keysize' in public and 'keysize' in private:
-            if public['keysize'] != private['keysize']:
-                raise XMLSigException("Public and private key sizes do not match (%s, %s)"
-                                      % (public['keysize'], private['keysize']))
+        if public.keysize and private.keysize:  # XXX maybe one set and one not set should also raise exception?
+            if public.keysize != private.keysize:
+                raise XMLSigException("Public and private key sizes do not match ({!s}, {!s})".format(
+                                      public.keysize, private.keysize))
             # This might be incorrect for PKCS#11 tokens if we have no public key
-            logging.debug("Using %s bit key" % (private['keysize']))
+            logging.debug("Using {!s} bit key".format(private.keysize))
 
     if t.find(sig_path) is None:
         add_enveloped_signature(t, reference_uri=reference_uri, pos=insert_index)
@@ -488,8 +421,8 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         b_digest = _create_signature_digest(si, cm_alg, digest_alg)
 
         # sign hash digest and insert it into the XML
-        tbs = _signed_value(b_digest, private.get('keysize'), do_padding, digest_alg)
-        signed = private['f_private'](tbs)
+        tbs = _signed_value(b_digest, private.keysize, private.do_padding, digest_alg)
+        signed = private.sign(tbs)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
@@ -499,11 +432,11 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
             sv.text = signature
 
         for cert_src in (public, private):
-            if cert_src is not None and 'data' in cert_src:
+            if cert_src is not None and cert_src.cert_pem:
                 # Insert cert_data as b64-encoded X.509 certificate into XML document
                 sv_elt = si.getnext()
-                sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_src['data'])))))
-                break # add the first we find, no more
+                sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_src.cert_pem)))))
+                break  # add the first we find, no more
 
     return t
 
