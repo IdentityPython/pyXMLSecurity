@@ -19,6 +19,7 @@ def from_keyspec(keyspec, private=False, signature_element=None):
 
     Possible keyspecs, in evaluation order :
 
+      - XMLSECCrypto   If keyspec is already a loaded key, just return it.
       - a callable.    Return a partial dict with 'f_private' set to the keyspec.
       - a filename.    Load a PEM X.509 certificate from the file.
       - a PKCS#11-URI  (see xmlsec.pk11.parse_uri()). Return a dict with 'f_private'
@@ -138,6 +139,8 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
 
 
 def _load_keyspec(keyspec, private=False, signature_element=None):
+    if isinstance(keyspec, XMlSecCrypto):
+        return keyspec
     if private and hasattr(keyspec, '__call__'):
         return XMLSecCryptoCallable(keyspec)
     if isinstance(keyspec, basestring):

@@ -327,6 +327,22 @@ class TestTransforms(unittest.TestCase):
         res = xmlsec.verify(t, href_signer)
         self.assertTrue(res)
 
+    def test_already_loaded_keyspec(self):
+        """
+        Test signing a SAML assertion with an already loaded keyspec, and making sure we can verify it.
+        """
+        case = self.cases['SAML_assertion1']
+        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+
+        private_key = xmlsec.crypto.from_keyspec(self.private_keyspec, private = True)
+        public_key = xmlsec.crypto.from_keyspec(self.public_keyspec, private = False)
+
+        signed = xmlsec.sign(case.as_etree('in.xml'),
+                             key_spec=private_key,
+                             cert_spec=self.public_keyspec)
+        res = xmlsec.verify(signed, public_key)
+        self.assertTrue(res)
+
 
 def main():
     unittest.main()
