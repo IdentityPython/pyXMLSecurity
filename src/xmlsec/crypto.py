@@ -29,21 +29,12 @@ def from_keyspec(keyspec, private=False, signature_element=None):
                        the fingerprint (provided as string).
       - X.509 string.  An X.509 certificate as string.
 
-    Resulting dictionary (used except for 'callable') :
-
-      {'keyspec': keyspec,
-       'source': 'pkcs11' or 'file' or 'fingerprint' or 'keyspec',
-       'data': X.509 certificate as string if source != 'pkcs11',
-       'key': Parsed key from certificate if source != 'pkcs11',
-       'keysize': Keysize in bits if source != 'pkcs11',
-       'f_public': rsa_x509_pem.f_public(key) if private == False,
-       'f_private': rsa_x509_pem.f_private(key) if private == True,
-      }
-
     :param keyspec: Keyspec as string or callable. See above.
     :param private: True of False, is keyspec a private key or not?
     :param signature_element:
-    :returns: dict, see above.
+    :returns: Loaded keyspec
+
+    :rtype: XMlSecCrypto
     """
     thread_local = threading.local()
     cache = getattr(thread_local, 'keycache', {})
