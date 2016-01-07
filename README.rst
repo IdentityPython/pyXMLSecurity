@@ -14,10 +14,10 @@ python XML Security
    :target: https://github.com/leifj/pyXMLSecurity/blob/master/LICENSE.txt
    :alt: License
 .. image:: https://img.shields.io/pypi/format/pyXMLSecurity.svg
-   :target:
+   :target: https://pypi.python.org/pypi/pyXMLSecurity
    :alt: Format
 .. image:: https://img.shields.io/pypi/v/pyXMLSecurity.svg
-   :target: 
+   :target: https://pypi.python.org/pypi/pyXMLSecurity
    :alt: PyPI Version
 
 This is a python implementation of XML-Security - XML-DSIG only right now. There are no
