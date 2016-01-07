@@ -7,9 +7,6 @@ python XML Security
 .. image:: https://coveralls.io/repos/leifj/pyXMLSecurity/badge.png?branch=master
    :target: https://coveralls.io/r/leifj/pyXMLSecurity?branch=master
    :alt: Coverage
-.. image:: https://pypip.in/license/pyXMLSecurity/badge.svg
-    :target: https://pypi.python.org/pypi/pyXMLSecurity/
-    :alt: License
 .. image:: https://requires.io/github/leifj/pyXMLSecurity/requirements.svg?branch=master
      :target: https://requires.io/github/leifj/pyXMLSecurity/requirements/?branch=master
      :alt: Requirements Status
