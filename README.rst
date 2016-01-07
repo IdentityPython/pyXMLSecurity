@@ -1,10 +1,10 @@
 python XML Security
 ===================
 
-.. image:: https://travis-ci.org/leifj/pyXMLSecurity.svg?branch=master
+.. image:: https://img.shields.io/travis/leifj/pyXMLSecurity.svg
    :target: https://travis-ci.org/leifj/pyXMLSecurity
-   :alt: Build Status
-.. image:: https://coveralls.io/repos/leifj/pyXMLSecurity/badge.png?branch=master
+   :alt: Travis Build
+.. image:: https://img.shields.io/coveralls/leifj/pyXMLSecurity.svg
    :target: https://coveralls.io/r/leifj/pyXMLSecurity?branch=master
    :alt: Coverage
 .. image:: https://requires.io/github/leifj/pyXMLSecurity/requirements.svg?branch=master
