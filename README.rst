@@ -10,6 +10,9 @@ python XML Security
 .. image:: https://requires.io/github/leifj/pyXMLSecurity/requirements.svg?branch=master
    :target: https://requires.io/github/leifj/pyXMLSecurity/requirements/?branch=master
    :alt: Requirements Status
+.. image:: https://img.shields.io/codeclimate/leifj/pyXMLSecurity/flow.svg
+   :target: https://codeclimate.com/github/leifj/pyXMLSecurity
+   :alt: Code Climate
 .. image:: https://img.shields.io/pypi/l/pyXMLSecurity.svg
    :target: https://github.com/leifj/pyXMLSecurity/blob/master/LICENSE.txt
    :alt: License
