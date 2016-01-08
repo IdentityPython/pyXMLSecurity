@@ -9,8 +9,26 @@ except ImportError:
 from operator import getslice, setslice, delslice
 from string import join
 from types import SliceType
-from . import constraint
+from . import constraint, namedval
 from .. import error
+import warnings
+
+
+def deprecated(func):
+    """This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emitted
+    when the function is used."""
+
+    def new_func(*args, **kwargs):
+        warnings.warn("Call to deprecated function {}.".format(func.__name__),
+                      category=DeprecationWarning)
+        return func(*args, **kwargs)
+
+    new_func.__name__ = func.__name__
+    new_func.__doc__ = func.__doc__
+    new_func.__dict__.update(func.__dict__)
+
+    return new_func
 
 
 class Asn1Item:
@@ -139,9 +157,62 @@ class AbstractSimpleAsn1Item(Asn1ItemBase):
     def prettyPrint(self, scope=0):
         return self.prettyOut(self._value)
 
-    # XXX Compatibility stub
+    @deprecated
     def prettyPrinter(self, scope=0):
         return self.prettyPrint(scope)
+
+
+class AbstractNumerableAsn1Item(AbstractSimpleAsn1Item):
+
+    namedValues = namedval.NamedValues()
+
+    def __init__(self, value=None, tagSet=None, subtypeSpec=None,
+                 namedValues=None):
+        if namedValues is None:
+            self.__namedValues = self.namedValues
+        else:
+            self.__namedValues = namedValues
+        AbstractSimpleAsn1Item.__init__(
+            self, value, tagSet, subtypeSpec
+        )
+
+    @property
+    def named_values(self):
+        return self.__namedValues
+
+    def clone(self, value=None, tagSet=None, subtypeSpec=None,
+              namedValues=None):
+        if value is None and tagSet is None and subtypeSpec is None and namedValues is None:
+            return self
+        if value is None:
+            value = self._value
+        if tagSet is None:
+            tagSet = self._tagSet
+        if subtypeSpec is None:
+            subtypeSpec = self._subtypeSpec
+        if namedValues is None:
+            namedValues = self.__namedValues
+        return self.__class__(value, tagSet, subtypeSpec, namedValues)
+
+    def subtype(self, value=None, implicitTag=None, explicitTag=None,
+                subtypeSpec=None, namedValues=None):
+        if value is None:
+            value = self._value
+        if implicitTag is not None:
+            tagSet = self._tagSet.tagImplicitly(implicitTag)
+        elif explicitTag is not None:
+            tagSet = self._tagSet.tagExplicitly(explicitTag)
+        else:
+            tagSet = self._tagSet
+        if subtypeSpec is None:
+            subtypeSpec = self._subtypeSpec
+        else:
+            subtypeSpec = subtypeSpec + self._subtypeSpec
+        if namedValues is None:
+            namedValues = self.__namedValues
+        else:
+            namedValues = namedValues + self.__namedValues
+        return self.__class__(value, tagSet, subtypeSpec, namedValues)
 
 #
 # Constructed types:

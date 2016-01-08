@@ -8,25 +8,16 @@ import operator
 from . import base, tag, constraint, namedtype, namedval
 from .. import error
 
+
 # "Simple" ASN.1 types (yet incomplete)
 
-class Integer(base.AbstractSimpleAsn1Item):
+
+class Integer(base.AbstractNumerableAsn1Item):
     tagSet = tag.initTagSet(
         tag.Tag(tag.tagClassUniversal, tag.tagFormatSimple, 0x02)
     )
-    namedValues = namedval.NamedValues()
 
-    def __init__(self, value=None, tagSet=None, subtypeSpec=None,
-                 namedValues=None):
-        if namedValues is None:
-            self.__namedValues = self.namedValues
-        else:
-            self.__namedValues = namedValues
-        base.AbstractSimpleAsn1Item.__init__(
-            self, value, tagSet, subtypeSpec
-        )
-
-    #XXX    def __coerce__(self, other): return long(self), long(other)
+    #    def __coerce__(self, other): return long(self), long(other)
     def __and__(self, value):
         return self.clone(self._value & value)
 
@@ -105,7 +96,7 @@ class Integer(base.AbstractSimpleAsn1Item):
     def prettyIn(self, value):
         if type(value) != types.StringType:
             return long(value)
-        r = self.__namedValues.getValue(value)
+        r = self.named_values.getValue(value)
         if r is not None:
             return r
         try:
@@ -119,49 +110,11 @@ class Integer(base.AbstractSimpleAsn1Item):
                 )
 
     def prettyOut(self, value):
-        r = self.__namedValues.getName(value)
+        r = self.named_values.getName(value)
         if r is not None:
             return '%s(%s)' % (r, value)
         else:
             return str(value)
-
-    def getNamedValues(self):
-        return self.__namedValues
-
-    def clone(self, value=None, tagSet=None, subtypeSpec=None,
-              namedValues=None):
-        if value is None and tagSet is None and subtypeSpec is None \
-            and namedValues is None:
-            return self
-        if value is None:
-            value = self._value
-        if tagSet is None:
-            tagSet = self._tagSet
-        if subtypeSpec is None:
-            subtypeSpec = self._subtypeSpec
-        if namedValues is None:
-            namedValues = self.__namedValues
-        return self.__class__(value, tagSet, subtypeSpec, namedValues)
-
-    def subtype(self, value=None, implicitTag=None, explicitTag=None,
-                subtypeSpec=None, namedValues=None):
-        if value is None:
-            value = self._value
-        if implicitTag is not None:
-            tagSet = self._tagSet.tagImplicitly(implicitTag)
-        elif explicitTag is not None:
-            tagSet = self._tagSet.tagExplicitly(explicitTag)
-        else:
-            tagSet = self._tagSet
-        if subtypeSpec is None:
-            subtypeSpec = self._subtypeSpec
-        else:
-            subtypeSpec = subtypeSpec + self._subtypeSpec
-        if namedValues is None:
-            namedValues = self.__namedValues
-        else:
-            namedValues = namedValues + self.__namedValues
-        return self.__class__(value, tagSet, subtypeSpec, namedValues)
 
 
 class Boolean(Integer):
@@ -172,56 +125,10 @@ class Boolean(Integer):
     namedValues = Integer.namedValues.clone(('False', 0), ('True', 1))
 
 
-class BitString(base.AbstractSimpleAsn1Item):
+class BitString(base.AbstractNumerableAsn1Item):
     tagSet = tag.initTagSet(
         tag.Tag(tag.tagClassUniversal, tag.tagFormatSimple, 0x03)
     )
-    namedValues = namedval.NamedValues()
-
-    def __init__(self, value=None, tagSet=None, subtypeSpec=None,
-                 namedValues=None):
-        if namedValues is None:
-            self.__namedValues = self.namedValues
-        else:
-            self.__namedValues = namedValues
-        base.AbstractSimpleAsn1Item.__init__(
-            self, value, tagSet, subtypeSpec
-        )
-
-    def clone(self, value=None, tagSet=None, subtypeSpec=None,
-              namedValues=None):
-        if value is None and tagSet is None and subtypeSpec is None \
-            and namedValues is None:
-            return self
-        if value is None:
-            value = self._value
-        if tagSet is None:
-            tagSet = self._tagSet
-        if subtypeSpec is None:
-            subtypeSpec = self._subtypeSpec
-        if namedValues is None:
-            namedValues = self.__namedValues
-        return self.__class__(value, tagSet, subtypeSpec, namedValues)
-
-    def subtype(self, value=None, implicitTag=None, explicitTag=None,
-                subtypeSpec=None, namedValues=None):
-        if value is None:
-            value = self._value
-        if implicitTag is not None:
-            tagSet = self._tagSet.tagImplicitly(implicitTag)
-        elif explicitTag is not None:
-            tagSet = self._tagSet.tagExplicitly(explicitTag)
-        else:
-            tagSet = self._tagSet
-        if subtypeSpec is None:
-            subtypeSpec = self._subtypeSpec
-        else:
-            subtypeSpec = subtypeSpec + self._subtypeSpec
-        if namedValues is None:
-            namedValues = self.__namedValues
-        else:
-            namedValues = namedValues + self.__namedValues
-        return self.__class__(value, tagSet, subtypeSpec, namedValues)
 
     def __str__(self):
         return str(tuple(self))
@@ -277,7 +184,7 @@ class BitString(base.AbstractSimpleAsn1Item):
                 )
         else:
             for i in string.split(value, ','):
-                i = self.__namedValues.getValue(i)
+                i = self.named_values.getValue(i)
                 if i is None:
                     raise error.PyAsn1Error(
                         'Unknown identifier \'%s\'' % i
@@ -332,7 +239,7 @@ class OctetString(base.AbstractSimpleAsn1Item):
 
 
 class Null(OctetString):
-    defaultValue = '' # This is tightly constrained
+    defaultValue = ''  # This is tightly constrained
     tagSet = tag.initTagSet(
         tag.Tag(tag.tagClassUniversal, tag.tagFormatSimple, 0x05)
     )
@@ -429,6 +336,7 @@ class Enumerated(Integer):
     tagSet = tag.initTagSet(
         tag.Tag(tag.tagClassUniversal, tag.tagFormatSimple, 0x0A)
     )
+
 
 # "Structured" ASN.1 types
 
