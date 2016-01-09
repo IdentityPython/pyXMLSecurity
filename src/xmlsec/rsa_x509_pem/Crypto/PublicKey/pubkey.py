@@ -18,10 +18,29 @@ from .number import bignum, bytes_to_long, long_to_bytes, getPrime, inverse
 class CryptoPubkeyError(Exception):
     pass
 
+
+def construct(tuple, sizes, obj):
+    if len(tuple) not in sizes:
+        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
+    for i in range(len(tuple)):
+        field = obj.keydata[i]
+        setattr(obj, field, tuple[i])
+    return obj
+
+
 # Basic public key class
 class CryptoPubkey:
     def __init__(self):
         pass
+
+    def __getattr__(self, attr):
+        if attr in self.keydata:
+            return getattr(self.key, attr)
+        else:
+            if self.__dict__.has_key(attr):
+                self.__dict__[attr]
+            else:
+                raise AttributeError('%s instance has no attribute %s' % (self.__class__, attr))
 
     def __getstate__(self):
         """To keep key objects platform-independent, the key data is

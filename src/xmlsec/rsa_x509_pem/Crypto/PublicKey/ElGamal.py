@@ -68,14 +68,7 @@ def construct(tuple):
              : ElGamalobj
     Construct an ElGamal key from a 3- or 4-tuple of numbers.
     """
-
-    obj = ElGamalobj()
-    if len(tuple) not in [3, 4]:
-        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
-    for i in range(len(tuple)):
-        field = obj.keydata[i]
-        setattr(obj, field, tuple[i])
-    return obj
+    return pubkey.construct(tupe, [3, 4], ElGamalobj())
 
 
 class ElGamalobj(pubkey.CryptoPubkey):

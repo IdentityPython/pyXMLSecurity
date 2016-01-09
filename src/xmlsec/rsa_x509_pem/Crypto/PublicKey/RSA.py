@@ -63,13 +63,7 @@ def construct(tuple):
     """construct(tuple:(long,) : RSAobj
     Construct an RSA object from a 2-, 3-, 5-, or 6-tuple of numbers.
     """
-
-    obj = RSAobj()
-    if len(tuple) not in [2, 3, 5, 6]:
-        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
-    for i in range(len(tuple)):
-        field = obj.keydata[i]
-        setattr(obj, field, tuple[i])
+    obj = pubkey.construct(tuple, [2, 3, 5, 6], RSAobj())
     if len(tuple) >= 5:
         # Ensure p is smaller than q
         if obj.p > obj.q:
@@ -152,15 +146,6 @@ class RSAobj_c(pubkey.CryptoPubkey):
 
     def __init__(self, key):
         self.key = key
-
-    def __getattr__(self, attr):
-        if attr in self.keydata:
-            return getattr(self.key, attr)
-        else:
-            if self.__dict__.has_key(attr):
-                self.__dict__[attr]
-            else:
-                raise AttributeError('%s instance has no attribute %s' % (self.__class__, attr))
 
     def __getstate__(self):
         d = {}

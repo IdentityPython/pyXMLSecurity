@@ -108,13 +108,7 @@ def construct(tuple):
     """construct(tuple:(long,long,long,long)|(long,long,long,long,long)
     Construct a qNEW object from a 4- or 5-tuple of numbers.
     """
-    obj = qNEWobj()
-    if len(tuple) not in [4, 5]:
-        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
-    for i in range(len(tuple)):
-        field = obj.keydata[i]
-        setattr(obj, field, tuple[i])
-    return obj
+    return pubkey.construct(tuple, [4, 5], qNEWobj())
 
 
 class qNEWobj(pubkey.CryptoPubkey):

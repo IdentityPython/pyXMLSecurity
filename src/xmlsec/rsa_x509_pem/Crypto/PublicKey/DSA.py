@@ -103,13 +103,7 @@ def construct(tuple):
     """construct(tuple:(long,long,long,long)|(long,long,long,long,long)):DSAobj
     Construct a DSA object from a 4- or 5-tuple of numbers.
     """
-    obj = DSAobj()
-    if len(tuple) not in [4, 5]:
-        raise pubkey.CryptoPubkeyError('argument for construct() wrong length')
-    for i in range(len(tuple)):
-        field = obj.keydata[i]
-        setattr(obj, field, tuple[i])
-    return obj
+    return pubkey.construct(tuple, [4, 5], DSAobj())
 
 
 class DSAobj(pubkey.CryptoPubkey):
@@ -178,15 +172,6 @@ class DSAobj_c(pubkey.CryptoPubkey):
 
     def __init__(self, key):
         self.key = key
-
-    def __getattr__(self, attr):
-        if attr in self.keydata:
-            return getattr(self.key, attr)
-        else:
-            if self.__dict__.has_key(attr):
-                self.__dict__[attr]
-            else:
-                raise AttributeError('%s instance has no attribute %s' % (self.__class__, attr))
 
     def __getstate__(self):
         d = {}
