@@ -71,9 +71,16 @@ class Asn1ItemBase(Asn1Item):
 
     def isSuperTypeOf(self, other):
         """Returns true if argument is a ASN1 subtype of ourselves"""
-        return self._tagSet.isSuperTagSetOf(other.getTagSet()) and \
-               self._subtypeSpec.isSuperTypeOf(other.getSubtypeSpec())
+        return self._tagSet.isSuperTagSetOf(other.getTagSet()) and self._subtypeSpec.isSuperTypeOf(other.getSubtypeSpec())
 
+    def tagsToTagSet(self, implicitTag, explicitTag):
+        if implicitTag is not None:
+            tagSet = self._tagSet.tagImplicitly(implicitTag)
+        elif explicitTag is not None:
+            tagSet = self._tagSet.tagExplicitly(explicitTag)
+        else:
+            tagSet = self._tagSet
+        return tagSet
 
 class __NoValue:
     def __getattr__(self, attr):
@@ -136,12 +143,7 @@ class AbstractSimpleAsn1Item(Asn1ItemBase):
                 subtypeSpec=None):
         if value is None:
             value = self._value
-        if implicitTag is not None:
-            tagSet = self._tagSet.tagImplicitly(implicitTag)
-        elif explicitTag is not None:
-            tagSet = self._tagSet.tagExplicitly(explicitTag)
-        else:
-            tagSet = self._tagSet
+        tagSet = self.tagsToTagSet(implicitTag, explicitTag)
         if subtypeSpec is None:
             subtypeSpec = self._subtypeSpec
         else:
@@ -198,12 +200,7 @@ class AbstractNumerableAsn1Item(AbstractSimpleAsn1Item):
                 subtypeSpec=None, namedValues=None):
         if value is None:
             value = self._value
-        if implicitTag is not None:
-            tagSet = self._tagSet.tagImplicitly(implicitTag)
-        elif explicitTag is not None:
-            tagSet = self._tagSet.tagExplicitly(explicitTag)
-        else:
-            tagSet = self._tagSet
+        tagSet = self.tagsToTagSet(implicitTag, explicitTag)
         if subtypeSpec is None:
             subtypeSpec = self._subtypeSpec
         else:
@@ -255,9 +252,7 @@ class AbstractConstructedAsn1Item(Asn1ItemBase):
         for idx in range(len(self)):
             if self._componentValues[idx] is None:
                 continue
-            r = r + '.setComponentByPosition(%s, %s)' % (
-                idx, repr(self._componentValues[idx])
-            )
+            r += '.setComponentByPosition(%s, %s)' % (idx, repr(self._componentValues[idx]))
         return r
 
     def __cmp__(self, other):
@@ -284,12 +279,7 @@ class AbstractConstructedAsn1Item(Asn1ItemBase):
 
     def subtype(self, implicitTag=None, explicitTag=None, subtypeSpec=None,
                 sizeSpec=None, cloneValueFlag=None):
-        if implicitTag is not None:
-            tagSet = self._tagSet.tagImplicitly(implicitTag)
-        elif explicitTag is not None:
-            tagSet = self._tagSet.tagExplicitly(explicitTag)
-        else:
-            tagSet = self._tagSet
+        tagSet = self.tagsToTagSet(implicitTag, explicitTag)
         if subtypeSpec is None:
             subtypeSpec = self._subtypeSpec
         else:

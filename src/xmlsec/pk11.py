@@ -7,6 +7,7 @@ from xmlsec.exceptions import XMLSigException
 from urlparse import urlparse
 import os
 import logging
+from xmlsec.utils import b642pem
 
 _modules = {}
 
@@ -116,19 +117,6 @@ def _get_object_attributes(session, o):
     return dict(zip(all_attributes, attributes))
 
 
-def _cert_der2pem(der):
-    x = base64.standard_b64encode(der)
-    r = "-----BEGIN CERTIFICATE-----\n"
-    while len(x) > 64:
-        r += x[0:64]
-        r += "\n"
-        x = x[64:]
-    r += x
-    r += "\n"
-    r += "-----END CERTIFICATE-----"
-    return r
-
-
 def _find_key(session, keyname):
     key = _find_object(session, [(CKA_LABEL, keyname), (CKA_CLASS, CKO_PRIVATE_KEY), (CKA_KEY_TYPE, CKK_RSA)])
     if key is None:
@@ -138,7 +126,7 @@ def _find_key(session, keyname):
     cert_pem = None
     if cert is not None:
         cert_a = _get_object_attributes(session, cert)
-        cert_pem = _cert_der2pem(_intarray2bytes(cert_a[CKA_VALUE]))
+        cert_pem = b642pem(base64.standard_b64encode(_intarray2bytes(cert_a[CKA_VALUE])))
         logging.debug(cert)
     return key, cert_pem
 
