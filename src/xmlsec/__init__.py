@@ -281,9 +281,6 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
         with open("/tmp/foo-sig.xml", "w") as fd:
             fd.write(etree.tostring(root_elt(t)))
 
-    # Load and parse certificate, unless keyspec is a fingerprint.
-    cert = xmlsec.crypto.from_keyspec(keyspec)
-
     validated = []
     for sig in t.findall(sig_path):
         try:
@@ -291,18 +288,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             if sv is None:
                 raise XMLSigException("No SignatureValue")
 
-            if cert is None:
-                # keyspec is fingerprint - look for matching certificate in XML
-                this_cert = xmlsec.crypto.from_keyspec(keyspec)
-                if this_cert is None:
-                    raise XMLSigException("Could not find certificate fingerprint to validate signature")
-            else:
-                # Non-fingerprint keyspec, use pre-parsed values
-                this_cert = cert
-
-            if this_cert is None:
-                raise XMLSigException("Could not find certificate to validate signature")
-
+            this_cert = xmlsec.crypto.from_keyspec(keyspec, signature_element=sig)
             logging.debug("key size: {!s} bits".format(this_cert.keysize))
 
             si = sig.find(".//{%s}SignedInfo" % NS['ds'])

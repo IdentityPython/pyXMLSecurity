@@ -8,6 +8,7 @@ from UserDict import DictMixin
 from . import rsa_x509_pem
 from xmlsec.exceptions import XMLSigException
 
+NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 
 def from_keyspec(keyspec, private=False, signature_element=None):
     """
@@ -142,8 +143,29 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
 
         cert = rsa_x509_pem.parse(data)
         self.cert_pem = cert.get('pem')
-
+        self.key = rsa_x509_pem.get_key(cert)
+        self.keysize = int(self.key.size()) + 1
         self._from_keyspec = keyspec  # for debugging
+
+
+class XMLSecCryptoREST(XMlSecCrypto):
+
+    def __init__(self, keyspec):
+        super(XMLSecCryptoREST, self).__init__(source = "rest", do_padding = False, private = True)
+        self._url = "%s/sign" % keyspec
+        import requests
+
+    def sign(self, data):
+        try:
+            r = requests.post(self._url, data=json.dumps(dict(data=data.encode("base64"))))
+            if not r.status_code != requests.codes.ok:
+                r.raise_for_status()
+            msg = r.json()
+            if not 'signed' in msg:
+                raise ValueError("Missing signed data in response message")
+            return msg['signed'].decode('base64')
+        except Exception, ex:
+            raise XMLSigException(ex)
 
 
 def _load_keyspec(keyspec, private=False, signature_element=None):
@@ -154,6 +176,8 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
             return XMLSecCryptoFile(keyspec, private)
         elif private and keyspec.startswith("pkcs11://"):
             return XMLSecCryptoP11(keyspec)
+        elif private and keyspec.startswith("http://"):
+            return XMLSecCryptoREST(keyspec)
         elif signature_element is not None:
             return XMLSecCryptoFromXML(signature_element, keyspec)
 
