@@ -10,6 +10,7 @@ from xmlsec.exceptions import XMLSigException
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 
+
 def from_keyspec(keyspec, private=False, signature_element=None):
     """
     Load a key referenced by a keyspec (see below).
@@ -61,7 +62,6 @@ def from_keyspec(keyspec, private=False, signature_element=None):
 
 
 class XMlSecCrypto(object):
-
     def __init__(self, source, do_padding, private):
         # Public attributes
         self.source = source
@@ -83,9 +83,8 @@ class XMlSecCrypto(object):
 
 
 class XMLSecCryptoCallable(XMlSecCrypto):
-
     def __init__(self, private):
-        super(XMLSecCryptoCallable, self).__init__(source = 'callable', do_padding = True, private = private)
+        super(XMLSecCryptoCallable, self).__init__(source='callable', do_padding=True, private=private)
         self._private_callable = private
 
     def sign(self, data):
@@ -96,9 +95,8 @@ class XMLSecCryptoCallable(XMlSecCrypto):
 
 
 class XMLSecCryptoFile(XMlSecCrypto):
-
     def __init__(self, filename, private):
-        super(XMLSecCryptoFile, self).__init__(source = 'file', do_padding = True, private = private)
+        super(XMLSecCryptoFile, self).__init__(source='file', do_padding=True, private=private)
         with io.open(filename) as c:
             data = c.read()
 
@@ -111,9 +109,8 @@ class XMLSecCryptoFile(XMlSecCrypto):
 
 
 class XMLSecCryptoP11(XMlSecCrypto):
-
     def __init__(self, keyspec):
-        super(XMLSecCryptoP11, self).__init__(source = 'pkcs11', do_padding = False, private = True)
+        super(XMLSecCryptoP11, self).__init__(source='pkcs11', do_padding=False, private=True)
 
         from xmlsec import pk11
 
@@ -149,9 +146,8 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
 
 
 class XMLSecCryptoREST(XMlSecCrypto):
-
     def __init__(self, keyspec):
-        super(XMLSecCryptoREST, self).__init__(source = "rest", do_padding = False, private = True)
+        super(XMLSecCryptoREST, self).__init__(source="rest", do_padding=False, private=True)
         self._url = "%s/sign" % keyspec
         import requests
 
@@ -181,9 +177,8 @@ def _load_keyspec(keyspec, private=False, signature_element=None):
         elif signature_element is not None:
             return XMLSecCryptoFromXML(signature_element, keyspec)
 
-    #raise XMLSigException("Unable to find a useful key from keyspec '%s'" % (keyspec))
+    # raise XMLSigException("Unable to find a useful key from keyspec '%s'" % (keyspec))
     return None
-
 
 
 class CertDict(DictMixin):
