@@ -126,9 +126,14 @@ class XMLSecCryptoP11(XMlSecCrypto):
 
 
 class XMLSecCryptoFromXML(XMlSecCrypto):
-
     def __init__(self, signature_element, keyspec):
-        cd = _find_matching_cert(signature_element, keyspec)
+        source = None
+        data = None
+        #print "XMLSecCryptoFromXML using %s and keyspec=%s" % (signature_element, keyspec)
+        fp = keyspec
+        if ':' not in keyspec:
+            fp,_ = _cert_fingerprint(keyspec)
+        cd = _find_cert_by_fingerprint(signature_element, fp)
         if cd is not None:
             data = "-----BEGIN CERTIFICATE-----\n%s\n-----END CERTIFICATE-----" % cd
             source = 'signature_element'
@@ -136,7 +141,10 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
             data = keyspec
             source = 'keyspec'
 
-        super(XMLSecCryptoFromXML, self).__init__(source = source, do_padding = False, private = True)
+        if data is None:
+            raise ValueError("Unable to find cert matching fingerprint: %s" % fp)
+
+        super(XMLSecCryptoFromXML, self).__init__(source=source, do_padding=False, private=True)
 
         cert = rsa_x509_pem.parse(data)
         self.cert_pem = cert.get('pem')
@@ -193,12 +201,7 @@ class CertDict(DictMixin):
         """
         self.certs = {}
         for cd in t.findall(".//{%s}X509Certificate" % NS['ds']):
-            cert_pem = cd.text
-            cert_der = base64.b64decode(cert_pem)
-            m = hashlib.sha1()
-            m.update(cert_der)
-            fingerprint = m.hexdigest().lower()
-            fingerprint = ":".join([fingerprint[x:x + 2] for x in xrange(0, len(fingerprint), 2)])
+            fingerprint, cert_pem = _cert_fingerprint(cd.text)
             self.certs[fingerprint] = cert_pem
 
     def __getitem__(self, item):
@@ -213,8 +216,18 @@ class CertDict(DictMixin):
     def __delitem__(self, key):
         del self.certs[key]
 
+def _cert_fingerprint(cert_pem):
+    if "-----BEGIN CERTIFICATE" in cert_pem:
+        cert_pem = pem2b64(cert_pem)
+    cert_der = base64.b64decode(cert_pem)
+    m = hashlib.sha1()
+    m.update(cert_der)
+    fingerprint = m.hexdigest().lower()
+    fingerprint = ":".join([fingerprint[x:x + 2] for x in xrange(0, len(fingerprint), 2)])
+    return fingerprint, cert_pem
 
-def _find_matching_cert(t, fp):
+
+def _find_cert_by_fingerprint(t, fp):
     """
     Find certificate using fingerprint.
 
