@@ -59,7 +59,8 @@ def unescape_xml_entities(text):
             # character reference
             try:
                 if txt[:3] == "&#x":
-                    return unichr(int(txt[3:-1], 16))
+                    return txt
+                    #return unichr(int(txt[3:-1], 16))
                 else:
                     return unichr(int(txt[2:-1]))
             except ValueError:

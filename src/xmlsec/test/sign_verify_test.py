@@ -327,6 +327,27 @@ class TestTransforms(unittest.TestCase):
         res = xmlsec.verify(t, href_signer)
         self.assertTrue(res)
 
+    def test_edugain_with_xmlsec1(self):
+        case = self.cases['edugain']
+        t = case.as_etree('xmlsec1_in.xml')
+        signed = xmlsec.sign(t,
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+
+        expected = case.as_etree('xmlsec1_out.xml')
+
+        print " --- Expected"
+        print etree.tostring(expected)
+        print " --- Actual"
+        print etree.tostring(signed)
+
+        # extract 'SignatureValue's
+        expected_sv = _get_all_signatures(expected)
+        signed_sv = _get_all_signatures(signed)
+
+        print "Signed   SignatureValue: %s" % (repr(signed_sv))
+        print "Expected SignatureValue: %s" % (repr(expected_sv))
+
 
 def main():
     unittest.main()
