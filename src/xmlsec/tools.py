@@ -55,6 +55,8 @@ def sign_cmd():
             certspec = a
         elif o in ('-r','--reference'):
             reference = a
+        elif o in ('-o','--output'):
+            output = a
         elif o in '--loglevel':
             loglevel = getattr(logging, a.upper(), None)
             if not isinstance(loglevel, int):
