@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<foo xmlns="http://example.com/NS/test"><data>&amp;
+  &#13; &quot; &#xD;</data>
+</foo>

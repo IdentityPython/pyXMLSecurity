@@ -1,7 +1,4 @@
 from lxml import etree
-
-__author__ = 'ft'
-
 import os
 import copy
 import unittest
@@ -9,6 +6,14 @@ import xmlsec
 import pkg_resources
 from xmlsec.test.case import load_test_data
 from xmlsec import constants
+from . import find_alts, run_cmd
+import tempfile
+
+__author__ = 'ft'
+
+
+XMLSEC1 = find_alts(['/usr/local/bin/xmlsec1','/usr/bin/xmlsec1'])
+
 
 def root(t):
     if hasattr(t, 'getroot') and hasattr(t.getroot, '__call__'):
@@ -27,12 +32,50 @@ def _get_all_signatures(t):
     return res
 
 
-class TestTransforms(unittest.TestCase):
+class TestSignVerifyXmlSec1(unittest.TestCase):
+
     def setUp(self):
         self.datadir = pkg_resources.resource_filename(__name__, 'data')
         self.private_keyspec = os.path.join(self.datadir, 'test.key')
         self.public_keyspec = os.path.join(self.datadir, 'test.pem')
+        self.cases = load_test_data('data/verifyxmlsec1')
+        self.tmpf = tempfile.NamedTemporaryFile(delete=False)
 
+    @unittest.skipIf(XMLSEC1 is None, "xmlsec1 binary not installed")
+    def test_sign_verify_all(self):
+        """
+        Run through all testcases, sign and verify using xmlsec1
+        """
+        for case in self.cases.values():
+            if case.has_data('in.xml'):
+                signed = xmlsec.sign(case.as_etree('in.xml'),
+                                     key_spec=self.private_keyspec,
+                                     cert_spec=self.public_keyspec)
+                res = xmlsec.verify(signed, self.public_keyspec)
+                self.assertTrue(res)
+                with open(self.tmpf.name, "w") as fd:
+                    fd.write(etree.tostring(signed))
+
+                run_cmd([XMLSEC1,
+                         '--verify',
+                         '--store-references',
+                         '--id-attr:ID', 'urn:oasis:names:tc:SAML:2.0:metadata:EntityDescriptor',
+                         '--id-attr:ID', 'urn:oasis:names:tc:SAML:2.0:metadata:EntitiesDescriptor',
+                         '--id-attr:ID', 'urn:oasis:names:tc:SAML:2.0:assertion:Assertion',
+                         '--verification-time', '2009-11-01 12:00:00',
+                         '--trusted-pem',self.public_keyspec,
+                         self.tmpf.name])
+
+    def tearDown(self):
+        if os.path.exists(self.tmpf.name):
+            pass
+            #os.unlink(self.tmpf.name)
+
+class TestSignVerify(unittest.TestCase):
+    def setUp(self):
+        self.datadir = pkg_resources.resource_filename(__name__, 'data')
+        self.private_keyspec = os.path.join(self.datadir, 'test.key')
+        self.public_keyspec = os.path.join(self.datadir, 'test.pem')
         self.cases = load_test_data('data/signverify')
 
     def test_sign_verify_SAML_assertion1(self):

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<foo xmlns="http://example.com/NS/test" x="&gt;">[!CDATA[&gt;&lt;]]<foo:data xmlns:foo="urn:bla:foo:kaka">&amp;
+  <foo:x fff="_ööö&lt;">åäö</foo:x>
+  &#13; &quot; &#xD;
+    <!-- &lt; &gt; -->
+</foo:data>
+</foo>

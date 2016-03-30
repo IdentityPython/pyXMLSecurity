@@ -23,6 +23,9 @@ class XMLTestData():
         for fn in pkg_resources.resource_listdir(self.base, self.name):
             self.data[fn] = pkg_resources.resource_stream(self.base, "%s/%s" % (self.name, fn)).read()
 
+    def has_data(self, n):
+        return n in self.data
+
     def as_buf(self, n):
         assert n in self.data, XMLTestDataException("No data named %s in test case %s" % (n, self.name))
         return self.data[n]
