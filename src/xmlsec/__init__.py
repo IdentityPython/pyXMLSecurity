@@ -220,7 +220,7 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     """
     doc = t
     if root_elt(doc).getparent() is not None:
-        xml_str = etree.tostring(doc)
+        xml_str = etree.tostring(doc, encoding=unicode)
         doc = parse_xml(xml_str, remove_whitespace=config.c14n_strip_ws, remove_comments=not with_comments, schema=schema)
         del xml_str
 
@@ -229,12 +229,15 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
                          exclusive=exclusive,
                          with_comments=with_comments,
                          inclusive_ns_prefixes=inclusive_prefix_list)
-    u = unescape_xml_entities(buf.decode("utf8", 'strict')).encode("utf8").strip()
-    if u[0] != '<':
-        raise XMLSigException("C14N buffer doesn't start with '<'")
-    if u[-1] != '>':
-        raise XMLSigException("C14N buffer doesn't end with '>'")
-    return u
+    #u = unescape_xml_entities(buf.decode("utf8", 'strict')).encode("utf8").strip()
+    assert buf[0] == '<'
+    assert buf[-1] == '>'
+    #if u[0] != '<':
+    #    raise XMLSigException("C14N buffer doesn't start with '<'")
+    #if u[-1] != '>':
+    #    raise XMLSigException("C14N buffer doesn't end with '>'")
+    #return u
+    return buf
 
 
 def _transform(uri, t, tr=None, schema=None, sig_path=".//{%s}Signature" % NS['ds']):
