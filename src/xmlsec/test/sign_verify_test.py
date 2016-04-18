@@ -11,8 +11,7 @@ import tempfile
 
 __author__ = 'ft'
 
-
-XMLSEC1 = find_alts(['/usr/local/bin/xmlsec1','/usr/bin/xmlsec1'])
+XMLSEC1 = find_alts(['/usr/local/bin/xmlsec1', '/usr/bin/xmlsec1'])
 
 
 def root(t):
@@ -33,7 +32,6 @@ def _get_all_signatures(t):
 
 
 class TestSignVerifyXmlSec1(unittest.TestCase):
-
     def setUp(self):
         self.datadir = pkg_resources.resource_filename(__name__, 'data')
         self.private_keyspec = os.path.join(self.datadir, 'test.key')
@@ -63,15 +61,17 @@ class TestSignVerifyXmlSec1(unittest.TestCase):
                          '--id-attr:ID', 'urn:oasis:names:tc:SAML:2.0:metadata:EntitiesDescriptor',
                          '--id-attr:ID', 'urn:oasis:names:tc:SAML:2.0:assertion:Assertion',
                          '--verification-time', '2009-11-01 12:00:00',
-                         '--trusted-pem',self.public_keyspec,
+                         '--trusted-pem', self.public_keyspec,
                          self.tmpf.name])
 
     def tearDown(self):
         if os.path.exists(self.tmpf.name):
             pass
-            #os.unlink(self.tmpf.name)
+            # os.unlink(self.tmpf.name)
+
 
 class TestSignVerify(unittest.TestCase):
+    
     def setUp(self):
         self.datadir = pkg_resources.resource_filename(__name__, 'data')
         self.private_keyspec = os.path.join(self.datadir, 'test.key')
@@ -216,6 +216,21 @@ class TestSignVerify(unittest.TestCase):
         print("XML input :\n{}\n\n".format(case.as_buf('out.xml')))
         with self.assertRaises(xmlsec.XMLSigException):
             xmlsec.verify(case.as_etree('out.xml'), self.public_keyspec)
+
+    def test_sign_xades(self):
+        """
+        Test that we can sign an already signed document without breaking the first signature
+        """
+
+        case = self.cases['dont_break_xades']
+        t = case.as_etree('in.xml')
+
+        signed = xmlsec.sign(t, self.private_keyspec)
+        self.assertIsNotNone(signed)
+        digests = [dv.text for dv in signed.findall('.//{%s}DigestValue' % xmlsec.NS['ds'])]
+        assert 'JvmW5vKjaTEVHzOdiC/H3HSGNocGamY9sDeU86ld6TA=' in digests
+        res = xmlsec.verify(signed, self.public_keyspec)
+        self.assertTrue(res)
 
     def test_mm1(self):
         case = self.cases['mm1']
@@ -365,7 +380,7 @@ class TestSignVerify(unittest.TestCase):
 
     def test_verify_href(self):
         case = self.cases['href']
-        t = case.as_etree('href.xml',remove_comments=False,remove_whitespace=False)
+        t = case.as_etree('href.xml', remove_comments=False, remove_whitespace=False)
         href_signer = os.path.join(self.datadir, "signverify/href/href-metadata-signer-2011.crt")
         res = xmlsec.verify(t, href_signer)
         self.assertTrue(res)

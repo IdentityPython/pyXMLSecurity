@@ -145,11 +145,17 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         hash_alg = None
         uri = ref.get('URI', None)
         if uri is None or uri == '#' or uri == '':
-            ct = _remove_child_comments(_implicit_same_document(t, sig))
+            ref_obj = _implicit_same_document(t, sig)
+            if ref_obj is None:
+                raise XMLSigException("Unable to find reference while processing implicit same document reference")
+            ct = _remove_child_comments(ref_obj)
             obj = root_elt(ct)
         elif uri.startswith('#'):
             ct = copy.deepcopy(t)
-            obj = _remove_child_comments(_get_by_id(ct, uri[1:]))
+            ref_obj = _get_by_id(ct, uri[1:])
+            if ref_obj is None:
+                raise XMLSigException("Unable to find reference while processing '%s'" % uri)
+            obj = _remove_child_comments(ref_obj)
         else:
             raise XMLSigException("Unknown reference %s" % uri)
 
@@ -364,6 +370,21 @@ def add_enveloped_signature(t,
     else:
         root_elt(t).insert(pos, tmpl)
 
+    return tmpl
+
+
+def _is_template(sig):
+    si = sig.find(".//{%s}SignedInfo" % NS['ds'])
+    if si is None:
+        return False
+    dv = si.find(".//{%s}DigestValue" % NS['ds'])
+    if dv is not None and dv.text is not None and len(dv.text) > 0:
+        return False
+    sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
+    if sv is not None and sv.text is not None and len(sv.text) > 0:
+        return False
+    return True
+
 
 def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path=".//{%s}Signature" % NS['ds']):
     """
@@ -373,6 +394,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
     :param key_spec: private key reference, see xmlsec.crypto.from_keyspec() for syntax.
     :param cert_spec: None or public key reference (to add cert to document),
                       see xmlsec.crypto.from_keyspec() for syntax.
+    :param sig_path: An xpath expression identifying the Signature template element
     :param reference_uri: Envelope signature reference URI
     :param insert_index: Insertion point for the Signature element,
                          Signature is inserted at beginning by default
@@ -392,16 +414,21 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
             # This might be incorrect for PKCS#11 tokens if we have no public key
             logging.debug("Using {!s} bit key".format(private.keysize))
 
-    if t.find(sig_path) is None:
-        add_enveloped_signature(t, reference_uri=reference_uri, pos=insert_index)
+    templates = filter(_is_template, t.findall(sig_path))
+    if not templates:
+        tmpl = add_enveloped_signature(t, reference_uri=reference_uri, pos=insert_index)
+        templates = [tmpl]
+
+    assert templates, XMLSigException("Failed to both find and add a signing template")
 
     if config.debug_write_to_files:
         with open("/tmp/sig-ref.xml", "w") as fd:
             fd.write(etree.tostring(root_elt(t)))
 
-    for sig in t.findall(sig_path):
+    for sig in templates:
         logging.debug("processing sig template: %s" % etree.tostring(sig))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
+        assert si is not None
         cm_alg = _cm_alg(si)
         digest_alg = _sig_digest(si)
 
