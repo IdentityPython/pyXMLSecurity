@@ -68,7 +68,7 @@ def unescape_xml_entities(text):
         else:
             # named entity
             try:
-                if not txt in ('&amp;', '&lt;', '&gt;'):
+                if not txt in ('&amp;', '&lt;', '&gt;', '&quot;', '&pos;'):
                     txt = unichr(htmlentitydefs.name2codepoint[txt[1:-1]])
             except KeyError:
                 pass
