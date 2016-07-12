@@ -37,7 +37,7 @@ class Config(object):
     Refer to the pyconfig documentation for information on how to override these in your own project.
     """
     default_signature_alg = pyconfig.setting("xmlsec.default_signature_alg", constants.ALGORITHM_SIGNATURE_RSA_SHA1)
-    default_digest_alg = pyconfig.setting("xmlsec.default_digest_alg", constants.ALGORITHM_DIGEST_SHA1)
+    default_digest_alg = pyconfig.setting("xmlsec.default_digest_alg", constants.ALGORITHM_DIGEST_SHA256)
     default_c14n_alg = pyconfig.setting("xmlsec.default_c14n_alg", constants.TRANSFORM_C14N_INCLUSIVE)
     debug_write_to_files = pyconfig.setting("xmlsec.config.debug_write_to_files", False)
     same_document_is_root = pyconfig.setting("xmlsec.same_document_is_root", False)
