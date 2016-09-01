@@ -21,7 +21,8 @@ class XMLTestData():
         self.name = name
         self.data = {}
         for fn in pkg_resources.resource_listdir(self.base, self.name):
-            self.data[fn] = pkg_resources.resource_stream(self.base, "%s/%s" % (self.name, fn)).read()
+            if fn.endswith(".xml"):
+                self.data[fn] = pkg_resources.resource_stream(self.base, "%s/%s" % (self.name, fn)).read()
 
     def has_data(self, n):
         return n in self.data
