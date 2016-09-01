@@ -70,6 +70,20 @@ class TestSignVerifyXmlSec1(unittest.TestCase):
             # os.unlink(self.tmpf.name)
 
 
+class TestVerify(unittest.TestCase):
+
+    def setUp(self):
+        self.datadir = pkg_resources.resource_filename(__name__, 'data')
+        self.resource_dir = pkg_resources.resource_filename(__name__, '')
+        self.cases = load_test_data('data/verify')
+
+    def test_verify_all(self):
+        for case in self.cases.values():
+            public_keyspec = os.path.join(self.resource_dir, case.name, "signer.crt")
+            res = xmlsec.verify(case.as_etree("in.xml"), public_keyspec)
+            self.assertTrue(res)
+
+
 class TestSignVerify(unittest.TestCase):
     
     def setUp(self):
