@@ -162,8 +162,10 @@ class XMLSecCryptoREST(XMlSecCrypto):
         try:
             import requests
             import json
-            r = requests.post(self._url, data=json.dumps(dict(data=data.encode("base64"))))
-            if not r.status_code != requests.codes.ok:
+            r = requests.post(self._url,
+                              content_type='application/json',
+                              data=json.dumps(dict(mech='RSAPKCS1', data=data.encode("base64"))))
+            if r.status_code != requests.codes.ok:
                 r.raise_for_status()
             msg = r.json()
             if not 'signed' in msg:
