@@ -157,10 +157,10 @@ class XMLSecCryptoREST(XMlSecCrypto):
     def __init__(self, keyspec):
         super(XMLSecCryptoREST, self).__init__(source="rest", do_padding=False, private=True)
         self._url = "%s/sign" % keyspec
-        import requests
 
     def sign(self, data):
         try:
+            import requests
             r = requests.post(self._url, data=json.dumps(dict(data=data.encode("base64"))))
             if not r.status_code != requests.codes.ok:
                 r.raise_for_status()
