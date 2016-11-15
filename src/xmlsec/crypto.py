@@ -161,6 +161,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
     def sign(self, data):
         try:
             import requests
+            import json
             r = requests.post(self._url, data=json.dumps(dict(data=data.encode("base64"))))
             if not r.status_code != requests.codes.ok:
                 r.raise_for_status()
