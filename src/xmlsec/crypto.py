@@ -171,6 +171,8 @@ class XMLSecCryptoREST(XMlSecCrypto):
                 raise ValueError("Missing signed data in response message")
             return msg['signed'].decode('base64')
         except Exception, ex:
+            from traceback import print_exc
+            print_exc(ex)
             raise XMLSigException(ex)
 
 
