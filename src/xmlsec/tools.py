@@ -77,9 +77,9 @@ def sign_cmd():
     def _output(t):
         if output is not None:
             with open(output, 'w') as xml_out:
-                xml_out.write(etree.tostring(t))
+                xml_out.write(etree.tostring(t,encoding="UTF-8"))
         else:
-            print etree.tostring(t)
+            print etree.tostring(t,encoding="UTF-8")
 
     def _resolve_reference_uri(ref, t): # can probably be improved a bit
         if ref.startswith('@'):
