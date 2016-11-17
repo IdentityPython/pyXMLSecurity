@@ -74,16 +74,6 @@ def sign_cmd():
         print __doc__
         sys.exit(0)
 
-    def _output(t):
-        if output is not None:
-            with open(output, 'w') as xml_out:
-                t.write(xml_out, encoding='utf-8', xml_declaration=True)
-        else:
-            from io import BytesIO
-            xml_out = BytesIO()
-            t.write(xml_out, encoding='utf-8', xml_declaration=True)
-            print xml_out.getvalue()
-
     def _resolve_reference_uri(ref, t): # can probably be improved a bit
         if ref.startswith('@'):
             r = root_elt(t)
@@ -98,10 +88,10 @@ def sign_cmd():
                 reference_uri = _resolve_reference_uri(reference, t)
                 signed = sign(t, keyspec, certspec, reference_uri=reference_uri)
                 if signed:
-                    _output(signed)
+                    serialize(signed, stream=output)
     else:
         t = etree.parse(sys.stdin)
         reference_uri = _resolve_reference_uri(reference, t)
         signed = sign(t, keyspec, certspec, reference_uri=reference_uri)
         if signed:
-            _output(signed)
+            serialize(signed, stream=output)

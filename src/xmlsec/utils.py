@@ -8,6 +8,7 @@ from int_to_bytes import int_to_bytes
 from xmlsec.exceptions import XMLSigException
 import htmlentitydefs
 import re
+from io import BytesIO
 
 
 def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
@@ -126,3 +127,13 @@ def b64e(s):
     if type(s) in (int, long):
         s = int_to_bytes(s)
     return s.encode('base64').replace('\n', '')
+
+
+def serialize(t, stream=None):
+    if stream is not None:
+        with open(stream, 'w') as xml_out:
+            t.write(xml_out, encoding='utf-8', xml_declaration=True)
+    else:
+        xml_out = BytesIO()
+        t.write(xml_out, encoding='utf-8', xml_declaration=True)
+        print xml_out.getvalue()
