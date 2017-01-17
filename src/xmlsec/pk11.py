@@ -141,6 +141,7 @@ def _session(library, slot, pin=None):
         lib = PyKCS11.PyKCS11Lib()
         assert type(library) == str  # lib.load does not like unicode
         lib.load(library)
+        # XXX should check result of C_Initialize()
         lib.lib.C_Initialize()
         _modules[library] = lib
     else:
