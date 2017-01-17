@@ -12,6 +12,7 @@ import os
 import traceback
 import subprocess
 import tempfile
+from defusedxml import lxml
 from lxml import etree
 from . import find_alts, run_cmd
 

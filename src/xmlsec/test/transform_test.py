@@ -3,6 +3,7 @@ import pkg_resources
 __author__ = 'leifj'
 
 import unittest
+from defusedxml import lxml
 import lxml.etree as etree
 import xmlsec
 from xmlsec.test.case import XMLTestData

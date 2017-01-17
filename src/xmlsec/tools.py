@@ -18,6 +18,7 @@ import sys
 import getopt
 import traceback
 import logging
+from defusedxml import lxml
 from lxml import etree
 
 

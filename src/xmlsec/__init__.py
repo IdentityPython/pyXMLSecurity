@@ -5,6 +5,7 @@
 
 __author__ = 'leifj'
 
+from defusedxml import lxml
 from lxml import etree as etree
 import logging
 import hashlib

@@ -2,6 +2,7 @@ import logging
 
 __author__ = 'leifj'
 
+from defusedxml import lxml
 from lxml import etree as etree
 from rsa_x509_pem import parse as pem_parse
 from int_to_bytes import int_to_bytes

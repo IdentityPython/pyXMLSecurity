@@ -6,6 +6,7 @@ __author__ = 'leifj'
 
 import os
 import pkg_resources
+from defusedxml import lxml
 import lxml.etree as etree
 from StringIO import StringIO
 import xmlsec

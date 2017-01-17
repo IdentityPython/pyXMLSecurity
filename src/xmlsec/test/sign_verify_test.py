@@ -1,3 +1,4 @@
+from defusedxml import lxml
 from lxml import etree
 import os
 import copy
