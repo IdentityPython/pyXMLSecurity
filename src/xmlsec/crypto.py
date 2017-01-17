@@ -164,14 +164,17 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
 class XMLSecCryptoREST(XMlSecCrypto):
     def __init__(self, keyspec):
         super(XMLSecCryptoREST, self).__init__(source="rest", do_padding=False, private=True)
-        self._url = "%s/sign" % keyspec
+        self._keyspec = keyspec
 
-    def sign(self, data):
+    def sign(self, data, raw_sign=False):
         try:
             import requests
             import json
-            r = requests.post(self._url,
-                              json=dict(mech='RSAPKCS1', data=data.encode("base64")))
+            if raw_sign:
+                url = '{!s}/rawsign'.format(self._keyspec)
+            else:
+                url = '{!s}/sign'.format(self._keyspec)
+            r = requests.post(url, json=dict(mech='RSAPKCS1', data=data.encode("base64")))
             if r.status_code != requests.codes.ok:
                 r.raise_for_status()
             msg = r.json()
