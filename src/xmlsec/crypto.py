@@ -27,9 +27,14 @@ def from_keyspec(keyspec, private=False, signature_element=None):
                        set to a function calling the 'sign' function for the key,
                        and the rest based on the (public) key returned by
                        xmlsec.pk11.signer().
+      - an http:// URL REST URL used for signing (see pyeleven).
       - a fingerprint. If signature_element is provided, the key is located using
                        the fingerprint (provided as string).
       - X.509 string.  An X.509 certificate as string.
+
+    If the keyspec is prefixed by 'xmlsec+', that prefix will be removed.
+    This is a workaround for pysaml2 that handles keyspecs starting with
+    'http' differently.
 
     Resulting dictionary (used except for 'callable') :
 
@@ -47,6 +52,9 @@ def from_keyspec(keyspec, private=False, signature_element=None):
     :param signature_element:
     :returns: dict, see above.
     """
+    if keyspec.startswith('xmlsec+'):
+        # workaround for pysaml2 which handles http keyspecs differently
+        keyspec = keyspec[7:]
     thread_local = threading.local()
     cache = getattr(thread_local, 'keycache', {})
     if keyspec in cache:
@@ -156,14 +164,17 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
 class XMLSecCryptoREST(XMlSecCrypto):
     def __init__(self, keyspec):
         super(XMLSecCryptoREST, self).__init__(source="rest", do_padding=False, private=True)
-        self._url = "%s/sign" % keyspec
+        self._keyspec = keyspec
 
-    def sign(self, data):
+    def sign(self, data, raw_sign=False):
         try:
             import requests
             import json
-            r = requests.post(self._url,
-                              json=dict(mech='RSAPKCS1', data=data.encode("base64")))
+            if raw_sign:
+                url = '{!s}/rawsign'.format(self._keyspec)
+            else:
+                url = '{!s}/sign'.format(self._keyspec)
+            r = requests.post(url, json=dict(mech='RSAPKCS1', data=data.encode("base64")))
             if r.status_code != requests.codes.ok:
                 r.raise_for_status()
             msg = r.json()
