@@ -124,8 +124,9 @@ class XMLSecCryptoP11(XMlSecCrypto):
 
         self._private_callable, data = pk11.signer(keyspec)
         logging.debug("Using pkcs11 signing key: {!s}".format(self._private_callable))
-        cert = rsa_x509_pem.parse(data)
-        self.cert_pem = cert.get('pem')
+        if data is not None:
+            cert = rsa_x509_pem.parse(data)
+            self.cert_pem = cert.get('pem')
 
         self._from_keyspec = keyspec  # for debugging
 
