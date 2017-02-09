@@ -20,6 +20,7 @@ import traceback
 import logging
 from defusedxml import lxml
 from lxml import etree
+from .utils import serialize
 
 
 def sign_cmd():
@@ -48,7 +49,7 @@ def sign_cmd():
             print __doc__
             sys.exit(0)
         elif o in '--version':
-            print "pyff version %s" % __version__
+            print "sign version %s" % __version__
             sys.exit(0)
         elif o in ('-k','--key'):
             keyspec = a
