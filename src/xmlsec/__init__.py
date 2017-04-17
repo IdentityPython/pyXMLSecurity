@@ -39,11 +39,17 @@ class Config(object):
     """
     default_signature_alg = pyconfig.setting("xmlsec.default_signature_alg", constants.ALGORITHM_SIGNATURE_RSA_SHA1)
     default_digest_alg = pyconfig.setting("xmlsec.default_digest_alg", constants.ALGORITHM_DIGEST_SHA1)
-    default_c14n_alg = pyconfig.setting("xmlsec.default_c14n_alg", constants.TRANSFORM_C14N_INCLUSIVE)
+    default_c14n_alg = pyconfig.setting("xmlsec.default_c14n_alg", constants.TRANSFORM_C14N_EXCLUSIVE)
     debug_write_to_files = pyconfig.setting("xmlsec.config.debug_write_to_files", False)
     same_document_is_root = pyconfig.setting("xmlsec.same_document_is_root", False)
     id_attributes = pyconfig.setting("xmlsec.id_attributes", ['ID', 'id'])
-    c14n_strip_ws = pyconfig.setting("xmlsec.c14n_strip_ws", False)
+
+    if default_c14n_alg in (constants.TRANSFORM_C14N_EXCLUSIVE, constants.TRANSFORM_C14N_INCLUSIVE):
+        c14n_strip_ws = True
+    else:
+        c14n_strip_ws = False
+    # Override whitespace handling - may break signature
+    #c14n_strip_ws = pyconfig.setting("xmlsec.c14n_strip_ws", False)
 
 
 config = Config()
@@ -363,7 +369,7 @@ def add_enveloped_signature(t,
                             pos=0):
     if transforms is None:
         transforms = (constants.TRANSFORM_ENVELOPED_SIGNATURE,
-                      constants.TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS)
+                      constants.TRANSFORM_C14N_EXCLUSIVE)
 
     tmpl = _enveloped_signature_template(c14n_method, digest_alg, transforms, reference_uri, signature_alg)
     if pos == -1:
