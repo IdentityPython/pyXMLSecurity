@@ -3,7 +3,7 @@
 # and includes https://github.com/andrewdyates/rsa_x509_pem with
 # permission from the author.
 
-__author__ = 'leifj'
+__author__ = 'leifj'   # fork: r2h2
 
 from lxml import etree as etree
 import logging
