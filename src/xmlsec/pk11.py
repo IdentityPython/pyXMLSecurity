@@ -120,7 +120,10 @@ def _get_object_attributes(session, o):
 def _find_key(session, keyname):
     key = _find_object(session, [(CKA_LABEL, keyname), (CKA_CLASS, CKO_PRIVATE_KEY), (CKA_KEY_TYPE, CKK_RSA)])
     if key is None:
-        return None, None
+        key = _find_object(session, [(CKA_CLASS, CKO_PRIVATE_KEY),
+                                     (CKA_KEY_TYPE, CKK_RSA)])  # try private key without label
+        if key is None:
+            return None, None
     key_a = _get_object_attributes(session, key)
     cert = _find_object(session, [(CKA_ID, key_a[CKA_ID]), (CKA_CLASS, CKO_CERTIFICATE)])
     cert_pem = None
