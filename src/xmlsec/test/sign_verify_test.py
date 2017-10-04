@@ -260,6 +260,8 @@ class TestSignVerify(unittest.TestCase):
         xmlsec.add_enveloped_signature(t,
                                        pos=-1,
                                        c14n_method=constants.TRANSFORM_C14N_EXCLUSIVE,
+                                       digest_alg=constants.ALGORITHM_DIGEST_SHA1,
+                                       signature_alg=constants.ALGORITHM_SIGNATURE_RSA_SHA1,
                                        transforms=[constants.TRANSFORM_ENVELOPED_SIGNATURE])
         signed = xmlsec.sign(t,
                              key_spec=self.private_keyspec,
@@ -333,6 +335,8 @@ class TestSignVerify(unittest.TestCase):
         xmlsec.add_enveloped_signature(t,
                                        pos=-1,
                                        c14n_method=constants.TRANSFORM_C14N_EXCLUSIVE,
+                                       digest_alg=constants.ALGORITHM_DIGEST_SHA1,
+                                       signature_alg=constants.ALGORITHM_SIGNATURE_RSA_SHA1,
                                        transforms=[constants.TRANSFORM_ENVELOPED_SIGNATURE])
         signed = xmlsec.sign(t,
                              key_spec=self.private_keyspec,
@@ -362,6 +366,8 @@ class TestSignVerify(unittest.TestCase):
         xmlsec.add_enveloped_signature(t,
                                        pos=-1,
                                        c14n_method=constants.TRANSFORM_C14N_EXCLUSIVE,
+                                       digest_alg=constants.ALGORITHM_DIGEST_SHA1,
+                                       signature_alg=constants.ALGORITHM_SIGNATURE_RSA_SHA1,
                                        transforms=[constants.TRANSFORM_ENVELOPED_SIGNATURE])
         signed = xmlsec.sign(t,
                              key_spec=self.private_keyspec,
