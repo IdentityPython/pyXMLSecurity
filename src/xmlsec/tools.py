@@ -12,7 +12,7 @@ __author__ = 'leifj'
 
 
 
-from . import sign, verify, root_elt
+from . import verified, root_elt
 
 import sys
 import getopt
@@ -91,6 +91,74 @@ def sign_cmd():
                 signed = sign(t, keyspec, certspec, reference_uri=reference_uri)
                 if signed:
                     serialize(signed, stream=output)
+    else:
+        t = etree.parse(sys.stdin)
+        reference_uri = _resolve_reference_uri(reference, t)
+        signed = sign(t, keyspec, certspec, reference_uri=reference_uri)
+        if signed:
+            serialize(signed, stream=output)
+
+
+def verify_cmd():
+    """
+    xmlverify command entrypoint
+    """
+
+    opts = None
+    args = None
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'hc:o:r:',
+                                   ['help', 'cert=', 'version', 'output=', 'loglevel=', 'logfile=', 'reference='])
+    except getopt.error, msg:
+        print msg
+        print __doc__
+        sys.exit(2)
+
+    output = None
+    certspec = None
+    reference = ""
+    loglevel = logging.WARN
+    logfile = None
+    for o, a in opts:
+        if o in ('-h', '--help'):
+            print __doc__
+            sys.exit(0)
+        elif o in '--version':
+            print "sign version %s" % __version__
+            sys.exit(0)
+        elif o in ('-c','--cert'):
+            certspec = a
+        elif o in ('-r','--reference'):
+            reference = a
+        elif o in ('-o','--output'):
+            output = a
+        elif o in '--loglevel':
+            loglevel = getattr(logging, a.upper(), None)
+            if not isinstance(loglevel, int):
+                raise ValueError('Invalid log level: %s' % a)
+        elif o in '--logfile':
+            logfile = a
+
+    log_args = {'level': loglevel}
+    if logfile is not None:
+        log_args['filename'] = logfile
+    logging.basicConfig(**log_args)
+
+    def _resolve_reference_uri(ref, t): # can probably be improved a bit
+        if ref.startswith('@'):
+            r = root_elt(t)
+            return "#%s" % r.get(ref[1:])
+        else:
+            return ref
+
+    if len(args) > 0:
+        for f in args:
+            with open(f) as xml:
+                t = etree.parse(xml)
+                reference_uri = _resolve_reference_uri(reference, t)
+                t = verified(t, certspec, reference_uri=reference_uri)
+                if t:
+                    serialize(t, stream=output)
     else:
         t = etree.parse(sys.stdin)
         reference_uri = _resolve_reference_uri(reference, t)
