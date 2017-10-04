@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ns0:Assertion xmlns:ns0="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:ns1="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="11111" IssueInstant="2009-10-30T13:20:28Z" Version="2.0">
+<ns0:Assertion xmlns:ns0="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:ns1="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="id11111" IssueInstant="2009-10-30T13:20:28Z" Version="2.0">
   <ns1:Signature Id="Signature1">
     <ns1:SignedInfo>
       <ns1:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
       <ns1:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
-      <ns1:Reference URI="#11111">
+      <ns1:Reference URI="#id11111">
         <ns1:Transforms>
           <ns1:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
           <ns1:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
