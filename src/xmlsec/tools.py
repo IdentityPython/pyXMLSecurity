@@ -12,7 +12,7 @@ __author__ = 'leifj'
 
 
 
-from . import verified, root_elt
+from . import verified, root_elt, sign
 
 import sys
 import getopt
