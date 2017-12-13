@@ -177,6 +177,12 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
             logging.debug("transform: %s" % _alg(tr))
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
+            nslist = _find_nslist(tr)
+            if nslist is not None:
+                r = root(t)
+                for nsprefix in nslist:
+                    if nsprefix in r.nsmap:
+                        obj_copy.nsmap[nsprefix] = r.nsmap[nsprefix]
 
         if not isinstance(obj, basestring):
             if config.debug_write_to_files:
@@ -247,25 +253,24 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     return buf
 
 
+def _find_nslist(tr):
+    nslist = None
+    if tr is not None:
+        elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
+        if elt is not None:
+            nslist = elt.get('PrefixList', '').split()
+    return nslist
+
+
 def _transform(uri, t, tr=None, schema=None, sig_path=".//{%s}Signature" % NS['ds']):
     if uri == constants.TRANSFORM_ENVELOPED_SIGNATURE:
         return _enveloped_signature(t, sig_path)
 
     if uri == constants.TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS:
-        nslist = None
-        if tr is not None:
-            elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
-            if elt is not None:
-                nslist = elt.get('PrefixList', '').split()
-        return _c14n(t, exclusive=True, with_comments=True, inclusive_prefix_list=nslist, schema=schema)
+        return _c14n(t, exclusive=True, with_comments=True, inclusive_prefix_list=_find_nslist(tr), schema=schema)
 
     if uri == constants.TRANSFORM_C14N_EXCLUSIVE:
-        nslist = None
-        if tr is not None:
-            elt = tr.find(".//{%s}InclusiveNamespaces" % 'http://www.w3.org/2001/10/xml-exc-c14n#')
-            if elt is not None:
-                nslist = elt.get('PrefixList', '').split()
-        return _c14n(t, exclusive=True, with_comments=False, inclusive_prefix_list=nslist, schema=schema)
+        return _c14n(t, exclusive=True, with_comments=False, inclusive_prefix_list=_find_nslist(tr), schema=schema)
 
     if uri == constants.TRANSFORM_C14N_INCLUSIVE:
         return _c14n(t, exclusive=False, with_comments=False, schema=schema)
