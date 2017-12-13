@@ -44,6 +44,6 @@ setup(name='pyXMLSecurity',
     requires=install_requires,
     extras_require=extras_require,
     entry_points={
-          'console_scripts': ['xmlsign=xmlsec.tools:sign_cmd']
+          'console_scripts': ['xmlsign=xmlsec.tools:sign_cmd','xmlverify=xmlsec.tools:verify_cmd']
     },
 )

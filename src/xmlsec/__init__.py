@@ -179,7 +179,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
             nslist = _find_nslist(tr)
             if nslist is not None:
-                r = root(t)
+                r = root_elt(t)
                 for nsprefix in nslist:
                     if nsprefix in r.nsmap:
                         obj_copy.nsmap[nsprefix] = r.nsmap[nsprefix]
