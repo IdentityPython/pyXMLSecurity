@@ -8,7 +8,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.16.dev0'
+version = '0.16'
 
 install_requires = [
     'defusedxml', 'lxml', 'pyconfig', 'requests'

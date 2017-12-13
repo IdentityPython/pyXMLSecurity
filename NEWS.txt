@@ -134,3 +134,13 @@ News
 * make cert loading thread safe
 * bugfixes
 
+0.16
+----
+
+*Release ons 13 dec 2017 21:10:29 CET*
+
+* crypto abstraction
+* switch to sha256 default
+* verify and sign cmdline tools
+* lots of bugfixes
+
