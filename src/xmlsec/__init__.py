@@ -67,7 +67,7 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     :param key_size: key length (if known) in bits; => len(`data`) + 3
     :param do_pad: Do PKCS1 (?) padding of the data - requires integer key_size
     :param hash_alg: Hash algorithm as string (e.g. 'sha1')
-    :returns: rsa-sha1 signature value of `data`
+    :returns: rsa-sha signature value of `data`
 
     :type data: string
     :type key_size: None | int
@@ -102,7 +102,7 @@ def _digest(data, hash_alg):
     h = getattr(hashlib, hash_alg)()
     logging.debug(h)
     h.update(data)
-    digest = h.digest().encode("base64").rstrip("\n") #b64e(h.digest())
+    digest = b64e(h.digest())
     return digest
 
 

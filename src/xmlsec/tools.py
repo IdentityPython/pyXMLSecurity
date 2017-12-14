@@ -151,17 +151,16 @@ def verify_cmd():
         else:
             return ref
 
+    verified_objects = None
     if len(args) > 0:
         for f in args:
             with open(f) as xml:
                 t = etree.parse(xml)
-                reference_uri = _resolve_reference_uri(reference, t)
-                t = verified(t, certspec, reference_uri=reference_uri)
-                if t:
-                    serialize(t, stream=output)
+                verified_objects = verified(t, certspec, drop_signature=True)
+
     else:
         t = etree.parse(sys.stdin)
-        reference_uri = _resolve_reference_uri(reference, t)
-        signed = sign(t, keyspec, certspec, reference_uri=reference_uri)
-        if signed:
-            serialize(signed, stream=output)
+        verified_objects = verified(t, certspec, drop_signature=True)
+
+    for v in verified_objects:
+        serialize(v, stream=output)

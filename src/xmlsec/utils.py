@@ -10,7 +10,7 @@ from xmlsec.exceptions import XMLSigException
 import htmlentitydefs
 import re
 from io import BytesIO
-
+from base64 import b64encode, standard_b64decode
 
 def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
     """
@@ -121,20 +121,20 @@ def number_of_bits(num):
     return len(bin(num)) - 2
 
 
-b64d = lambda s: s.decode('base64')
-
+def b64d(s):
+    return standard_b64decode(s)
 
 def b64e(s):
     if type(s) in (int, long):
         s = int_to_bytes(s)
-    return s.encode('base64').replace('\n', '')
+
+    return b64encode(s)
 
 
 def serialize(t, stream=None):
+    xml = etree.tostring(t, xml_declaration=True)
     if stream is not None:
         with open(stream, 'w') as xml_out:
-            t.write(xml_out, encoding='utf-8', xml_declaration=True)
+            xml_out.write(xml)
     else:
-        xml_out = BytesIO()
-        t.write(xml_out, encoding='utf-8', xml_declaration=True)
-        print xml_out.getvalue()
+        print(xml)
