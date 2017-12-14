@@ -144,3 +144,10 @@ News
 * verify and sign cmdline tools
 * lots of bugfixes
 
+0.17
+----
+
+*Release tor 14 dec 2017 12:27:48 CET*
+
+* fix base64 bug
+* fix bug in cmdline verify serialization
