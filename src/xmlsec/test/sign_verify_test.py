@@ -207,6 +207,21 @@ class TestSignVerify(unittest.TestCase):
 
         self.assertEqual(signed_sv, expected_sv)
 
+    def test_duo_vuln_attack(self):
+        """
+        Test https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations
+        """
+        case = self.cases['SAML_assertion_sha256']
+        print("XML input :\n{}\n\n".format(case.as_buf('in.xml')))
+
+        signed = xmlsec.sign(case.as_etree('in.xml'),
+                             key_spec=self.private_keyspec,
+                             cert_spec=self.public_keyspec)
+        refs = xmlsec.verified(signed, self.public_keyspec)
+        self.assertTrue(len(refs) == 1)
+        print("verified XML: %s" % etree.tostring(refs[0]))
+        assert('evil' not in [x.text for x in refs[0].findall(".//{%s}AttributeValue" % 'urn:oasis:names:tc:SAML:2.0:assertion')])
+
     def test_verify_SAML_assertion1(self):
         """
         Test that we can verify signatures created by another implementation (xmlsec1).

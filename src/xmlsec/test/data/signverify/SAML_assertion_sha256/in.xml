@@ -22,7 +22,7 @@
   </ns1:Signature>
   <ns0:AttributeStatement>
     <ns0:Attribute FriendlyName="givenName" NameFormat="">
-      <ns0:AttributeValue xsi:nil="true" xsi:type="xs:string">Bar</ns0:AttributeValue>
+      <ns0:AttributeValue xsi:nil="true" xsi:type="xs:string">Bar<!-- evil bits --></ns0:AttributeValue>
     </ns0:Attribute>
     <ns0:Attribute FriendlyName="surName" NameFormat="">
       <ns0:AttributeValue xsi:nil="true" xsi:type="xs:string">Foo</ns0:AttributeValue>
