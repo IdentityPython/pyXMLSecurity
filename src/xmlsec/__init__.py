@@ -321,13 +321,15 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
 
             refmap = _process_references(t, sig, sig_path=sig_path, drop_signature=drop_signature)
             for ref,obj in refmap.items():
+                logging.debug("----")
+                logging.debug(etree.tostring(obj))
                 logging.debug("Validating reference {!s}".format(ref.get('URI')))
                 ref_digest_alg = _ref_digest(ref)
                 b_digest = _create_signature_digest(si, cm_alg, sig_digest_alg)
                 actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
                 if not this_cert.verify(b64d(sv), actual):
                     raise XMLSigException("Failed to validate {!s} using ref digest {!s} and cm {!s}".format(etree.tostring(sig),ref_digest_alg,cm_alg))
-                validated.extend(obj)
+                validated.append(obj)
         except XMLSigException, ex:
             logging.error(ex)
 
