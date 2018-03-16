@@ -28,6 +28,9 @@ class XMLTestData():
     def has_data(self, n):
         return n in self.data
 
+    def __str__(self):
+        return "Testcase {}/{}".format(self.base, self.name)
+
     def as_buf(self, n):
         assert n in self.data, XMLTestDataException("No data named %s in test case %s" % (n, self.name))
         return self.data[n]

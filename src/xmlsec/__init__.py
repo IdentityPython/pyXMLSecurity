@@ -140,7 +140,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
     :returns: hash algorithm as string
     """
 
-    verified_objects = []
+    verified_objects = {}
     for ref in sig.findall(".//{%s}Reference" % NS['ds']):
         obj = None
         hash_alg = None
@@ -168,7 +168,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             if drop_signature:
                 for sig in obj_copy.findall(sig_path):
                     sig.getparent().remove(sig)
-            verified_objects.append(obj_copy)
+            verified_objects[ref] = obj_copy
 
         if config.debug_write_to_files:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
@@ -194,10 +194,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
             with open("/tmp/foo-obj.xml", "w") as fd:
                 fd.write(obj)
 
-        dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
-        if dm is None:
-            raise XMLSigException("Unable to find DigestMethod")
-        hash_alg = (_alg(dm).split("#"))[1]
+        hash_alg = _ref_digest(ref)
         logging.debug("using hash algorithm %s" % hash_alg)
         digest = _digest(obj, hash_alg)
         logging.debug("using digest %s (%s) for ref %s" % (digest, hash_alg, uri))
@@ -209,6 +206,17 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         return verified_objects
     else:
         return None
+
+
+def _ref_digest(ref):
+    dm = ref.find(".//{%s}DigestMethod" % NS['ds'])
+    if dm is None:
+        raise XMLSigException("Unable to find DigestMethod for Reference@URI {!s}".format(ref.get('URI')))
+    alg_uri = _alg(dm)
+    hash_alg = (alg_uri.split("#"))[1]
+    if not hash_alg:
+        raise XMLSigException("Unable to determine digest algorithm from {!s}".format(alg_uri))
+    return hash_alg
 
 
 def _enveloped_signature(t, sig_path=".//{%s}Signature" % NS['ds']):
@@ -307,15 +315,19 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             logging.debug("key size: {!s} bits".format(this_cert.keysize))
 
             si = sig.find(".//{%s}SignedInfo" % NS['ds'])
+            logging.debug("Found signedinfo {!s}".format(etree.tostring(si)))
             cm_alg = _cm_alg(si)
-            digest_alg = _sig_digest(si)
+            sig_digest_alg = _sig_digest(si)
 
-            validated_objects = _process_references(t, sig, sig_path=sig_path, drop_signature=drop_signature)
-            b_digest = _create_signature_digest(si, cm_alg, digest_alg)
-            actual = _signed_value(b_digest, this_cert.keysize, True, digest_alg)
-            if not this_cert.verify(b64d(sv), actual):
-                raise XMLSigException("Failed to validate {!s}".format(etree.tostring(sig)))
-            validated.extend(validated_objects)
+            refmap = _process_references(t, sig, sig_path=sig_path, drop_signature=drop_signature)
+            for ref,obj in refmap.items():
+                logging.debug("Validating reference {!s}".format(ref.get('URI')))
+                ref_digest_alg = _ref_digest(ref)
+                b_digest = _create_signature_digest(si, cm_alg, sig_digest_alg)
+                actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
+                if not this_cert.verify(b64d(sv), actual):
+                    raise XMLSigException("Failed to validate {!s} using ref digest {!s} and cm {!s}".format(etree.tostring(sig),ref_digest_alg,cm_alg))
+                validated.extend(obj)
         except XMLSigException, ex:
             logging.error(ex)
 
