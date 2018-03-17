@@ -100,7 +100,6 @@ def _digest(data, hash_alg):
     :returns: Base64 string
     """
     h = getattr(hashlib, hash_alg)()
-    logging.debug(h)
     h.update(data)
     digest = b64e(h.digest())
     return digest
@@ -199,7 +198,7 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         digest = _digest(obj, hash_alg)
         logging.debug("using digest %s (%s) for ref %s" % (digest, hash_alg, uri))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
-        logging.debug(etree.tostring(dv))
+        #logging.debug(etree.tostring(dv))
         dv.text = digest
 
     if return_verified:
@@ -308,9 +307,10 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
     for sig in t.findall(sig_path):
         try:
             sv = sig.findtext(".//{%s}SignatureValue" % NS['ds'])
-            if sv is None:
+            if not sv:
                 raise XMLSigException("No SignatureValue")
 
+            logging.debug("SignatureValue: {!s}".format(sv))
             this_cert = xmlsec.crypto.from_keyspec(keyspec, signature_element=sig)
             logging.debug("key size: {!s} bits".format(this_cert.keysize))
 
@@ -321,10 +321,6 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
 
             refmap = _process_references(t, sig, sig_path=sig_path, drop_signature=drop_signature)
             for ref,obj in refmap.items():
-                logging.debug("----")
-                logging.debug(etree.tostring(obj))
-                logging.debug("Validating reference {!s}".format(ref.get('URI')))
-                ref_digest_alg = _ref_digest(ref)
                 b_digest = _create_signature_digest(si, cm_alg, sig_digest_alg)
                 actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
                 if not this_cert.verify(b64d(sv), actual):
