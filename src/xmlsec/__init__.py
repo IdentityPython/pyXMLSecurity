@@ -324,7 +324,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                 b_digest = _create_signature_digest(si, cm_alg, sig_digest_alg)
                 actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
                 if not this_cert.verify(b64d(sv), actual):
-                    raise XMLSigException("Failed to validate {!s} using ref digest {!s} and cm {!s}".format(etree.tostring(sig),ref_digest_alg,cm_alg))
+                    raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig),sig_digest_alg,cm_alg))
                 validated.append(obj)
         except XMLSigException, ex:
             logging.error(ex)

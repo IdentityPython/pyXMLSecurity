@@ -50,7 +50,7 @@ der_decode = SingleAccessCallable(decoder.decode)
 from .sequence_parser import SequenceParser
 
 
-MAX = 64
+MAX = 1024
 CERT_FILE = "keys/cacert_pass_helloworld.pem"
 
 RSA_ID = "1.2.840.113549.1.1.1"
