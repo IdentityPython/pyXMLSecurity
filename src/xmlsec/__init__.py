@@ -134,7 +134,7 @@ def _remove_child_comments(t):
     return t
 
 
-def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=False):
+def _process_references(t, sig, verify_mode=True, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=False):
     """
     :returns: hash algorithm as string
     """
@@ -162,19 +162,18 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         if obj is None:
             raise XMLSigException("Unable to dereference Reference URI='%s'" % uri)
 
-        if return_verified:
+        obj_copy = obj
+        if verify_mode:
             obj_copy = copy.deepcopy(obj)
             if drop_signature:
                 for sig in obj_copy.findall(sig_path):
                     sig.getparent().remove(sig)
-            verified_objects[ref] = obj_copy
 
         if config.debug_write_to_files:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
                 fd.write(etree.tostring(obj))
 
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
-            logging.debug("transform: %s" % _alg(tr))
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
             nslist = _find_nslist(tr)
             if nslist is not None:
@@ -196,12 +195,23 @@ def _process_references(t, sig, return_verified=True, sig_path=".//{%s}Signature
         hash_alg = _ref_digest(ref)
         logging.debug("using hash algorithm %s" % hash_alg)
         digest = _digest(obj, hash_alg)
-        logging.debug("using digest %s (%s) for ref %s" % (digest, hash_alg, uri))
+        logging.debug("computed %s digest %s for ref %s" % (hash_alg, digest, uri))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
-        #logging.debug(etree.tostring(dv))
-        dv.text = digest
 
-    if return_verified:
+        if verify_mode:
+            logging.debug("found %s digest %s for ref %s" % (hash_alg, dv.text, uri))
+            computed_digest_binary = b64d(digest)
+            digest_binary = b64d(dv.text)
+            if digest_binary == computed_digest_binary: # no point in verifying signature if the digest doesn't match
+                verified_objects[ref] = obj_copy
+            else:
+                logging.error("not returning ref %s - digest mismatch" % uri)
+        else: # signing - lets store the digest
+            logging.debug("replacing digest in %s" % etree.tostring(dv))
+            dv.text = digest
+
+
+    if verify_mode:
         return verified_objects
     else:
         return None
@@ -319,7 +329,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             cm_alg = _cm_alg(si)
             sig_digest_alg = _sig_digest(si)
 
-            refmap = _process_references(t, sig, sig_path=sig_path, drop_signature=drop_signature)
+            refmap = _process_references(t, sig, verify_mode=True, sig_path=sig_path, drop_signature=drop_signature)
             for ref,obj in refmap.items():
                 b_digest = _create_signature_digest(si, cm_alg, sig_digest_alg)
                 actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
@@ -448,7 +458,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         cm_alg = _cm_alg(si)
         digest_alg = _sig_digest(si)
 
-        _process_references(t, sig, return_verified=False, sig_path=sig_path)
+        _process_references(t, sig, verify_mode=False, sig_path=sig_path)
         # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
         b_digest = _create_signature_digest(si, cm_alg, digest_alg)
 

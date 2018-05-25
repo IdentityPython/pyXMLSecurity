@@ -246,7 +246,8 @@ class TestSignVerify(unittest.TestCase):
 
         print("XML input :\n{}\n\n".format(case.as_buf('out.xml')))
         with self.assertRaises(xmlsec.XMLSigException):
-            xmlsec.verify(case.as_etree('out.xml'), self.public_keyspec)
+            res = xmlsec.verify(case.as_etree('out.xml'), self.public_keyspec)
+            print(res)
 
     def test_sign_xades(self):
         """
