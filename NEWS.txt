@@ -151,3 +151,10 @@ News
 
 * fix base64 bug
 * fix bug in cmdline verify serialization
+
+0.18
+----
+
+*Release fre 25 maj 2018 19:43:54 CEST*
+
+* fix verification bug affecting sha512
