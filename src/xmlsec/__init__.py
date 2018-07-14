@@ -27,8 +27,8 @@ class Config(object):
     """
     This class holds a set of configuration parameters (using pyconfig) for pyXMLSecurity:
 
-    :param default_signature_alg: The URI of the default signature algorithm (RSA_SHA1 by default)
-    :param default_digest_alg: The URI of the default digest algorithm (SHA1 by default)
+    :param default_signature_alg: The URI of the default signature algorithm (RSA_SHA256 by default)
+    :param default_digest_alg: The URI of the default digest algorithm (SHA256 by default)
     :param default_c14n_alg: The URI of the default c14n algorithm (c14n exclusive by default)
     :param debug_write_to_files: Set to True to dump certain XML traces to /tmp. Danger! Not for production!
     :param same_document_is_root: Set to True to treat implicit null same-document-references as reference to the whole document.
@@ -39,7 +39,7 @@ class Config(object):
     """
     default_signature_alg = pyconfig.setting("xmlsec.default_signature_alg", constants.ALGORITHM_SIGNATURE_RSA_SHA256)
     default_digest_alg = pyconfig.setting("xmlsec.default_digest_alg", constants.ALGORITHM_DIGEST_SHA256)
-    default_c14n_alg = pyconfig.setting("xmlsec.default_c14n_alg", constants.TRANSFORM_C14N_INCLUSIVE)
+    default_c14n_alg = pyconfig.setting("xmlsec.default_c14n_alg", constants.TRANSFORM_C14N_EXCLUSIVE)
     debug_write_to_files = pyconfig.setting("xmlsec.config.debug_write_to_files", False)
     same_document_is_root = pyconfig.setting("xmlsec.same_document_is_root", False)
     id_attributes = pyconfig.setting("xmlsec.id_attributes", ['ID', 'id'])
