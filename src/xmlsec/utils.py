@@ -2,9 +2,14 @@ import logging
 
 __author__ = 'leifj'
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate
 from defusedxml import lxml
 from lxml import etree as etree
 from rsa_x509_pem import parse as pem_parse
+from LegacyCertificate import LegacyCertificate
 from int_to_bytes import int_to_bytes
 from xmlsec.exceptions import XMLSigException
 import htmlentitydefs
@@ -40,14 +45,29 @@ def b642pem(data):
     r += "-----END CERTIFICATE-----"
     return r
 
+def _cert2dict(cert):
+    key = cert.public_key()
+    if not isinstance(key, rsa.RSAPublicKey):
+        raise XMLSigException("We don't support non-RSA keys at the moment.")
+    cdict = dict()
+    cdict['type'] = "X509 CERTIFICATE"
+    cdict['pem'] = cert.public_bytes(encoding=serialization.Encoding.PEM)
+    cdict['body'] = b64encode(cert.public_bytes(encoding=serialization.Encoding.DER))
+    n = key.public_numbers()
+    cdict['modulus'] = n.n
+    cdict['publicExponent'] = n.e
+    cdict['subject'] = cert.subject
+    cdict['cert'] = LegacyCertificate(cert)
+
+    return cdict
 
 def pem2cert(pem):
-    return pem_parse(pem)
-
+    cert = load_pem_x509_certificate(pem, backend=default_backend())
+    return _cert2dict(cert)
 
 def b642cert(data):
-    return pem_parse(b642pem(data))
-
+    cert = load_der_x509_certificate(standard_b64decode(data), backend=default_backend())    
+    return _cert2dict(cert)
 
 def unescape_xml_entities(text):
     """

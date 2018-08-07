@@ -14,7 +14,7 @@ from . import int_to_bytes as itb
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
 from xmlsec import constants
-from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, b642cert
+from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e
 import xmlsec.crypto
 import pyconfig
 
@@ -331,9 +331,19 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
 
             refmap = _process_references(t, sig, verify_mode=True, sig_path=sig_path, drop_signature=drop_signature)
             for ref,obj in refmap.items():
-                b_digest = _create_signature_digest(si, cm_alg, sig_digest_alg)
-                actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
-                if not this_cert.verify(b64d(sv), actual):
+
+                logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
+                sic = _transform(cm_alg, si)
+                logging.debug("SignedInfo C14N: %s" % sic)
+                if this_cert.do_digest:
+                    digest = _digest(sic, sig_digest_alg)
+                    logging.debug("SignedInfo digest: %s" % digest)
+                    b_digest = b64d(digest)
+                    actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
+                else:
+                    actual = sic
+
+                if not this_cert.verify(b64d(sv), actual, sig_digest_alg):
                     raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig),sig_digest_alg,cm_alg))
                 validated.append(obj)
         except XMLSigException, ex:
@@ -460,11 +470,20 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
 
         _process_references(t, sig, verify_mode=False, sig_path=sig_path)
         # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
-        b_digest = _create_signature_digest(si, cm_alg, digest_alg)
+        logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
+        sic = _transform(cm_alg, si)
+        logging.debug("SignedInfo C14N: %s" % sic)
 
         # sign hash digest and insert it into the XML
-        tbs = _signed_value(b_digest, private.keysize, private.do_padding, digest_alg)
-        signed = private.sign(tbs)
+        if private.do_digest:
+            digest = _digest(sic, digest_alg)
+            logging.debug("SignedInfo digest: %s" % digest)
+            b_digest = b64d(digest)
+            tbs = _signed_value(b_digest, private.keysize, private.do_padding, digest_alg)
+        else:
+            tbs = sic
+
+        signed = private.sign(tbs,digest_alg)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
@@ -501,17 +520,4 @@ def _sig_alg(si):
 
 def _sig_digest(si):
     return (_sig_alg(si).split("-"))[1]
-
-
-def _create_signature_digest(si, cm_alg, hash_alg):
-    """
-    :param hash_alg: string such as 'sha1'
-    """
-    logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
-    sic = _transform(cm_alg, si)
-    logging.debug("SignedInfo C14N: %s" % sic)
-    digest = _digest(sic, hash_alg)
-    logging.debug("SignedInfo digest: %s" % digest)
-    return b64d(digest)
-
 

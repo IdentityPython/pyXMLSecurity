@@ -1,3 +1,4 @@
+import pdb
 import io
 import os
 import base64
@@ -5,8 +6,13 @@ import hashlib
 import logging
 import threading
 from UserDict import DictMixin
-from . import rsa_x509_pem
 from xmlsec.exceptions import XMLSigException
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization,hashes
+from cryptography.hazmat.primitives.asymmetric import rsa,padding,utils
+from cryptography.x509 import load_pem_x509_certificate
+
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 
@@ -40,11 +46,10 @@ def from_keyspec(keyspec, private=False, signature_element=None):
 
       {'keyspec': keyspec,
        'source': 'pkcs11' or 'file' or 'fingerprint' or 'keyspec',
-       'data': X.509 certificate as string if source != 'pkcs11',
-       'key': Parsed key from certificate if source != 'pkcs11',
+       'cert_pem': key as string if source != 'pkcs11',
+       'key': pyca.cryptography key instance if source != 'pkcs11',
        'keysize': Keysize in bits if source != 'pkcs11',
-       'f_public': rsa_x509_pem.f_public(key) if private == False,
-       'f_private': rsa_x509_pem.f_private(key) if private == True,
+       'private': True if private key, False if public key/certificate,
       }
 
     :param keyspec: Keyspec as string or callable. See above.
@@ -70,7 +75,7 @@ def from_keyspec(keyspec, private=False, signature_element=None):
 
 
 class XMlSecCrypto(object):
-    def __init__(self, source, do_padding, private):
+    def __init__(self, source, do_padding, private, do_digest=True):
         # Public attributes
         self.source = source
         self.keysize = None
@@ -78,16 +83,37 @@ class XMlSecCrypto(object):
         self.key = None
         self.is_private = private
         self.do_padding = do_padding
+        self.do_digest = do_digest
 
-    def sign(self, data):
-        # This used to be f_private()
-        return rsa_x509_pem.f_sign(self.key)(data)
+    def sign(self, data, hash_alg=None):
+        if hash_alg is None:
+            hash_alg = "sha1"
+        if self.is_private:
+            chosen_hash = getattr(hashes, hash_alg.upper())()
+            return self.key.sign(data,
+                                padding.PKCS1v15(),
+                                chosen_hash
+                                )
+        else:
+            raise XMLSigException('Signing is only possible with a private key.')
 
-    def verify(self, data, actual):
-        # This used to be f_public()
-        expected = rsa_x509_pem.f_public(self.key)(data)
-        # XXX does constant time comparision of RSA signatures matter?
-        return actual == expected
+    def verify(self, signature, msg, hash_alg=None):
+        if hash_alg is None:
+            hash_alg = "sha1"
+        if not self.is_private:
+            try:
+                chosen_hash = getattr(hashes, hash_alg.upper())()
+                self.key.public_key().verify(
+                    signature,
+                    msg,
+                    padding.PKCS1v15(),
+                    chosen_hash
+                )
+            except InvalidSignature:
+                return False
+            return True
+        else:
+            raise XMLSigException('Verifying is only possible with a certificate.')
 
 
 class XMLSecCryptoCallable(XMlSecCrypto):
@@ -95,24 +121,37 @@ class XMLSecCryptoCallable(XMlSecCrypto):
         super(XMLSecCryptoCallable, self).__init__(source='callable', do_padding=True, private=private)
         self._private_callable = private
 
-    def sign(self, data):
+    def sign(self, data, hash_alg=None):
         return self._private_callable(data)
 
-    def verify(self, data, actual):
+    def verify(self, data, actual, hash_alg=None):
         raise XMLSigException('Trying to verify with a private key (from a callable)')
 
 
 class XMLSecCryptoFile(XMlSecCrypto):
     def __init__(self, filename, private):
-        super(XMLSecCryptoFile, self).__init__(source='file', do_padding=True, private=private)
-        with io.open(filename) as c:
-            data = c.read()
+        super(XMLSecCryptoFile, self).__init__(source='file', do_padding=False, private=private, do_digest=False)
+        with io.open(filename,"rb") as file:
+            if private:
+                self.key = serialization.load_pem_private_key(file.read(),password=None, backend=default_backend())
+                if not isinstance(self.key, rsa.RSAPrivateKey):
+                    raise XMLSigException("We don't support non-RSA keys at the moment.")
 
-        cert = rsa_x509_pem.parse(data)
-        self.cert_pem = cert.get('pem')
-        self.key = rsa_x509_pem.get_key(cert)
-        self.keysize = int(self.key.size()) + 1
+                # XXX now we could implement encrypted-PEM-support
+                self.cert_pem = self.key.private_bytes(
+                                                   encoding=serialization.Encoding.PEM,
+                                                   format=serialization.PrivateFormat.PKCS8,
+                                                   encryption_algorithm=serialization.NoEncryption())
 
+                self.keysize = self.key.key_size
+            else:
+                self.key = load_pem_x509_certificate(file.read(), backend=default_backend())
+                if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
+                    raise XMLSigException("We don't support non-RSA keys at the moment.")
+
+                self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
+                self.keysize = self.key.public_key().key_size
+        
         self._from_file = filename  # for debugging
 
 
@@ -125,12 +164,16 @@ class XMLSecCryptoP11(XMlSecCrypto):
         self._private_callable, data = pk11.signer(keyspec)
         logging.debug("Using pkcs11 signing key: {!s}".format(self._private_callable))
         if data is not None:
-            cert = rsa_x509_pem.parse(data)
-            self.cert_pem = cert.get('pem')
+            self.key = load_pem_x509_certificate(data, backend=default_backend())
+            if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
+                raise XMLSigException("We don't support non-RSA keys at the moment.")
+
+            self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
+            self.keysize = self.key.public_key().key_size
 
         self._from_keyspec = keyspec  # for debugging
 
-    def sign(self, data):
+    def sign(self, data, hash_alg=None):
         return self._private_callable(data)
 
 
@@ -153,12 +196,16 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
         if data is None:
             raise ValueError("Unable to find cert matching fingerprint: %s" % fp)
 
-        super(XMLSecCryptoFromXML, self).__init__(source=source, do_padding=False, private=True)
+        super(XMLSecCryptoFromXML, self).__init__(source=source, do_padding=False, private=False, do_digest=False)
 
-        cert = rsa_x509_pem.parse(data)
-        self.cert_pem = cert.get('pem')
-        self.key = rsa_x509_pem.get_key(cert)
-        self.keysize = int(self.key.size()) + 1
+        self.key = load_pem_x509_certificate(data, backend=default_backend())
+        if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
+            raise XMLSigException("We don't support non-RSA keys at the moment.")
+
+        # XXX now we could implement encrypted-PEM-support
+        self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
+
+        self.keysize = self.key.public_key().key_size
         self._from_keyspec = keyspec  # for debugging
 
 
@@ -167,7 +214,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
         super(XMLSecCryptoREST, self).__init__(source="rest", do_padding=False, private=True)
         self._keyspec = keyspec
 
-    def sign(self, data):
+    def sign(self, data, hash_alg=None):
         try:
             import requests
             import json
@@ -230,6 +277,7 @@ class CertDict(DictMixin):
         del self.certs[key]
 
 def _cert_fingerprint(cert_pem):
+    # XXX might use cryptography internals instead of parsing it on our own
     if "-----BEGIN CERTIFICATE" in cert_pem:
         cert_pem = pem2b64(cert_pem)
     cert_der = base64.b64decode(cert_pem)

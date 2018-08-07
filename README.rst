@@ -24,7 +24,7 @@ python XML Security
    :alt: PyPI Version
 
 This is a python implementation of XML-Security - XML-DSIG only right now. There are no
-dependencies except lxml currently.
+dependencies except lxml and pyca.cryptography currently.
 
 This code was inspired by https://github.com/andrewdyates/xmldsig (this implementation is
 a refactor and extension of that implementation) and includes a pure-python RSA implementation
