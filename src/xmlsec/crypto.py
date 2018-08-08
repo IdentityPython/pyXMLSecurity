@@ -1,4 +1,3 @@
-import pdb
 import io
 import os
 import base64
@@ -9,8 +8,8 @@ from UserDict import DictMixin
 from xmlsec.exceptions import XMLSigException
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization,hashes
-from cryptography.hazmat.primitives.asymmetric import rsa,padding,utils
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils
 from cryptography.x509 import load_pem_x509_certificate
 
 
@@ -131,23 +130,23 @@ class XMLSecCryptoCallable(XMlSecCrypto):
 class XMLSecCryptoFile(XMlSecCrypto):
     def __init__(self, filename, private):
         super(XMLSecCryptoFile, self).__init__(source='file', do_padding=False, private=private, do_digest=False)
-        with io.open(filename,"rb") as file:
+        with io.open(filename, "rb") as file:
             if private:
-                self.key = serialization.load_pem_private_key(file.read(),password=None, backend=default_backend())
+                self.key = serialization.load_pem_private_key(file.read(), password=None, backend=default_backend())
                 if not isinstance(self.key, rsa.RSAPrivateKey):
-                    raise XMLSigException("We don't support non-RSA keys at the moment.")
+                    raise XMLSigException("We don't support non-RSA private keys at the moment.")
 
                 # XXX now we could implement encrypted-PEM-support
                 self.cert_pem = self.key.private_bytes(
-                                                   encoding=serialization.Encoding.PEM,
-                                                   format=serialization.PrivateFormat.PKCS8,
-                                                   encryption_algorithm=serialization.NoEncryption())
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption())
 
                 self.keysize = self.key.key_size
             else:
                 self.key = load_pem_x509_certificate(file.read(), backend=default_backend())
                 if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
-                    raise XMLSigException("We don't support non-RSA keys at the moment.")
+                    raise XMLSigException("We don't support non-RSA public keys at the moment.")
 
                 self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
                 self.keysize = self.key.public_key().key_size
@@ -166,7 +165,7 @@ class XMLSecCryptoP11(XMlSecCrypto):
         if data is not None:
             self.key = load_pem_x509_certificate(data, backend=default_backend())
             if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
-                raise XMLSigException("We don't support non-RSA keys at the moment.")
+                raise XMLSigException("We don't support non-RSA public keys at the moment.")
 
             self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
             self.keysize = self.key.public_key().key_size
@@ -200,7 +199,7 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
 
         self.key = load_pem_x509_certificate(data, backend=default_backend())
         if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
-            raise XMLSigException("We don't support non-RSA keys at the moment.")
+            raise XMLSigException("We don't support non-RSA public keys at the moment.")
 
         # XXX now we could implement encrypted-PEM-support
         self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
@@ -277,7 +276,7 @@ class CertDict(DictMixin):
         del self.certs[key]
 
 def _cert_fingerprint(cert_pem):
-    # XXX might use cryptography internals instead of parsing it on our own
+    # XXX might use cryptography internals instead of parsing
     if "-----BEGIN CERTIFICATE" in cert_pem:
         cert_pem = pem2b64(cert_pem)
     cert_der = base64.b64decode(cert_pem)

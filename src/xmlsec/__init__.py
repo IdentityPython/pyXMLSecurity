@@ -483,7 +483,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         else:
             tbs = sic
 
-        signed = private.sign(tbs,digest_alg)
+        signed = private.sign(tbs, digest_alg)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
@@ -520,4 +520,3 @@ def _sig_alg(si):
 
 def _sig_digest(si):
     return (_sig_alg(si).split("-"))[1]
-

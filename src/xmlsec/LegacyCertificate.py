@@ -1,26 +1,35 @@
+"""
+Emulate pycrypto RSAobj object as used by former crypto backend 
+rsa_x509_pem.
+"""
+
+datefmt = "%y%m%d%H%M%SZ"
 
 class LegacyCertificate(object):
 
     def __init__(self, cert):
         self.cert = cert
 
+        self.validity = dict()
+        self.validity['notAfter'] = [self.cert.not_valid_after.strftime(datefmt)]
+        self.validity['notBefore'] = [self.cert.not_valid_before.strftime(datefmt)]
+        self.subject = self.cert.subject
+        self.issuer = self.cert.issuer
+
     def getSubject(self):
-        return self.cert.subject
+        return self.subject
 
     def get_subject(self):
         return self.getSubject()
 
     def getIssuer(self):
-        return self.cert.issuer
+        return self.issuer
 
     def get_issuer(self):
-        return self.get_issuer()
+        return self.getIssuer()
 
     def getValidity(self):
-        d = dict()
-        d['notAfter'] = [self.cert.not_valid_after.strftime("%y%m%d%H%M%SZ")]
-        d['notBefore'] = [self.cert.not_valid_before.strftime("%y%m%d%H%M%SZ")]
-        return d
+        return self.validity
 
     def getNotAfter(self):
         return self.getValidity()['notAfter'][0]

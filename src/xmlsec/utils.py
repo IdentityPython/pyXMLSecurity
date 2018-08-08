@@ -8,7 +8,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate
 from defusedxml import lxml
 from lxml import etree as etree
-from rsa_x509_pem import parse as pem_parse
 from LegacyCertificate import LegacyCertificate
 from int_to_bytes import int_to_bytes
 from xmlsec.exceptions import XMLSigException
@@ -30,6 +29,14 @@ def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
 
 
 def pem2b64(pem):
+    """
+    Strip the header and footer of a .pem. BEWARE: Won't work with explanatory
+    strings above the header.
+    @params pem A string representing the pem
+    """
+    # XXX try to use cryptography parser to support things like
+    # https://tools.ietf.org/html/rfc7468#section-5.2
+
     return '\n'.join(pem.strip().split('\n')[1:-1])
 
 
@@ -46,9 +53,14 @@ def b642pem(data):
     return r
 
 def _cert2dict(cert):
+    """
+    Build cert_dict similar to old rsa_x509_pem backend. Shouldn't
+    be used by new code.
+    @param cert A cryptography.x509.Certificate object
+    """
     key = cert.public_key()
     if not isinstance(key, rsa.RSAPublicKey):
-        raise XMLSigException("We don't support non-RSA keys at the moment.")
+        raise XMLSigException("We don't support non-RSA public keys at the moment.")
     cdict = dict()
     cdict['type'] = "X509 CERTIFICATE"
     cdict['pem'] = cert.public_bytes(encoding=serialization.Encoding.PEM)
@@ -62,10 +74,20 @@ def _cert2dict(cert):
     return cdict
 
 def pem2cert(pem):
+    """
+    Return cert_dict similar to old rsa_x509_pem backend. Shouldn't
+    be used by new code.
+    @param pem The certificate as pem string
+    """
     cert = load_pem_x509_certificate(pem, backend=default_backend())
     return _cert2dict(cert)
 
 def b642cert(data):
+    """
+    Return cert_dict similar to old rsa_x509_pem backend. Shouldn't
+    be used by new code.
+    @param data The certificate as base64 string (i.e. pem without header/footer)
+    """
     cert = load_der_x509_certificate(standard_b64decode(data), backend=default_backend())    
     return _cert2dict(cert)
 
