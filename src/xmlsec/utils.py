@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate
 from defusedxml import lxml
 from lxml import etree as etree
-from LegacyCertificate import LegacyCertificate
+from PyCryptoShim import RSAobjShim
 from int_to_bytes import int_to_bytes
 from xmlsec.exceptions import XMLSigException
 import htmlentitydefs
@@ -69,7 +69,7 @@ def _cert2dict(cert):
     cdict['modulus'] = n.n
     cdict['publicExponent'] = n.e
     cdict['subject'] = cert.subject
-    cdict['cert'] = LegacyCertificate(cert)
+    cdict['cert'] = RSAobjShim(cert)
 
     return cdict
 

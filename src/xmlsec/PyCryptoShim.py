@@ -5,7 +5,7 @@ rsa_x509_pem.
 
 datefmt = "%y%m%d%H%M%SZ"
 
-class LegacyCertificate(object):
+class RSAobjShim(object):
 
     def __init__(self, cert):
         self.cert = cert
