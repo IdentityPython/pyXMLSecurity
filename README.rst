@@ -37,7 +37,7 @@ This package is available under the NORDUnet BSD license (cf LICENSE.txt)
 Limitations:
 
 - only support for enveloped signatures
-- only support for RSA-SHA1 signatures
+- only support for RSA signatures
 - no encryption support
 
 Some of those limitations might be addressed. Patches and pull-requests are most welcome!
