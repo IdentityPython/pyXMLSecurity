@@ -16,6 +16,7 @@ def run_cmd(args,softhsm_conf=None):
     env = {}
     if softhsm_conf is not None:
         env['SOFTHSM_CONF'] = softhsm_conf
+        env['SOFTHSM2_CONF'] = softhsm_conf
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     out, err = proc.communicate()
     if err is not None and len(err) > 0:

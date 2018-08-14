@@ -36,7 +36,7 @@ def parse_uri(pk11_uri):
 
     logging.debug("parsed pkcs11 uri: %s" % repr(o))
 
-    slot = 0
+    slot = None
     library = None
     keyname = None
     query = {}
@@ -134,8 +134,19 @@ def _find_key(session, keyname):
 _session_lock = threading.RLock()
 
 
-def _session(library, slot, pin=None):
+def _session(library, slot=None, pin=None, pk11_uri=None):
     _session_lock.acquire()
+
+    # XXX: adhoc fix -- should test cases where slot, pin and pk11_uri
+    # contradict or both are 'None'
+    if slot is None and pk11_uri is not None:
+        library, slot, keyname, query = parse_uri(pk11_uri)
+        pin_spec = query.get('pin', "env:PYKCS11PIN")
+        if pin_spec.startswith("env:"):
+            pin = os.environ.get(pin_spec[4:], None)
+        else:
+            pin = pin_spec
+
     if not library in _modules:
         logging.debug("loading library %s" % library)
         lib = PyKCS11.PyKCS11Lib()
@@ -148,6 +159,13 @@ def _session(library, slot, pin=None):
         logging.debug("already loaded: %s: %s" % (library, _modules[library]))
 
     lib = _modules[library]
+
+    # XXX: adhoc fix: if no slot given, use the first in the list
+    # (not the one named '0')
+    # Should be replaced by some proper pkcs11 uri search
+    if slot is None:
+        slot = lib.getSlotList(tokenPresent=True)[0]
+
     session = lib.openSession(slot)
     if pin is not None:
         assert type(pin) == str  # session.login does not like unicode
