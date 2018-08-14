@@ -72,7 +72,6 @@ def from_keyspec(keyspec, private=False, signature_element=None):
     thread_local.cache = cache
     return key
 
-
 class XMlSecCrypto(object):
     def __init__(self, source, do_padding, private, do_digest=True):
         # Public attributes
@@ -84,29 +83,24 @@ class XMlSecCrypto(object):
         self.do_padding = do_padding
         self.do_digest = do_digest
 
-    def sign(self, data, hash_alg=None):
-        if hash_alg is None:
-            hash_alg = "sha1"
+    def sign(self, data, hash_alg, pad_alg="PKCS1v15"):
         if self.is_private:
-            chosen_hash = getattr(hashes, hash_alg.upper())()
-            return self.key.sign(data,
-                                padding.PKCS1v15(),
-                                chosen_hash
-                                )
+            hasher = getattr(hashes, hash_alg.pyca_name)
+            padder = getattr(padding, pad_alg)
+            return self.key.sign(data, padder(), hasher())
         else:
             raise XMLSigException('Signing is only possible with a private key.')
 
-    def verify(self, signature, msg, hash_alg=None):
-        if hash_alg is None:
-            hash_alg = "sha1"
+    def verify(self, signature, msg, hash_alg, pad_alg="PKCS1v15"):
         if not self.is_private:
             try:
-                chosen_hash = getattr(hashes, hash_alg.upper())()
+                hasher = getattr(hashes, hash_alg.pyca_name)
+                padder = getattr(padding, pad_alg)
                 self.key.public_key().verify(
                     signature,
                     msg,
-                    padding.PKCS1v15(),
-                    chosen_hash
+                    padder(),
+                    hasher()
                 )
             except InvalidSignature:
                 return False

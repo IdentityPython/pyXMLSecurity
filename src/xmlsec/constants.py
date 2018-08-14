@@ -15,16 +15,59 @@ TRANSFORM_C14N_EXCLUSIVE_WITH_COMMENTS = 'http://www.w3.org/2001/10/xml-exc-c14n
 TRANSFORM_C14N_EXCLUSIVE = 'http://www.w3.org/2001/10/xml-exc-c14n#'
 TRANSFORM_C14N_INCLUSIVE = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'
 
+
+
+# All suported crypto primitives and some factories normalization of names as
+# pyca/cryptography uses UPPERCASE object-names for hashes.
+
 ALGORITHM_DIGEST_SHA1 = "http://www.w3.org/2000/09/xmldsig#sha1"
-ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
-
 ALGORITHM_DIGEST_SHA256 = "http://www.w3.org/2001/04/xmlenc#sha256"
-ALGORITHM_SIGNATURE_RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-
 ALGORITHM_DIGEST_SHA384 = "http://www.w3.org/2001/04/xmlenc#sha384"
-ALGORITHM_SIGNATURE_RSA_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"
-
 ALGORITHM_DIGEST_SHA512 = "http://www.w3.org/2001/04/xmlenc#sha512"
+
+ALGORITHM_SIGNATURE_RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
+ALGORITHM_SIGNATURE_RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+ALGORITHM_SIGNATURE_RSA_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"
 ALGORITHM_SIGNATURE_RSA_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
 
 
+
+class _HashType(object):
+    def __init__(self, hashlib_name, xmldsig_name, pyca_name=None):
+        self.name = hashlib_name
+        self.xmldsig_name = xmldsig_name
+        if pyca_name is None:
+            self.pyca_name = self.name.upper()
+        else:
+            self.pyca_name = pyca_name
+
+class _HashTypes(object):
+    def __init__(self):
+        self._HASHES = {
+            ALGORITHM_SIGNATURE_RSA_SHA1: 'sha1',
+            ALGORITHM_SIGNATURE_RSA_SHA256: 'sha256',
+            ALGORITHM_SIGNATURE_RSA_SHA384: 'sha384',
+            ALGORITHM_SIGNATURE_RSA_SHA512: 'sha512'}
+
+    def __getattr__(self, item):
+        if item in self._HASHES:
+            return _HashType(self._HASHES[item], item)
+        else:
+            raise AttributeError("Hash type '%s' not supported." % item)
+
+class _PaddingType(object):
+    def __init__(self, name):
+        self.name = name
+
+
+class _PaddingTypes(object):
+    def __init__(self):
+        self._PADDINGS = ['PKCS1v15']
+    def __getattr__(self, item):
+        if item in self._PADDINGS:
+            return _PaddingType(item)
+        else:
+            raise AttributeError("Padding type '%s' not supported." % item)
+
+Hashes = _HashTypes()
+Paddings = _PaddingTypes()

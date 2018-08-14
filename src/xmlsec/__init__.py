@@ -116,7 +116,7 @@ def _get_by_id(t, id_v):
 
 def _alg(elt):
     """
-    Return the hashlib name of an Algorithm. Hopefully.
+    Return the xmldsig name of an Algorithm. Hopefully.
     :returns: None or string
     """
     uri = elt.get('Algorithm', None)
@@ -327,7 +327,10 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             si = sig.find(".//{%s}SignedInfo" % NS['ds'])
             logging.debug("Found signedinfo {!s}".format(etree.tostring(si)))
             cm_alg = _cm_alg(si)
-            sig_digest_alg = _sig_digest(si)
+            try:
+                sig_digest_alg = _sig_alg(si)
+            except AttributeError:
+                raise XMLSigException("Failed to validate {!s} because of unsupported hash format".format(etree.tostring(sig)))
 
             refmap = _process_references(t, sig, verify_mode=True, sig_path=sig_path, drop_signature=drop_signature)
             for ref,obj in refmap.items():
@@ -336,15 +339,15 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                 sic = _transform(cm_alg, si)
                 logging.debug("SignedInfo C14N: %s" % sic)
                 if this_cert.do_digest:
-                    digest = _digest(sic, sig_digest_alg)
+                    digest = _digest(sic, sig_digest_alg.name)
                     logging.debug("SignedInfo digest: %s" % digest)
                     b_digest = b64d(digest)
-                    actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
+                    actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg.name)
                 else:
                     actual = sic
 
                 if not this_cert.verify(b64d(sv), actual, sig_digest_alg):
-                    raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig),sig_digest_alg,cm_alg))
+                    raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig), sig_digest_alg.xmldsig_name, cm_alg))
                 validated.append(obj)
         except XMLSigException, ex:
             logging.error(ex)
@@ -466,7 +469,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         assert si is not None
         cm_alg = _cm_alg(si)
-        digest_alg = _sig_digest(si)
+        sig_alg = _sig_alg(si)
 
         _process_references(t, sig, verify_mode=False, sig_path=sig_path)
         # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
@@ -476,14 +479,14 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
 
         # sign hash digest and insert it into the XML
         if private.do_digest:
-            digest = _digest(sic, digest_alg)
+            digest = _digest(sic, sig_alg.name)
             logging.debug("SignedInfo digest: %s" % digest)
             b_digest = b64d(digest)
-            tbs = _signed_value(b_digest, private.keysize, private.do_padding, digest_alg)
+            tbs = _signed_value(b_digest, private.keysize, private.do_padding, sig_alg.name)
         else:
             tbs = sic
 
-        signed = private.sign(tbs, digest_alg)
+        signed = private.sign(tbs, sig_alg)
         signature = b64e(signed)
         logging.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
@@ -515,8 +518,5 @@ def _sig_alg(si):
     sig_alg = _alg(sm)
     if sm is None or sig_alg is None:
         raise XMLSigException("No SignatureMethod")
-    return (sig_alg.split("#"))[1]
 
-
-def _sig_digest(si):
-    return (_sig_alg(si).split("-"))[1]
+    return getattr(constants.Hashes,sig_alg.lower())
