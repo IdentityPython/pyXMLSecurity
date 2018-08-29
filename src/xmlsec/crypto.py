@@ -1,7 +1,6 @@
 import io
 import os
 import base64
-import hashlib
 import logging
 import threading
 from binascii import hexlify
@@ -86,7 +85,7 @@ class XMlSecCrypto(object):
 
     def sign(self, data, hash_alg, pad_alg="PKCS1v15"):
         if self.is_private:
-            hasher = getattr(hashes, hash_alg.pyca_name)
+            hasher = getattr(hashes, hash_alg)
             padder = getattr(padding, pad_alg)
             return self.key.sign(data, padder(), hasher())
         else:
@@ -95,7 +94,7 @@ class XMlSecCrypto(object):
     def verify(self, signature, msg, hash_alg, pad_alg="PKCS1v15"):
         if not self.is_private:
             try:
-                hasher = getattr(hashes, hash_alg.pyca_name)
+                hasher = getattr(hashes, hash_alg)
                 padder = getattr(padding, pad_alg)
                 self.key.public_key().verify(
                     signature,
@@ -318,3 +317,16 @@ def _find_cert_by_fingerprint(t, fp):
         return None
 
     return cert.public_bytes(encoding=serialization.Encoding.PEM)
+
+def _digest(data, hash_alg):
+    """
+    Calculate a hash digest of algorithm hash_alg and return the result base64 encoded.
+
+    :param hash_alg: String with algorithm, such as 'SHA256' (as named by pyca/cryptography)
+    :param data: The data to digest
+    :returns: Base64 string
+    """
+    h = getattr(hashes, hash_alg)
+    d = hashes.Hash(h(), backend=default_backend())
+    d.update(data)
+    return base64.b64encode(d.finalize())

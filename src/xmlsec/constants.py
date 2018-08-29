@@ -1,5 +1,8 @@
 __author__ = 'leifj'
 
+from xmlsec.exceptions import XMLSigException
+
+
 # ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
 ASN1_BER_ALG_DESIGNATOR_PREFIX = {
     # disabled 'md2': '\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x02\x05\x00\x04\x10',
@@ -30,44 +33,30 @@ ALGORITHM_SIGNATURE_RSA_SHA256 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha
 ALGORITHM_SIGNATURE_RSA_SHA384 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384"
 ALGORITHM_SIGNATURE_RSA_SHA512 = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"
 
+sign_alg_xmldsig_digest_to_internal_d = {
+    ALGORITHM_DIGEST_SHA1: 'SHA1',
+    ALGORITHM_DIGEST_SHA256: 'SHA256',
+    ALGORITHM_DIGEST_SHA384: 'SHA384',
+    ALGORITHM_DIGEST_SHA512: 'SHA512',
+}
+
+sign_alg_xmldsig_sig_to_internal_d = {
+    ALGORITHM_SIGNATURE_RSA_SHA1: 'SHA1',
+    ALGORITHM_SIGNATURE_RSA_SHA256: 'SHA256',
+    ALGORITHM_SIGNATURE_RSA_SHA384: 'SHA384',
+    ALGORITHM_SIGNATURE_RSA_SHA512: 'SHA512',
+}
 
 
-class _HashType(object):
-    def __init__(self, hashlib_name, xmldsig_name, pyca_name=None):
-        self.name = hashlib_name
-        self.xmldsig_name = xmldsig_name
-        if pyca_name is None:
-            self.pyca_name = self.name.upper()
-        else:
-            self.pyca_name = pyca_name
+def _try_a_to_b(dic, item):
+    try:
+        return dic[item]
+    except KeyError:
+        raise XMLSigException("Algorithm '%s' not supported." % item)
 
-class _HashTypes(object):
-    def __init__(self):
-        self._HASHES = {
-            ALGORITHM_SIGNATURE_RSA_SHA1: 'sha1',
-            ALGORITHM_SIGNATURE_RSA_SHA256: 'sha256',
-            ALGORITHM_SIGNATURE_RSA_SHA384: 'sha384',
-            ALGORITHM_SIGNATURE_RSA_SHA512: 'sha512'}
-
-    def __getattr__(self, item):
-        if item in self._HASHES:
-            return _HashType(self._HASHES[item], item)
-        else:
-            raise AttributeError("Hash type '%s' not supported." % item)
-
-class _PaddingType(object):
-    def __init__(self, name):
-        self.name = name
+def sign_alg_xmldsig_sig_to_internal(xmldsig_sign_alg):
+    return _try_a_to_b(sign_alg_xmldsig_sig_to_internal_d, xmldsig_sign_alg)
 
 
-class _PaddingTypes(object):
-    def __init__(self):
-        self._PADDINGS = ['PKCS1v15']
-    def __getattr__(self, item):
-        if item in self._PADDINGS:
-            return _PaddingType(item)
-        else:
-            raise AttributeError("Padding type '%s' not supported." % item)
-
-Hashes = _HashTypes()
-Paddings = _PaddingTypes()
+def sign_alg_xmldsig_digest_to_internal(xmldsig_digest_alg):
+    return _try_a_to_b(sign_alg_xmldsig_digest_to_internal_d, xmldsig_digest_alg)
