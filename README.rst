@@ -24,11 +24,13 @@ python XML Security
    :alt: PyPI Version
 
 This is a python implementation of XML-Security - XML-DSIG only right now. There are no
-dependencies except lxml currently.
+dependencies except lxml and pyca/cryptography currently.
 
 This code was inspired by https://github.com/andrewdyates/xmldsig (this implementation is
-a refactor and extension of that implementation) and includes a pure-python RSA implementation
-https://github.com/andrewdyates/rsa_x509_pem by and with permission from Andrew Yates.
+a refactor and extension of that implementation) and in former versions used to include a
+pure-python RSA implementation https://github.com/andrewdyates/rsa_x509_pem by and with
+permission from Andrew Yates. Cryptographic primitives are now provided by
+pyca/cryptography (https://cryptography.io).
 
 In order to sign with a PKCS#11-module you need to install pykcs11 (http://www.bit4id.org/pykcs11/)
 
