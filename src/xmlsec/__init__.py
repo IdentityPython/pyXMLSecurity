@@ -64,7 +64,7 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     :param data: str of bytes to sign
     :param key_size: key length (if known) in bits; => len(`data`) + 3
     :param do_pad: Do PKCS1 (?) padding of the data - requires integer key_size
-    :param hash_alg: Hash algorithm as string (e.g. 'sha1')
+    :param hash_alg: Hash algorithm as string
     :returns: rsa-sha signature value of `data`
 
     :type data: string
