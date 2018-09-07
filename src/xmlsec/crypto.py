@@ -130,11 +130,13 @@ class XMLSecCryptoFile(XMlSecCrypto):
                 if not isinstance(self.key, rsa.RSAPrivateKey):
                     raise XMLSigException("We don't support non-RSA private keys at the moment.")
 
-                # XXX now we could implement encrypted-PEM-support
-                self.cert_pem = self.key.private_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption())
+                # XXX Do not leak private key -- is there any situation
+                # where we might need this pem?
+                self.cert_pem = None
+                # self.cert_pem = self.key.private_bytes(
+                #     encoding=serialization.Encoding.PEM,
+                #     format=serialization.PrivateFormat.PKCS8,
+                #     encryption_algorithm=serialization.NoEncryption())
 
                 self.keysize = self.key.key_size
             else:
