@@ -80,7 +80,7 @@ class TestVerify(unittest.TestCase):
 
     def test_verify_all(self):
         for case in self.cases.values():
-            print str(case)
+            print(str(case))
             public_keyspec = os.path.join(self.resource_dir, case.name, "signer.crt")
             res = xmlsec.verify(case.as_etree("in.xml"), public_keyspec)
             self.assertTrue(res)
