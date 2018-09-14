@@ -3,6 +3,7 @@ import os
 import base64
 import logging
 import threading
+from . import constants
 from binascii import hexlify
 from UserDict import DictMixin
 from xmlsec.exceptions import XMLSigException
@@ -72,6 +73,7 @@ def from_keyspec(keyspec, private=False, signature_element=None):
     thread_local.cache = cache
     return key
 
+
 class XMlSecCrypto(object):
     def __init__(self, source, do_padding, private, do_digest=True):
         # Public attributes
@@ -83,25 +85,63 @@ class XMlSecCrypto(object):
         self.do_padding = do_padding
         self.do_digest = do_digest
 
-    def sign(self, data, hash_alg, pad_alg="PKCS1v15"):
+    def mk_hasher(self, hash_alg):
+        if 'sha3-' in hash_alg:
+            raise XMLSigException("sha3 hashes not yet supported")
+
+        hasher = getattr(hashes, hash_alg.upper())
+        return hasher()
+
+    def parse_sig_scheme(self, sig_alg, parameters=None):
+        if sig_alg == 'mgf1' or sig_alg == 'rsa-pss':
+            if not parameters:
+                hasher = hashes.SHA256()
+                padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=padding.PSS.MAX_LENGTH)
+                return [padder, hasher]
+            else:
+                raise XMLSigException("Parametrized RSA-PSS or RSA-PSS-MGF1 not yet supported")
+
+        if sig_alg.endswith('rsa-mgf1'):
+            sig_alg_lst = sig_alg.split('-')
+            if len(sig_alg_list) != 3:
+                raise XMLSigException("Unable to determine MGF1 digest method f '{}'".format(sig_alg))
+
+            hasher = self.mk_hasher(sig_alg_lst[0])
+            padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=padding.PSS.MAX_LENGTH)
+            return [padder, hasher]
+
+        if sig_alg.startswith('rsa-'):
+            sig_alg_lst = sig_alg.split('-')
+            if len(sig_alg_lst) != 2:
+                raise XMLSigException("Unable to determine digest method from '{}'".format(sig_alg))
+            hasher = self.mk_hasher(sig_alg_lst[1])
+            padder = padding.PKCS1v15()
+            return [padder, hasher]
+
+        if sig_alg.startswith('ecdsa-'):
+            sig_alg_lst = sig_alg.split('-')
+            if len(sig_alg_lst) != 2:
+                raise XMLSigException("Unable to determine digest method from '{}'".format(sig_alg))
+            hasher = self.mk_hasher(sig_alg_lst[1])
+            return [ec.ECDSA(hasher)]
+
+        raise XMLSigException("Unable to determine padder for '{}'".format(sig_alg))
+
+    def sign(self, data, sig_uri, parameters=None):
         if self.is_private:
-            hasher = getattr(hashes, hash_alg)
-            padder = getattr(padding, pad_alg)
-            return self.key.sign(data, padder(), hasher())
+            sig_alg = constants.sign_alg_xmldsig_sig_to_sigalg(sig_uri)
+            scheme = self.parse_sig_scheme(sig_alg,parameters=parameters)
+            return self.key.sign(data, *scheme)
         else:
             raise XMLSigException('Signing is only possible with a private key.')
 
-    def verify(self, signature, msg, hash_alg, pad_alg="PKCS1v15"):
+    def verify(self, signature, msg, sig_uri, parameters=None):
         if not self.is_private:
+
             try:
-                hasher = getattr(hashes, hash_alg)
-                padder = getattr(padding, pad_alg)
-                self.key.public_key().verify(
-                    signature,
-                    msg,
-                    padder(),
-                    hasher()
-                )
+                sig_alg = constants.sign_alg_xmldsig_sig_to_sigalg(sig_uri)
+                scheme = self.parse_sig_scheme(sig_alg, parameters=parameters)
+                self.key.public_key().verify(signature, msg, *scheme)
             except InvalidSignature:
                 return False
             return True
@@ -114,10 +154,10 @@ class XMLSecCryptoCallable(XMlSecCrypto):
         super(XMLSecCryptoCallable, self).__init__(source='callable', do_padding=True, private=private)
         self._private_callable = private
 
-    def sign(self, data, hash_alg=None):
+    def sign(self, data, sig_uri=None, parameters=None):
         return self._private_callable(data)
 
-    def verify(self, data, actual, hash_alg=None):
+    def verify(self, data, actual, sig_uri=None, parameters=None):
         raise XMLSigException('Trying to verify with a private key (from a callable)')
 
 
@@ -127,8 +167,6 @@ class XMLSecCryptoFile(XMlSecCrypto):
         with io.open(filename, "rb") as file:
             if private:
                 self.key = serialization.load_pem_private_key(file.read(), password=None, backend=default_backend())
-                if not isinstance(self.key, rsa.RSAPrivateKey):
-                    raise XMLSigException("We don't support non-RSA private keys at the moment.")
 
                 # XXX Do not leak private key -- is there any situation
                 # where we might need this pem?
@@ -141,9 +179,6 @@ class XMLSecCryptoFile(XMlSecCrypto):
                 self.keysize = self.key.key_size
             else:
                 self.key = load_pem_x509_certificate(file.read(), backend=default_backend())
-                if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
-                    raise XMLSigException("We don't support non-RSA public keys at the moment.")
-
                 self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
                 self.keysize = self.key.public_key().key_size
         
@@ -160,15 +195,12 @@ class XMLSecCryptoP11(XMlSecCrypto):
         logging.debug("Using pkcs11 signing key: {!s}".format(self._private_callable))
         if data is not None:
             self.key = load_pem_x509_certificate(data, backend=default_backend())
-            if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
-                raise XMLSigException("We don't support non-RSA public keys at the moment.")
-
             self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
             self.keysize = self.key.public_key().key_size
 
         self._from_keyspec = keyspec  # for debugging
 
-    def sign(self, data, hash_alg=None):
+    def sign(self, data, sig_uri=None, parameters=None):
         return self._private_callable(data)
 
 
@@ -194,8 +226,8 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
         super(XMLSecCryptoFromXML, self).__init__(source=source, do_padding=False, private=False, do_digest=False)
 
         self.key = load_pem_x509_certificate(data, backend=default_backend())
-        if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
-            raise XMLSigException("We don't support non-RSA public keys at the moment.")
+        #if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
+        #    raise XMLSigException("We don't support non-RSA public keys at the moment.")
 
         # XXX now we could implement encrypted-PEM-support
         self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
@@ -209,7 +241,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
         super(XMLSecCryptoREST, self).__init__(source="rest", do_padding=False, private=True)
         self._keyspec = keyspec
 
-    def sign(self, data, hash_alg=None):
+    def sign(self, data, sig_uri=None, parameters=None):
         try:
             import requests
             import json
