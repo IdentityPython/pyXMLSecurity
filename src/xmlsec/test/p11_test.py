@@ -25,7 +25,7 @@ except ImportError:
 from xmlsec.test.case import load_test_data
 
 P11_MODULE = find_alts(['/usr/lib/libsofthsm.so', '/usr/lib/softhsm/libsofthsm.so', '/usr/lib/softhsm/libsofthsm2.so'])
-P11_ENGINE = find_alts(['/usr/lib/engines/engine_pkcs11.so','/usr/lib/x86_64-linux-gnu/engines-1.1/pkcs11.so'])
+P11_ENGINE = find_alts(['/usr/lib/ssl/engines/libpkcs11.so','/usr/lib/engines/engine_pkcs11.so'])
 P11_SPY = find_alts(['/usr/lib/pkcs11/pkcs11-spy.so'])
 PKCS11_TOOL = find_alts(['/usr/bin/pkcs11-tool'])
 OPENSC_TOOL = find_alts(['/usr/bin/opensc-tool'])
@@ -41,7 +41,7 @@ if OPENSSL is None:
     raise unittest.SkipTest("OpenSSL not installed")
 
 if SOFTHSM is None:
-    raise unittest.SkipTest("SoftHSM not installed")
+    raise unittest.SkipTest("SoftHSM2 not installed")
 
 if OPENSC_TOOL is None:
     raise unittest.SkipTest("OpenSC not installed")
@@ -134,8 +134,8 @@ pkcs11 = pkcs11_section
 
 [pkcs11_section]
 engine_id = pkcs11
-# dynamic_path = %s
-# MODULE_PATH = %s
+dynamic_path = %s
+MODULE_PATH = %s
 PIN = secret1
 init = 0
 
