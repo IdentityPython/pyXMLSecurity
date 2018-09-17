@@ -226,8 +226,6 @@ class XMLSecCryptoFromXML(XMlSecCrypto):
         super(XMLSecCryptoFromXML, self).__init__(source=source, do_padding=False, private=False, do_digest=False)
 
         self.key = load_pem_x509_certificate(data, backend=default_backend())
-        #if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
-        #    raise XMLSigException("We don't support non-RSA public keys at the moment.")
 
         # XXX now we could implement encrypted-PEM-support
         self.cert_pem = self.key.public_bytes(encoding=serialization.Encoding.PEM)
