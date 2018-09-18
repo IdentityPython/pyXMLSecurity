@@ -3,16 +3,16 @@ import os
 import base64
 import logging
 import threading
-from . import constants
+from xmlsec import constants
 from binascii import hexlify
 from UserDict import DictMixin
 from xmlsec.exceptions import XMLSigException
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils
+from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils, ec
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
-
+from xmlsec.utils import sigvalue2dsssig, noop
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 
@@ -97,7 +97,7 @@ class XMlSecCrypto(object):
             if not parameters:
                 hasher = hashes.SHA256()
                 padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=padding.PSS.MAX_LENGTH)
-                return [padder, hasher]
+                return [padder, hasher], noop, noop
             else:
                 raise XMLSigException("Parametrized RSA-PSS or RSA-PSS-MGF1 not yet supported")
 
@@ -108,7 +108,7 @@ class XMlSecCrypto(object):
 
             hasher = self.mk_hasher(sig_alg_lst[0])
             padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=padding.PSS.MAX_LENGTH)
-            return [padder, hasher]
+            return [padder, hasher], noop, noop
 
         if sig_alg.startswith('rsa-'):
             sig_alg_lst = sig_alg.split('-')
@@ -116,21 +116,21 @@ class XMlSecCrypto(object):
                 raise XMLSigException("Unable to determine digest method from '{}'".format(sig_alg))
             hasher = self.mk_hasher(sig_alg_lst[1])
             padder = padding.PKCS1v15()
-            return [padder, hasher]
+            return [padder, hasher], noop, noop
 
         if sig_alg.startswith('ecdsa-'):
             sig_alg_lst = sig_alg.split('-')
             if len(sig_alg_lst) != 2:
                 raise XMLSigException("Unable to determine digest method from '{}'".format(sig_alg))
             hasher = self.mk_hasher(sig_alg_lst[1])
-            return [ec.ECDSA(hasher)]
+            return [ec.ECDSA(hasher)], lambda x: dsssig2sigvalue(x, 32), sigvalue2dsssig # 32 is right for P-256...
 
         raise XMLSigException("Unable to determine padder for '{}'".format(sig_alg))
 
     def sign(self, data, sig_uri, parameters=None):
         if self.is_private:
             sig_alg = constants.sign_alg_xmldsig_sig_to_sigalg(sig_uri)
-            scheme = self.parse_sig_scheme(sig_alg,parameters=parameters)
+            scheme, encoder, decoder = self.parse_sig_scheme(sig_alg,parameters=parameters)
             return self.key.sign(data, *scheme)
         else:
             raise XMLSigException('Signing is only possible with a private key.')
@@ -140,8 +140,8 @@ class XMlSecCrypto(object):
 
             try:
                 sig_alg = constants.sign_alg_xmldsig_sig_to_sigalg(sig_uri)
-                scheme = self.parse_sig_scheme(sig_alg, parameters=parameters)
-                self.key.public_key().verify(signature, msg, *scheme)
+                scheme, encoder, decoder = self.parse_sig_scheme(sig_alg, parameters=parameters)
+                self.key.public_key().verify(decoder(signature), msg, *scheme)
             except InvalidSignature:
                 return False
             return True

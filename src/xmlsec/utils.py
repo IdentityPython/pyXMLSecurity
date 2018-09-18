@@ -5,6 +5,7 @@ __author__ = 'leifj'
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature, encode_dss_signature
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate
 from defusedxml import lxml
 from lxml import etree as etree
@@ -15,7 +16,7 @@ import htmlentitydefs
 import re
 from io import BytesIO
 from base64 import b64encode, standard_b64decode
-
+from DataPrimitives import DataPrimitives
 
 def parse_xml(data, remove_whitespace=True, remove_comments=True, schema=None):
     """
@@ -186,3 +187,26 @@ def serialize(t, stream=None):
             xml_out.write(xml)
     else:
         print(xml)
+
+
+def sigvalue2dsssig(s):
+    l = len(s)
+    r_data, s_data = s[:l/2], s[l/2:]
+    dp = DataPrimitives()
+    r = dp.OS2IP(r_data)
+    s = dp.OS2IP(s_data)
+    return encode_dss_signature(r,s)
+
+
+def dsssig2sigvalue(sig, l=16):
+    r,s = decode_dss_signature(sig)
+    print(r)
+    print(s)
+    dp = DataPrimitives()
+    r_data = dp.I2OSP(r, l)
+    s_data = dp.I2OSP(s, l)
+    return r_data+s_data
+
+
+def noop(x):
+    return x
