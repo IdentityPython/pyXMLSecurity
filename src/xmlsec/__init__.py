@@ -12,7 +12,7 @@ import copy
 import traceback
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
-from xmlsec import constants
+import xmlsec.constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e
 import xmlsec.crypto
 import pyconfig
@@ -328,9 +328,9 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                     actual = _signed_value_pkcs1_v1_5(b_digest, this_cert.keysize, True, hash_alg)
                 else:
                     actual = sic
-
+                logging.debug("Verifying signature (computed) {} to (actual) {}".format(sv, actual))
                 if not this_cert.verify(b64d(sv), actual, sig_uri):
-                    raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig), hash_alg, cm_alg))
+                    raise XMLSigException("Failed to validate {!s} using sig sig method {!s}".format(etree.tostring(sig), sig_uri))
                 validated.append(obj)
         except XMLSigException, ex:
             logging.debug(traceback.format_exc())

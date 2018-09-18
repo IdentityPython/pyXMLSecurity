@@ -3,3 +3,4 @@ lxml
 pyconfig
 requests
 cryptography
+DataPrimitives
