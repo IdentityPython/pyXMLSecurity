@@ -9,6 +9,7 @@ from defusedxml import lxml
 from lxml import etree as etree
 import logging
 import copy
+import traceback
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
 from xmlsec import constants
@@ -332,6 +333,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                     raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig), hash_alg, cm_alg))
                 validated.append(obj)
         except XMLSigException, ex:
+            logging.debug(traceback.format_exc())
             logging.error(ex)
 
     if not validated:
