@@ -12,7 +12,7 @@ def find_alts(alts):
     return None
 
 
-def run_cmd(args,softhsm_conf=None):
+def run_cmd(args, softhsm_conf=None):
     env = {}
     if softhsm_conf is not None:
         env['SOFTHSM_CONF'] = softhsm_conf
