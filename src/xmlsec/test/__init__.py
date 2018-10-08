@@ -5,6 +5,11 @@ import logging
 __author__ = 'leifj'
 
 
+def paths_for_component(component, default_paths):
+    env_path = os.environ.get(component)
+    return [env_path] if env_path else default_paths
+
+
 def find_alts(alts):
     for a in alts:
         if os.path.exists(a):
@@ -12,7 +17,7 @@ def find_alts(alts):
     return None
 
 
-def run_cmd(args,softhsm_conf=None):
+def run_cmd(args, softhsm_conf=None):
     env = {}
     if softhsm_conf is not None:
         env['SOFTHSM_CONF'] = softhsm_conf
