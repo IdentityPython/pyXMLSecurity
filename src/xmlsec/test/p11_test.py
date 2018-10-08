@@ -245,7 +245,7 @@ class TestPKCS11(unittest.TestCase):
         try:
             os.environ['SOFTHSM_CONF'] = softhsm_conf
             os.environ['SOFTHSM2_CONF'] = softhsm_conf
-            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % P11_MODULE)
+            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % component_path['P11_MODULE'])
             assert session is not None
         except Exception, ex:
             traceback.print_exc()
@@ -260,7 +260,7 @@ class TestPKCS11(unittest.TestCase):
         try:
             os.environ['SOFTHSM_CONF'] = softhsm_conf
             os.environ['SOFTHSM2_CONF'] = softhsm_conf
-            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test" % P11_MODULE)
+            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test" % component_path['P11_MODULE'])
             assert session is not None
         except Exception, ex:
             traceback.print_exc()
@@ -276,8 +276,8 @@ class TestPKCS11(unittest.TestCase):
         try:
             os.environ['SOFTHSM_CONF'] = softhsm_conf
             os.environ['SOFTHSM2_CONF'] = softhsm_conf
-            session1 = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % P11_MODULE)
-            session2 = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % P11_MODULE)
+            session1 = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % component_path['P11_MODULE'])
+            session2 = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % component_path['P11_MODULE'])
             assert session1 != session2
             assert session1 is not None
             assert session2 is not None
@@ -294,7 +294,7 @@ class TestPKCS11(unittest.TestCase):
         os.environ['SOFTHSM_CONF'] = softhsm_conf
         os.environ['SOFTHSM2_CONF'] = softhsm_conf
         try:
-            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=wrong" % P11_MODULE)
+            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=wrong" % component_path['P11_MODULE'])
             assert False, "We should have failed the last login"
         except PyKCS11Error, ex:
             assert ex.value == CKR_PIN_INCORRECT
@@ -306,7 +306,7 @@ class TestPKCS11(unittest.TestCase):
         try:
             os.environ['SOFTHSM_CONF'] = softhsm_conf
             os.environ['SOFTHSM2_CONF'] = softhsm_conf
-            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % P11_MODULE)
+            session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % component_path['P11_MODULE'])
             key, cert = pk11._find_key(session, "test")
             assert key is not None
             assert cert is not None
