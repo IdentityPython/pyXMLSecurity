@@ -46,9 +46,6 @@ component_default_paths = {
         '/usr/lib/engines/engine_pkcs11.so',
         '/usr/lib/x86_64-linux-gnu/engines-1.1/pkcs11.so',
     ],
-    'P11_SPY': [
-        '/usr/lib/pkcs11/pkcs11-spy.so',
-    ],
     'PKCS11_TOOL': [
         '/usr/bin/pkcs11-tool',
     ],
