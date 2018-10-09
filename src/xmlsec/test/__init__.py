@@ -30,4 +30,7 @@ def run_cmd(args, softhsm_conf=None):
         logging.debug(out)
     rv = proc.wait()
     if rv:
-        raise RuntimeError("command exited with code != 0: %d" % rv)
+        msg = '[exit-code: {code}] [stdout: {out}] [stderr: {err}]'.format(
+            code=rv, out=out.strip(), err=err.strip(),
+        )
+        raise RuntimeError(msg)
