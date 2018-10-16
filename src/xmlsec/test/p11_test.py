@@ -77,7 +77,7 @@ if any(path is None for component, path in component_path.items()):
     raise unittest.SkipTest("Required components missing: {}".format(missing))
 
 softhsm_version = 1
-if component_path['SOFTHSM'] == '/usr/bin/softhsm2-util':
+if component_path['SOFTHSM'].endswith('softhsm2-util'):
     softhsm_version = 2
 
 p11_test_files = []
