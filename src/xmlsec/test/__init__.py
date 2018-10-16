@@ -32,8 +32,8 @@ def run_cmd(args, softhsm_conf=None):
     if rv:
         with open(softhsm_conf) as f:
             conf = f.read()
-        msg = '[code: {code}] [stdout: {out}] [stderr: {err}] [config: {conf}]'
+        msg = '[cmd: {cmd}] [code: {code}] [stdout: {out}] [stderr: {err}] [config: {conf}]'
         msg = msg.format(
-            code=rv, out=out.strip(), err=err.strip(), conf=conf,
+            cmd=" ".join(args), code=rv, out=out.strip(), err=err.strip(), conf=conf,
         )
         raise RuntimeError(msg)
