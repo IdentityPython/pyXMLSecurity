@@ -37,9 +37,9 @@ except Exception:
 
 component_default_paths = {
     'P11_MODULE': [
-        '/usr/lib/libsofthsm.so',
-        '/usr/lib/softhsm/libsofthsm.so',
         '/usr/lib/softhsm/libsofthsm2.so',
+        '/usr/lib/softhsm/libsofthsm.so',
+        '/usr/lib/libsofthsm.so',
     ],
     'P11_ENGINE': [
         '/usr/lib/ssl/engines/libpkcs11.so',
@@ -53,8 +53,8 @@ component_default_paths = {
         '/usr/bin/opensc-tool',
     ],
     'SOFTHSM': [
-        '/usr/bin/softhsm',
         '/usr/bin/softhsm2-util',
+        '/usr/bin/softhsm',
     ],
     'OPENSSL': [
         '/usr/bin/openssl',
