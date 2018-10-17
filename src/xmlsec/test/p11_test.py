@@ -156,31 +156,27 @@ log.level = DEBUG
         openssl_conf = _tf()
         logging.debug("Generating OpenSSL config")
         with open(openssl_conf, "w") as f:
-            f.write("""
-openssl_conf = openssl_def
-
-[openssl_def]
-engines = engine_section
-
-[engine_section]
-pkcs11 = pkcs11_section
-
-[req]
-distinguished_name = req_distinguished_name
-
-[req_distinguished_name]
-
-[pkcs11_section]
-engine_id = pkcs11
-""")
-            if openssl_version == "1.0":
-                f.write("dynamic_path = %s" % component_path['P11_ENGINE'])
-
-            f.write("""
-MODULE_PATH = %s
-PIN = secret1
-init = 0
-""" % (component_path['P11_MODULE']))
+            dynamic_path = (
+                "dynamic_path = %s" % component_path['P11_ENGINE']
+                if openssl_version == "1.0"
+                else ""
+            )
+            f.write("\n".join([
+                "openssl_conf = openssl_def",
+                "[openssl_def]",
+                "engines = engine_section",
+                "[engine_section]",
+                "pkcs11 = pkcs11_section",
+                "[req]",
+                "distinguished_name = req_distinguished_name",
+                "[req_distinguished_name]",
+                "[pkcs11_section]",
+                "engine_id = pkcs11",
+                dynamic_path,
+                "MODULE_PATH = %s" % component_path['P11_MODULE'],
+                "PIN = secret1",
+                "init = 0",
+            ]))
 
         signer_cert_der = _tf()
 
