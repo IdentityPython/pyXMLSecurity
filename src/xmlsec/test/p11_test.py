@@ -13,7 +13,6 @@ import subprocess
 import shutil
 import tempfile
 
-from defusedxml import lxml
 from lxml import etree
 
 import xmlsec
