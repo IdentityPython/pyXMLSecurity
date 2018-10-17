@@ -79,6 +79,10 @@ softhsm_version = 1
 if component_path['SOFTHSM'].endswith('softhsm2-util'):
     softhsm_version = 2
 
+openssl_version = subprocess.check_output([component_path['OPENSSL'],
+                                          'version']
+                                          )[8:11]
+
 p11_test_files = []
 softhsm_conf = None
 server_cert_pem = None
@@ -162,18 +166,20 @@ engines = engine_section
 [engine_section]
 pkcs11 = pkcs11_section
 
-[pkcs11_section]
-engine_id = pkcs11
-dynamic_path = %s
-#MODULE_PATH = %s
-PIN = secret1
-init = 0
-
 [req]
 distinguished_name = req_distinguished_name
 
 [req_distinguished_name]
-""" % (component_path['P11_ENGINE'], component_path['P11_MODULE']))
+
+[pkcs11_section]
+engine_id = pkcs11
+MODULE_PATH = %s
+PIN = secret1
+init = 0
+""" % (component_path['P11_MODULE']))
+
+            if openssl_version == "1.0":
+                f.write("dynamic_path = %s" % component_path['P11_ENGINE'])
 
         signer_cert_der = _tf()
 
@@ -185,7 +191,7 @@ distinguished_name = req_distinguished_name
                  '-engine', 'pkcs11',
                  '-config', openssl_conf,
                  '-keyform', 'engine',
-                 '-key', 'pkcs11:token=test',
+                 '-key', 'label_test',
                  '-passin', 'pass:secret1',
                  '-out', signer_cert_pem], softhsm_conf=softhsm_conf)
 
