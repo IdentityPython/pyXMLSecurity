@@ -278,7 +278,8 @@ class TestPKCS11(unittest.TestCase):
             if session is not None:
                 pk11._close_session(session)
 
-    @unittest.skipIf(component_path['P11_MODULE'] is None, "SoftHSM PKCS11 module not installed")
+    # @unittest.skipIf(component_path['P11_MODULE'] is None, "SoftHSM PKCS11 module not installed")
+    @unittest.skip("SoftHSM PKCS11 module does not support 2 sessions")
     def test_two_sessions(self):
         session1 = None
         session2 = None
