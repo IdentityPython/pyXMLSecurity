@@ -23,6 +23,9 @@ install:
   - pip install coveralls
 
 script:
+  - dpkg -s openssl
+  - apt show -a openssl
+  - ln -s /usr/lib/ssl/engines/libpkcs11.so /usr/lib/x86_64-linux-gnu/openssl-1.0.0/engines/libpkcs11.so
   - coverage run --source=xmlsec setup.py nosetests -vv -d
 
 after_success:

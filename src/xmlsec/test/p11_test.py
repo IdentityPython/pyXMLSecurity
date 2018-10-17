@@ -165,7 +165,7 @@ pkcs11 = pkcs11_section
 [pkcs11_section]
 engine_id = pkcs11
 dynamic_path = %s
-#MODULE_PATH = %s
+MODULE_PATH = %s
 PIN = secret1
 init = 0
 
@@ -185,7 +185,7 @@ distinguished_name = req_distinguished_name
                  '-engine', 'pkcs11',
                  '-config', openssl_conf,
                  '-keyform', 'engine',
-                 '-key', 'pkcs11:token=test',
+                 '-key', 'label_test',
                  '-passin', 'pass:secret1',
                  '-out', signer_cert_pem], softhsm_conf=softhsm_conf)
 
