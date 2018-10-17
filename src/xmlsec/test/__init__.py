@@ -30,4 +30,10 @@ def run_cmd(args, softhsm_conf=None):
         logging.debug(out)
     rv = proc.wait()
     if rv:
-        raise RuntimeError("command exited with code != 0: %d" % rv)
+        with open(softhsm_conf) as f:
+            conf = f.read()
+        msg = '[cmd: {cmd}] [code: {code}] [stdout: {out}] [stderr: {err}] [config: {conf}]'
+        msg = msg.format(
+            cmd=" ".join(args), code=rv, out=out.strip(), err=err.strip(), conf=conf,
+        )
+        raise RuntimeError(msg)
