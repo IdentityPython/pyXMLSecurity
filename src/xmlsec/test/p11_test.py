@@ -164,7 +164,7 @@ pkcs11 = pkcs11_section
 
 [pkcs11_section]
 engine_id = pkcs11
-#dynamic_path = %s
+dynamic_path = %s
 #MODULE_PATH = %s
 PIN = secret1
 init = 0
