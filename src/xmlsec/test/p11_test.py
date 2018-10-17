@@ -173,13 +173,15 @@ distinguished_name = req_distinguished_name
 
 [pkcs11_section]
 engine_id = pkcs11
+""")
+            if openssl_version == "1.0":
+                f.write("dynamic_path = %s" % component_path['P11_ENGINE'])
+
+            f.write("""
 MODULE_PATH = %s
 PIN = secret1
 init = 0
 """ % (component_path['P11_MODULE']))
-
-            if openssl_version == "1.0":
-                f.write("dynamic_path = %s" % component_path['P11_ENGINE'])
 
         signer_cert_der = _tf()
 
