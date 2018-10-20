@@ -1,23 +1,29 @@
+sudo: false
 language: python
-sudo: require
-python: 
-   - "2.7"
+python:
+  - 2.7
+
 addons:
-   apt:
-      packages:
-         - libxml2-dev
-         - libxslt-dev
-         - libsofthsm
-         - softhsm
-         - opensc
-         - libengine-pkcs11-openssl
-before_install: 
-   - sudo apt-get -qq update 
-   - sudo apt-get -y install libxml2-dev libxslt-dev libsofthsm softhsm opensc libengine-pkcs11-openssl
-   - pip install .
-   - pip install nose
-   - sh scripts/install-pykcs11.sh
-   - pip install coveralls
-script: "coverage run --source=xmlsec setup.py nosetests"
+  apt:
+    sources:
+      - sourceline: ppa:pkg-opendnssec/ppa
+    packages:
+      - xmlsec1
+      - libxml2-dev
+      - libxslt-dev
+      - libsofthsm2
+      - softhsm2
+      - opensc
+      - libengine-pkcs11-openssl
+      - swig
+
+install:
+  - pip install pykcs11
+  - pip install nose
+  - pip install coveralls
+
+script:
+  - coverage run --source=xmlsec setup.py nosetests -vv -d
+
 after_success:
-   coveralls
+  - coveralls
