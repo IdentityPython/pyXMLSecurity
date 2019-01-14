@@ -21,6 +21,7 @@ from xmlsec.test import find_alts
 from xmlsec.test import run_cmd
 
 from xmlsec.test.case import load_test_data
+from xmlsec.exceptions import XMLSigException
 
 try:
     from PyKCS11 import PyKCS11Error
@@ -29,8 +30,8 @@ except ImportError:
     raise unittest.SkipTest("PyKCS11 not installed")
 
 try:
-    import xmlsec.pk11 as pk11
-except Exception:
+    from xmlsec import pk11
+except (ImportError, XMLSigException):
     raise unittest.SkipTest("PyKCS11 not installed")
 
 
@@ -211,9 +212,9 @@ log.level = DEBUG
                  '--pin', 'secret1'], softhsm_conf=softhsm_conf)
 
     except Exception as ex:
-        print "-" * 64
+        print("-" * 64)
         traceback.print_exc()
-        print "-" * 64
+        print("-" * 64)
         logging.warning("PKCS11 tests disabled: unable to initialize test token: %s" % ex)
 
 
@@ -253,7 +254,7 @@ class TestPKCS11(unittest.TestCase):
             os.environ['SOFTHSM2_CONF'] = softhsm_conf
             session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=secret1" % component_path['P11_MODULE'])
             assert session is not None
-        except Exception, ex:
+        except Exception as ex:
             traceback.print_exc()
             raise ex
         finally:
@@ -268,7 +269,7 @@ class TestPKCS11(unittest.TestCase):
             os.environ['SOFTHSM2_CONF'] = softhsm_conf
             session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test" % component_path['P11_MODULE'])
             assert session is not None
-        except Exception, ex:
+        except Exception as ex:
             traceback.print_exc()
             raise ex
         finally:
@@ -288,7 +289,7 @@ class TestPKCS11(unittest.TestCase):
             assert session1 != session2
             assert session1 is not None
             assert session2 is not None
-        except Exception, ex:
+        except Exception as ex:
             raise ex
         finally:
             if session1 is not None:
@@ -303,7 +304,7 @@ class TestPKCS11(unittest.TestCase):
         try:
             session = pk11._session(component_path['P11_MODULE'], pk11_uri="pkcs11://%s/test?pin=wrong" % component_path['P11_MODULE'])
             assert False, "We should have failed the last login"
-        except PyKCS11Error, ex:
+        except PyKCS11Error as ex:
             assert ex.value == CKR_PIN_INCORRECT
             pass
 
@@ -317,8 +318,8 @@ class TestPKCS11(unittest.TestCase):
             key, cert = pk11._find_key(session, "test")
             assert key is not None
             assert cert is not None
-            assert cert.strip() == open(signer_cert_pem).read().strip()
-        except Exception, ex:
+            assert cert.strip() == open(signer_cert_pem).read().strip().encode('utf-8')
+        except Exception as ex:
             raise ex
         finally:
             if session is not None:
