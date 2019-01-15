@@ -179,6 +179,15 @@ log.level = DEBUG
                 "init = 0",
             ]))
 
+        with open(openssl_conf, "r") as f:
+            logging.debug('-------- START DEBUG openssl_conf --------')
+            logging.debug(f.readlines())
+            logging.debug('-------- END DEBUG openssl_conf --------')
+        logging.debug('-------- START DEBUG paths --------')
+        logging.debug(run_cmd(['ls', '-ld', component_path['P11_ENGINE']]))
+        logging.debug(run_cmd(['ls', '-ld', component_path['P11_MODULE']]))
+        logging.debug('-------- END DEBUG paths --------')
+
         signer_cert_der = _tf()
 
         logging.debug("Generating self-signed certificate")
