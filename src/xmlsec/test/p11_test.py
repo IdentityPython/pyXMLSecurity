@@ -215,7 +215,8 @@ log.level = DEBUG
         print("-" * 64)
         traceback.print_exc()
         print("-" * 64)
-        logging.warning("PKCS11 tests disabled: unable to initialize test token: %s" % ex)
+        logging.error("PKCS11 tests disabled: unable to initialize test token: %s" % ex)
+        raise ex
 
 
 def teardown(self):
