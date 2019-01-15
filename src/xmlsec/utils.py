@@ -185,7 +185,7 @@ def serialize(t, stream=None):
 
 def unicode_to_bytes(u):
     if six.PY2:
-        return str(u)
+        return u.encode('utf-8')
     else:
         return bytes(u, encoding='utf-8')
 
