@@ -4,6 +4,8 @@ triggers:
   cron: "@weekly"
 git:
   branch: fix_python3
+build_in_docker:
+  image: docker.sunet.se/sunet/docker-jenkins-job-xenial
 publish_over_ssh:
   - pypi.sunet.se
 clean_workspace: true
