@@ -155,11 +155,11 @@ log.level = DEBUG
         global signer_cert_pem
         signer_cert_pem = _tf()
         openssl_conf = _tf()
-        logging.debug("Generating OpenSSL config")
+        logging.debug("Generating OpenSSL config for version {}".format(openssl_version))
         with open(openssl_conf, "w") as f:
             dynamic_path = (
                 "dynamic_path = %s" % component_path['P11_ENGINE']
-                if openssl_version == "1.0"
+                if openssl_version.startswith('1.')
                 else ""
             )
             f.write("\n".join([
