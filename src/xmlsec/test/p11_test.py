@@ -159,7 +159,7 @@ log.level = DEBUG
         with open(openssl_conf, "w") as f:
             dynamic_path = (
                 "dynamic_path = %s" % component_path['P11_ENGINE']
-                if openssl_version.startswith('1.')
+                if openssl_version.startswith(b'1.')
                 else ""
             )
             f.write("\n".join([
