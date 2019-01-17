@@ -147,6 +147,7 @@ class XMlSecCrypto(object):
         if not self.is_private:
             if not isinstance(msg, six.binary_type):
                 msg = unicode_to_bytes(msg)
+
             try:
                 sig_alg = constants.sign_alg_xmldsig_sig_to_sigalg(sig_uri)
                 scheme, encoder, decoder = self.parse_sig_scheme(sig_alg, parameters=parameters)
