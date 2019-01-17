@@ -5,14 +5,16 @@
 
 __author__ = 'leifj'
 
+import six
 from defusedxml import lxml
 from lxml import etree as etree
 import logging
 import copy
+import traceback
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
 from xmlsec import constants
-from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e
+from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, etree_to_string
 import xmlsec.crypto
 import pyconfig
 
@@ -20,6 +22,8 @@ NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
 
+
+log = logging.getLogger('xmlsec')
 
 class Config(object):
     """
@@ -54,7 +58,7 @@ def _implicit_same_document(t, sig):
         return copy.deepcopy(sig.getparent())
 
 
-def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
+def _signed_value_pkcs1_v1_5(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     """Return unencrypted rsa-sha1 signature value `padded_digest` from `data`.
 
     The resulting signed value will be in the form:
@@ -81,9 +85,9 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     if do_pad:
         # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
         # WARNING: key size is in bits, not bytes!
-        padded_size = key_size / 8 - 1
+        padded_size = key_size // 8 - 1
         pad_size = padded_size - len(asn_digest) - 2
-        pad = '\x01' + '\xFF' * pad_size + '\x00'
+        pad = b'\x01' + b'\xFF' * pad_size + b'\x00'
         return pad + asn_digest
     else:
         return asn_digest
@@ -91,7 +95,7 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
 
 def _get_by_id(t, id_v):
     for id_a in config.id_attributes:
-        logging.debug("Looking for #%s using id attribute '%s'" % (id_v, id_a))
+        log.debug("Looking for #%s using id attribute '%s'" % (id_v, id_a))
         elts = t.xpath("//*[@%s='%s']" % (id_a, id_v))
         if elts is not None and len(elts) > 0:
             return elts[0]
@@ -151,7 +155,7 @@ def _process_references(t, sig, verify_mode=True, sig_path=".//{%s}Signature" % 
 
         if config.debug_write_to_files:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
-                fd.write(etree.tostring(obj))
+                fd.write(etree_to_string(obj))
 
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
@@ -162,32 +166,34 @@ def _process_references(t, sig, verify_mode=True, sig_path=".//{%s}Signature" % 
                     if nsprefix in r.nsmap:
                         obj_copy.nsmap[nsprefix] = r.nsmap[nsprefix]
 
-        if not isinstance(obj, basestring):
+        if not isinstance(obj, six.string_types):
             if config.debug_write_to_files:
                 with open("/tmp/foo-pre-serialize.xml", "w") as fd:
-                    fd.write(etree.tostring(obj))
+                    fd.write(etree_to_string(obj))
             obj = _transform(constants.TRANSFORM_C14N_INCLUSIVE, obj)
 
         if config.debug_write_to_files:
             with open("/tmp/foo-obj.xml", "w") as fd:
+                if six.PY2:
+                    obj = obj.encode('utf-8')
                 fd.write(obj)
 
         hash_alg = _ref_digest(ref)
-        logging.debug("using hash algorithm %s" % hash_alg)
+        log.debug("using hash algorithm %s" % hash_alg)
         digest = xmlsec.crypto._digest(obj, hash_alg)
-        logging.debug("computed %s digest %s for ref %s" % (hash_alg, digest, uri))
+        log.debug("computed %s digest %s for ref %s" % (hash_alg, digest, uri))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
 
         if verify_mode:
-            logging.debug("found %s digest %s for ref %s" % (hash_alg, dv.text, uri))
+            log.debug("found %s digest %s for ref %s" % (hash_alg, dv.text, uri))
             computed_digest_binary = b64d(digest)
             digest_binary = b64d(dv.text)
             if digest_binary == computed_digest_binary: # no point in verifying signature if the digest doesn't match
                 verified_objects[ref] = obj_copy
             else:
-                logging.error("not returning ref %s - digest mismatch" % uri)
+                log.error("not returning ref %s - digest mismatch" % uri)
         else: # signing - lets store the digest
-            logging.debug("replacing digest in %s" % etree.tostring(dv))
+            log.debug("replacing digest in %s" % etree.tostring(dv))
             dv.text = digest
 
 
@@ -215,7 +221,7 @@ def _enveloped_signature(t, sig_path=".//{%s}Signature" % NS['ds']):
         delete_elt(sig)
     if config.debug_write_to_files:
         with open("/tmp/foo-env.xml", "w") as fd:
-            fd.write(etree.tostring(t))
+            fd.write(etree_to_string(t))
     return t
 
 
@@ -231,15 +237,17 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     """
     doc = t
     if root_elt(doc).getparent() is not None:
-        xml_str = etree.tostring(doc, encoding=unicode)
+        xml_str = etree_to_string(doc)
         doc = parse_xml(xml_str, remove_whitespace=config.c14n_strip_ws, remove_comments=not with_comments, schema=schema)
         del xml_str
 
-    buf = etree.tostring(doc,
-                         method='c14n',
-                         exclusive=exclusive,
-                         with_comments=with_comments,
-                         inclusive_ns_prefixes=inclusive_prefix_list)
+    buf = six.text_type(
+        etree.tostring(doc,
+                       method='c14n',
+                       exclusive=exclusive,
+                       with_comments=with_comments,
+                       inclusive_ns_prefixes=inclusive_prefix_list),
+        'utf-8')
     #u = unescape_xml_entities(buf.decode("utf8", 'strict')).encode("utf8").strip()
     assert buf[0] == '<'
     assert buf[-1] == '>'
@@ -292,7 +300,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
     """
     if config.debug_write_to_files:
         with open("/tmp/foo-sig.xml", "w") as fd:
-            fd.write(etree.tostring(root_elt(t)))
+            fd.write(etree_to_string(t))
 
     validated = []
     for sig in t.findall(sig_path):
@@ -301,37 +309,39 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             if not sv:
                 raise XMLSigException("No SignatureValue")
 
-            logging.debug("SignatureValue: {!s}".format(sv))
+            log.debug("SignatureValue: {!s}".format(sv))
             this_cert = xmlsec.crypto.from_keyspec(keyspec, signature_element=sig)
-            logging.debug("key size: {!s} bits".format(this_cert.keysize))
+            log.debug("key size: {!s} bits".format(this_cert.keysize))
 
             si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-            logging.debug("Found signedinfo {!s}".format(etree.tostring(si)))
+            log.debug("Found signedinfo {!s}".format(etree.tostring(si)))
             cm_alg = _cm_alg(si)
             try:
-                sig_digest_alg = _sig_alg(si)
+                sig_uri = _sig_uri(si)
             except AttributeError:
                 raise XMLSigException("Failed to validate {!s} because of unsupported hash format".format(etree.tostring(sig)))
 
             refmap = _process_references(t, sig, verify_mode=True, sig_path=sig_path, drop_signature=drop_signature)
             for ref,obj in refmap.items():
 
-                logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
+                log.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
                 sic = _transform(cm_alg, si)
                 logging.debug("SignedInfo C14N: %s" % sic)
-                if this_cert.do_digest:
-                    digest = xmlsec.crypto._digest(sic, sig_digest_alg)
-                    logging.debug("SignedInfo digest: %s" % digest)
+                if this_cert.do_digest: # assume pkcs1 v1.5 right now
+                    hash_alg = constants.sign_alg_xmldsig_sig_to_hashalg(sig_uri)
+                    digest = xmlsec.crypto._digest(sic, hash_alg)
+                    log.debug("SignedInfo digest: %s" % digest)
                     b_digest = b64d(digest)
-                    actual = _signed_value(b_digest, this_cert.keysize, True, sig_digest_alg)
+                    actual = _signed_value_pkcs1_v1_5(b_digest, this_cert.keysize, True, hash_alg)
                 else:
                     actual = sic
-
-                if not this_cert.verify(b64d(sv), actual, sig_digest_alg):
-                    raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig), sig_digest_alg, cm_alg))
+                logging.debug("Verifying signature (computed) {} to (actual) {}".format(sv, actual))
+                if not this_cert.verify(b64d(sv), actual, sig_uri):
+                    raise XMLSigException("Failed to validate {!s} using sig sig method {!s}".format(etree.tostring(sig), sig_uri))
                 validated.append(obj)
-        except XMLSigException, ex:
-            logging.error(ex)
+        except XMLSigException as ex:
+            log.debug(traceback.format_exc())
+            log.error(ex)
 
     if not validated:
         raise XMLSigException("No valid ds:Signature elements found")
@@ -432,9 +442,9 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
                 raise XMLSigException("Public and private key sizes do not match ({!s}, {!s})".format(
                                       public.keysize, private.keysize))
             # This might be incorrect for PKCS#11 tokens if we have no public key
-            logging.debug("Using {!s} bit key".format(private.keysize))
-
-    templates = filter(_is_template, t.findall(sig_path))
+            log.debug("Using {!s} bit key".format(private.keysize))
+    sig_paths = t.findall(sig_path)
+    templates = list(filter(_is_template, sig_paths))
     if not templates:
         tmpl = add_enveloped_signature(t, reference_uri=reference_uri, pos=insert_index)
         templates = [tmpl]
@@ -443,33 +453,36 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
 
     if config.debug_write_to_files:
         with open("/tmp/sig-ref.xml", "w") as fd:
-            fd.write(etree.tostring(root_elt(t)))
+            fd.write(etree_to_string(root_elt(t)))
 
     for sig in templates:
-        logging.debug("processing sig template: %s" % etree.tostring(sig))
+        log.debug("processing sig template: %s" % etree.tostring(sig))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         assert si is not None
         cm_alg = _cm_alg(si)
-        sig_alg = _sig_alg(si)
+        sig_uri = _sig_uri(si)
 
         _process_references(t, sig, verify_mode=False, sig_path=sig_path)
         # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
-        logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
+        log.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
         sic = _transform(cm_alg, si)
-        logging.debug("SignedInfo C14N: %s" % sic)
+        log.debug("SignedInfo C14N: %s" % sic)
 
         # sign hash digest and insert it into the XML
-        if private.do_digest:
-            digest = xmlsec.crypto._digest(sic, sig_alg)
-            logging.debug("SignedInfo digest: %s" % digest)
+        if private.do_digest: # assume pkcs1 v1.5
+            hash_alg = constants.sign_alg_xmldsig_sig_to_hashalg(sig_uri)
+            digest = xmlsec.crypto._digest(sic, hash_alg)
+            log.debug("SignedInfo digest: %s" % digest)
             b_digest = b64d(digest)
-            tbs = _signed_value(b_digest, private.keysize, private.do_padding, sig_alg)
+            tbs = _signed_value_pkcs1_v1_5(b_digest, private.keysize, private.do_padding, hash_alg)
         else:
             tbs = sic
 
-        signed = private.sign(tbs, sig_alg)
+        signed = private.sign(tbs, sig_uri)
         signature = b64e(signed)
-        logging.debug("SignatureValue: %s" % signature)
+        if isinstance(signature, six.binary_type):
+            signature = six.text_type(signature, 'utf-8')
+        log.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
         if sv is None:
             si.addnext(DS.SignatureValue(signature))
@@ -494,10 +507,13 @@ def _cm_alg(si):
     return cm_alg
 
 
-def _sig_alg(si):
+def _sig_uri(si):
     sm = si.find(".//{%s}SignatureMethod" % NS['ds'])
     sig_uri = _alg(sm)
     if sm is None or sig_uri is None:
         raise XMLSigException("No SignatureMethod")
 
-    return constants.sign_alg_xmldsig_sig_to_internal(sig_uri.lower())
+    return sig_uri
+
+
+

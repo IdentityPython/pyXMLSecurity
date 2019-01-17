@@ -4,7 +4,7 @@ import threading
 __author__ = 'leifj'
 
 from xmlsec.exceptions import XMLSigException
-from urlparse import urlparse
+from six.moves.urllib_parse import urlparse
 import os
 import logging
 from xmlsec.utils import b642pem
@@ -17,7 +17,7 @@ try:
 except ImportError:
     raise XMLSigException("pykcs11 is required for PKCS#11 keys - cf README.rst")
 
-all_attributes = PyKCS11.CKA.keys()
+all_attributes = list(PyKCS11.CKA.keys())
 
 # remove the CKR_ATTRIBUTE_SENSITIVE attributes since we can't get
 all_attributes.remove(PyKCS11.LowLevel.CKA_PRIVATE_EXPONENT)
@@ -81,7 +81,7 @@ def parse_uri(pk11_uri):
 
 
 def _intarray2bytes(x):
-    return ''.join(chr(i) for i in x)
+    return bytearray(x)
 
 
 def _close_session(session):

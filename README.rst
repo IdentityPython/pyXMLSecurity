@@ -1,8 +1,8 @@
 python XML Security
 ===================
 
-.. image:: https://img.shields.io/travis/leifj/pyXMLSecurity.svg
-   :target: https://travis-ci.org/leifj/pyXMLSecurity
+.. image:: https://img.shields.io/travis/IdentityPython/pyXMLSecurity.svg
+   :target: https://travis-ci.org/IdentityPython/pyXMLSecurity
    :alt: Travis Build
 .. image:: https://img.shields.io/coveralls/leifj/pyXMLSecurity.svg
    :target: https://coveralls.io/r/leifj/pyXMLSecurity?branch=master
