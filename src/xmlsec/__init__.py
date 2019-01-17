@@ -5,6 +5,7 @@
 
 __author__ = 'leifj'
 
+import six
 from defusedxml import lxml
 from lxml import etree as etree
 import logging
@@ -12,7 +13,7 @@ import copy
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
 from xmlsec import constants
-from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e
+from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, etree_to_string
 import xmlsec.crypto
 import pyconfig
 
@@ -83,9 +84,9 @@ def _signed_value(data, key_size, do_pad, hash_alg):  # TODO Do proper asn1 CMS
     if do_pad:
         # Pad to "one octet shorter than the RSA modulus" [RSA-SHA1]
         # WARNING: key size is in bits, not bytes!
-        padded_size = key_size / 8 - 1
+        padded_size = key_size // 8 - 1
         pad_size = padded_size - len(asn_digest) - 2
-        pad = '\x01' + '\xFF' * pad_size + '\x00'
+        pad = b'\x01' + b'\xFF' * pad_size + b'\x00'
         return pad + asn_digest
     else:
         return asn_digest
@@ -153,7 +154,7 @@ def _process_references(t, sig, verify_mode=True, sig_path=".//{%s}Signature" % 
 
         if config.debug_write_to_files:
             with open("/tmp/foo-pre-transform.xml", "w") as fd:
-                fd.write(etree.tostring(obj))
+                fd.write(etree_to_string(obj))
 
         for tr in ref.findall(".//{%s}Transform" % NS['ds']):
             obj = _transform(_alg(tr), obj, tr=tr, sig_path=sig_path)
@@ -164,14 +165,16 @@ def _process_references(t, sig, verify_mode=True, sig_path=".//{%s}Signature" % 
                     if nsprefix in r.nsmap:
                         obj_copy.nsmap[nsprefix] = r.nsmap[nsprefix]
 
-        if not isinstance(obj, basestring):
+        if not isinstance(obj, six.string_types):
             if config.debug_write_to_files:
                 with open("/tmp/foo-pre-serialize.xml", "w") as fd:
-                    fd.write(etree.tostring(obj))
+                    fd.write(etree_to_string(obj))
             obj = _transform(constants.TRANSFORM_C14N_INCLUSIVE, obj)
 
         if config.debug_write_to_files:
             with open("/tmp/foo-obj.xml", "w") as fd:
+                if six.PY2:
+                    obj = obj.encode('utf-8')
                 fd.write(obj)
 
         hash_alg = _ref_digest(ref)
@@ -217,7 +220,7 @@ def _enveloped_signature(t, sig_path=".//{%s}Signature" % NS['ds']):
         delete_elt(sig)
     if config.debug_write_to_files:
         with open("/tmp/foo-env.xml", "w") as fd:
-            fd.write(etree.tostring(t))
+            fd.write(etree_to_string(t))
     return t
 
 
@@ -233,15 +236,17 @@ def _c14n(t, exclusive, with_comments, inclusive_prefix_list=None, schema=None):
     """
     doc = t
     if root_elt(doc).getparent() is not None:
-        xml_str = etree.tostring(doc, encoding=unicode)
+        xml_str = etree_to_string(doc)
         doc = parse_xml(xml_str, remove_whitespace=config.c14n_strip_ws, remove_comments=not with_comments, schema=schema)
         del xml_str
 
-    buf = etree.tostring(doc,
-                         method='c14n',
-                         exclusive=exclusive,
-                         with_comments=with_comments,
-                         inclusive_ns_prefixes=inclusive_prefix_list)
+    buf = six.text_type(
+        etree.tostring(doc,
+                       method='c14n',
+                       exclusive=exclusive,
+                       with_comments=with_comments,
+                       inclusive_ns_prefixes=inclusive_prefix_list),
+        'utf-8')
     #u = unescape_xml_entities(buf.decode("utf8", 'strict')).encode("utf8").strip()
     assert buf[0] == '<'
     assert buf[-1] == '>'
@@ -294,7 +299,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
     """
     if config.debug_write_to_files:
         with open("/tmp/foo-sig.xml", "w") as fd:
-            fd.write(etree.tostring(root_elt(t)))
+            fd.write(etree_to_string(t))
 
     validated = []
     for sig in t.findall(sig_path):
@@ -332,7 +337,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                 if not this_cert.verify(b64d(sv), actual, sig_digest_alg):
                     raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig), sig_digest_alg, cm_alg))
                 validated.append(obj)
-        except XMLSigException, ex:
+        except XMLSigException as ex:
             log.error(ex)
 
     if not validated:
@@ -435,8 +440,8 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
                                       public.keysize, private.keysize))
             # This might be incorrect for PKCS#11 tokens if we have no public key
             log.debug("Using {!s} bit key".format(private.keysize))
-
-    templates = filter(_is_template, t.findall(sig_path))
+    sig_paths = t.findall(sig_path)
+    templates = list(filter(_is_template, sig_paths))
     if not templates:
         tmpl = add_enveloped_signature(t, reference_uri=reference_uri, pos=insert_index)
         templates = [tmpl]
@@ -445,7 +450,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
 
     if config.debug_write_to_files:
         with open("/tmp/sig-ref.xml", "w") as fd:
-            fd.write(etree.tostring(root_elt(t)))
+            fd.write(etree_to_string(root_elt(t)))
 
     for sig in templates:
         log.debug("processing sig template: %s" % etree.tostring(sig))
@@ -471,6 +476,8 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
 
         signed = private.sign(tbs, sig_alg)
         signature = b64e(signed)
+        if isinstance(signature, six.binary_type):
+            signature = six.text_type(signature, 'utf-8')
         log.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
         if sv is None:

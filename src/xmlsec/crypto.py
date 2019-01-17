@@ -3,15 +3,20 @@ import os
 import base64
 import logging
 import threading
+import six
 from binascii import hexlify
-from UserDict import DictMixin
 from xmlsec.exceptions import XMLSigException
+from xmlsec.utils import unicode_to_bytes
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
 
+if six.PY2:
+    from UserDict import DictMixin
+else:
+    from collections import MutableMapping as DictMixin
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 
@@ -85,6 +90,8 @@ class XMlSecCrypto(object):
 
     def sign(self, data, hash_alg, pad_alg="PKCS1v15"):
         if self.is_private:
+            if not isinstance(data, six.binary_type):
+                data = unicode_to_bytes(data)
             hasher = getattr(hashes, hash_alg)
             padder = getattr(padding, pad_alg)
             return self.key.sign(data, padder(), hasher())
@@ -93,6 +100,8 @@ class XMlSecCrypto(object):
 
     def verify(self, signature, msg, hash_alg, pad_alg="PKCS1v15"):
         if not self.is_private:
+            if not isinstance(msg, six.binary_type):
+                msg = unicode_to_bytes(msg)
             try:
                 hasher = getattr(hashes, hash_alg)
                 padder = getattr(padding, pad_alg)
@@ -221,7 +230,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
             if not 'signed' in msg:
                 raise ValueError("Missing signed data in response message")
             return msg['signed'].decode('base64')
-        except Exception, ex:
+        except Exception as ex:
             from traceback import print_exc
             print_exc(ex)
             raise XMLSigException(ex)
@@ -230,7 +239,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
 def _load_keyspec(keyspec, private=False, signature_element=None):
     if private and hasattr(keyspec, '__call__'):
         return XMLSecCryptoCallable(keyspec)
-    if isinstance(keyspec, basestring):
+    if isinstance(keyspec, six.string_types):
         if os.path.isfile(keyspec):
             return XMLSecCryptoFile(keyspec, private)
         elif private and keyspec.startswith("pkcs11://"):
@@ -273,6 +282,13 @@ class CertDict(DictMixin):
 
     def __delitem__(self, key):
         del self.certs[key]
+
+    def __len__(self):
+        return len(self.certs)
+
+    def __iter__(self):
+        for item in self.certs:
+            yield item
 
     def _get_cert_by_fp(self, fp):
         """
@@ -320,6 +336,7 @@ def _find_cert_by_fingerprint(t, fp):
 
     return cert.public_bytes(encoding=serialization.Encoding.PEM)
 
+
 def _digest(data, hash_alg):
     """
     Calculate a hash digest of algorithm hash_alg and return the result base64 encoded.
@@ -330,5 +347,7 @@ def _digest(data, hash_alg):
     """
     h = getattr(hashes, hash_alg)
     d = hashes.Hash(h(), backend=default_backend())
+    if not isinstance(data, six.binary_type):
+        data = unicode_to_bytes(data)
     d.update(data)
     return base64.b64encode(d.finalize())
