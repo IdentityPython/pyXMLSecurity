@@ -12,7 +12,7 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.19dev2'
 
 install_requires = [
-    'defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'six'
+    'idna==2.5','defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'six'
 ]
 
 # Let some other project depend on 'xmlsec[PKCS11]'

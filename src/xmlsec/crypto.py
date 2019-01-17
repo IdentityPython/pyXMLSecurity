@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, ec
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
 from xmlsec.utils import sigvalue2dsssig, noop
+
 if six.PY2:
     from UserDict import DictMixin
 else:

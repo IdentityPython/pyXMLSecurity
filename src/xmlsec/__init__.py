@@ -23,6 +23,8 @@ NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
 
 
+log = logging.getLogger('xmlsec')
+
 class Config(object):
     """
     This class holds a set of configuration parameters (using pyconfig) for pyXMLSecurity:
@@ -93,7 +95,7 @@ def _signed_value_pkcs1_v1_5(data, key_size, do_pad, hash_alg):  # TODO Do prope
 
 def _get_by_id(t, id_v):
     for id_a in config.id_attributes:
-        logging.debug("Looking for #%s using id attribute '%s'" % (id_v, id_a))
+        log.debug("Looking for #%s using id attribute '%s'" % (id_v, id_a))
         elts = t.xpath("//*[@%s='%s']" % (id_a, id_v))
         if elts is not None and len(elts) > 0:
             return elts[0]
@@ -177,21 +179,21 @@ def _process_references(t, sig, verify_mode=True, sig_path=".//{%s}Signature" % 
                 fd.write(obj)
 
         hash_alg = _ref_digest(ref)
-        logging.debug("using hash algorithm %s" % hash_alg)
+        log.debug("using hash algorithm %s" % hash_alg)
         digest = xmlsec.crypto._digest(obj, hash_alg)
-        logging.debug("computed %s digest %s for ref %s" % (hash_alg, digest, uri))
+        log.debug("computed %s digest %s for ref %s" % (hash_alg, digest, uri))
         dv = ref.find(".//{%s}DigestValue" % NS['ds'])
 
         if verify_mode:
-            logging.debug("found %s digest %s for ref %s" % (hash_alg, dv.text, uri))
+            log.debug("found %s digest %s for ref %s" % (hash_alg, dv.text, uri))
             computed_digest_binary = b64d(digest)
             digest_binary = b64d(dv.text)
             if digest_binary == computed_digest_binary: # no point in verifying signature if the digest doesn't match
                 verified_objects[ref] = obj_copy
             else:
-                logging.error("not returning ref %s - digest mismatch" % uri)
+                log.error("not returning ref %s - digest mismatch" % uri)
         else: # signing - lets store the digest
-            logging.debug("replacing digest in %s" % etree.tostring(dv))
+            log.debug("replacing digest in %s" % etree.tostring(dv))
             dv.text = digest
 
 
@@ -307,12 +309,12 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             if not sv:
                 raise XMLSigException("No SignatureValue")
 
-            logging.debug("SignatureValue: {!s}".format(sv))
+            log.debug("SignatureValue: {!s}".format(sv))
             this_cert = xmlsec.crypto.from_keyspec(keyspec, signature_element=sig)
-            logging.debug("key size: {!s} bits".format(this_cert.keysize))
+            log.debug("key size: {!s} bits".format(this_cert.keysize))
 
             si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-            logging.debug("Found signedinfo {!s}".format(etree.tostring(si)))
+            log.debug("Found signedinfo {!s}".format(etree.tostring(si)))
             cm_alg = _cm_alg(si)
             try:
                 sig_uri = _sig_uri(si)
@@ -322,13 +324,13 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             refmap = _process_references(t, sig, verify_mode=True, sig_path=sig_path, drop_signature=drop_signature)
             for ref,obj in refmap.items():
 
-                logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
+                log.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
                 sic = _transform(cm_alg, si)
                 logging.debug("SignedInfo C14N: %s" % sic)
                 if this_cert.do_digest: # assume pkcs1 v1.5 right now
                     hash_alg = constants.sign_alg_xmldsig_sig_to_hashalg(sig_uri)
                     digest = xmlsec.crypto._digest(sic, hash_alg)
-                    logging.debug("SignedInfo digest: %s" % digest)
+                    log.debug("SignedInfo digest: %s" % digest)
                     b_digest = b64d(digest)
                     actual = _signed_value_pkcs1_v1_5(b_digest, this_cert.keysize, True, hash_alg)
                 else:
@@ -338,8 +340,8 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                     raise XMLSigException("Failed to validate {!s} using sig sig method {!s}".format(etree.tostring(sig), sig_uri))
                 validated.append(obj)
         except XMLSigException as ex:
-            logging.debug(traceback.format_exc())
-            logging.error(ex)
+            log.debug(traceback.format_exc())
+            log.error(ex)
 
     if not validated:
         raise XMLSigException("No valid ds:Signature elements found")
@@ -440,7 +442,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
                 raise XMLSigException("Public and private key sizes do not match ({!s}, {!s})".format(
                                       public.keysize, private.keysize))
             # This might be incorrect for PKCS#11 tokens if we have no public key
-            logging.debug("Using {!s} bit key".format(private.keysize))
+            log.debug("Using {!s} bit key".format(private.keysize))
     sig_paths = t.findall(sig_path)
     templates = list(filter(_is_template, sig_paths))
     if not templates:
@@ -454,7 +456,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
             fd.write(etree_to_string(root_elt(t)))
 
     for sig in templates:
-        logging.debug("processing sig template: %s" % etree.tostring(sig))
+        log.debug("processing sig template: %s" % etree.tostring(sig))
         si = sig.find(".//{%s}SignedInfo" % NS['ds'])
         assert si is not None
         cm_alg = _cm_alg(si)
@@ -462,15 +464,15 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
 
         _process_references(t, sig, verify_mode=False, sig_path=sig_path)
         # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
-        logging.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
+        log.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
         sic = _transform(cm_alg, si)
-        logging.debug("SignedInfo C14N: %s" % sic)
+        log.debug("SignedInfo C14N: %s" % sic)
 
         # sign hash digest and insert it into the XML
         if private.do_digest: # assume pkcs1 v1.5
             hash_alg = constants.sign_alg_xmldsig_sig_to_hashalg(sig_uri)
             digest = xmlsec.crypto._digest(sic, hash_alg)
-            logging.debug("SignedInfo digest: %s" % digest)
+            log.debug("SignedInfo digest: %s" % digest)
             b_digest = b64d(digest)
             tbs = _signed_value_pkcs1_v1_5(b_digest, private.keysize, private.do_padding, hash_alg)
         else:
@@ -480,7 +482,7 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
         signature = b64e(signed)
         if isinstance(signature, six.binary_type):
             signature = six.text_type(signature, 'utf-8')
-        logging.debug("SignatureValue: %s" % signature)
+        log.debug("SignatureValue: %s" % signature)
         sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
         if sv is None:
             si.addnext(DS.SignatureValue(signature))
