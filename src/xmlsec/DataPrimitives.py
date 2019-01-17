@@ -24,6 +24,7 @@ integer2string = dp.I2OSP(6382179, 3)
 # integer2string = abc
 """
 
+import six
 
 # TODO: Add various level of explanation
 # TODO: Add reference implementaions
@@ -122,7 +123,12 @@ class ISO18033Primitives:
 
         self.Explain('Convert string %s to bits:', x)
         for char in x:
-            x_ascii_num = ord(char)
+            if isinstance(char, six.text_type) or isinstance(char, six.binary_type):
+                x_ascii_num = ord(char)
+            elif isinstance(char, six.integer_types):
+                x_ascii_num = char
+            else:
+                raise ValueError('Unknown type ({}) for char'.format(type(char)))
             bit_str = bit_str + self.I2BSP(x_ascii_num, 8)
             self.Explain('\t%s is number %d which in binary is %s', char, x_ascii_num, bit_str[-8:])
 
