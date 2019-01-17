@@ -8,10 +8,11 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate
 from defusedxml import lxml
 from lxml import etree as etree
-from PyCryptoShim import RSAobjShim
-from int_to_bytes import int_to_bytes
+from xmlsec.PyCryptoShim import RSAobjShim
+from xmlsec.int_to_bytes import int_to_bytes
 from xmlsec.exceptions import XMLSigException
-import htmlentitydefs
+from six.moves import html_entities as htmlentitydefs
+import six
 import re
 from io import BytesIO
 from base64 import b64encode, standard_b64decode
@@ -36,20 +37,20 @@ def pem2b64(pem):
     """
     # XXX try to use cryptography parser to support things like
     # https://tools.ietf.org/html/rfc7468#section-5.2
-
+    pem = pem.decode('ascii')
     return '\n'.join(pem.strip().split('\n')[1:-1])
 
 
 def b642pem(data):
     x = data
-    r = "-----BEGIN CERTIFICATE-----\n"
+    r = b"-----BEGIN CERTIFICATE-----\n"
     while len(x) > 64:
         r += x[0:64]
-        r += "\n"
+        r += b"\n"
         x = x[64:]
     r += x
-    r += "\n"
-    r += "-----END CERTIFICATE-----"
+    r += b"\n"
+    r += b"-----END CERTIFICATE-----"
     return r
 
 def _cert2dict(cert):
@@ -167,7 +168,7 @@ def b64d(s):
     return standard_b64decode(s)
 
 def b64e(s):
-    if type(s) in (int, long):
+    if isinstance(s, six.integer_types):
         s = int_to_bytes(s)
 
     return b64encode(s)
@@ -180,3 +181,23 @@ def serialize(t, stream=None):
             xml_out.write(xml)
     else:
         print(xml)
+
+
+def unicode_to_bytes(u):
+    if six.PY2:
+        return u.encode('utf-8')
+    else:
+        return bytes(u, encoding='utf-8')
+
+
+def etree_to_string(obj):
+    """
+    :param obj: etree element
+    :type obj: lxml.etree.Element
+    :return: serialized element
+    :rtype: six.string_types
+    """
+    if six.PY2:
+        return etree.tostring(obj, encoding='UTF-8')
+    else:
+        return etree.tostring(obj, encoding='unicode')
