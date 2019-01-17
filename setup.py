@@ -12,7 +12,7 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.19dev2'
 
 install_requires = [
-    'idna==2.5','defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'six'
+    'idna==2.5', 'defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'six'
 ]
 
 # Let some other project depend on 'xmlsec[PKCS11]'
@@ -42,7 +42,6 @@ setup(name='pyXMLSecurity',
     },
     zip_safe=False,
     install_requires=install_requires,
-    requires=install_requires,
     extras_require=extras_require,
     entry_points={
           'console_scripts': ['xmlsign=xmlsec.tools:sign_cmd','xmlverify=xmlsec.tools:verify_cmd']
