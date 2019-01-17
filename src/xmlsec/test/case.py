@@ -7,8 +7,8 @@ __author__ = 'leifj'
 import os
 import pkg_resources
 from defusedxml import lxml
-import lxml.etree as etree
-from StringIO import StringIO
+from lxml import etree
+from six.moves import StringIO
 import xmlsec
 
 
