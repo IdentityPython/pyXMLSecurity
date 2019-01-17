@@ -1,3 +1,4 @@
+six
 defusedxml
 lxml
 pyconfig
