@@ -9,10 +9,10 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.19dev1'
+version = '0.19dev2'
 
 install_requires = [
-    'idna==2.5', 'defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'DataPrimitives', 'six'
+    'idna==2.5', 'defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'six'
 ]
 
 # Let some other project depend on 'xmlsec[PKCS11]'

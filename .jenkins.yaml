@@ -1,0 +1,22 @@
+# Disabled as we want to use the offical package
+disabled: true
+builders:
+  - script
+triggers:
+  cron: "@weekly"
+build_in_docker:
+  image: docker.sunet.se/sunet/docker-jenkins-job-xenial
+publish_over_ssh:
+  - pypi.sunet.se
+clean_workspace: true
+pre_build_script:
+  - "add-apt-repository -y -u ppa:pkg-opendnssec/ppa"
+  - "apt-get install -y xmlsec1 libxml2-dev libxslt-dev libsofthsm2 softhsm2 opensc libengine-pkcs11-openssl swig"
+script:
+  - "virtualenv -p python3 venv"
+  - ". venv/bin/activate"
+  - "pip install --upgrade setuptools pip wheel"
+  - "pip install pykcs11 nose"
+  - "python setup.py nosetests -vv -d"
+  - "python setup.py sdist bdist_wheel --universal"
+

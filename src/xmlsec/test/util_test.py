@@ -1,10 +1,10 @@
 
 import unittest
+from xmlsec.DataPrimitives import DataPrimitives
 from xmlsec.utils import dsssig2sigvalue, sigvalue2dsssig, b64e, b64d
 
-from DataPrimitives import DataPrimitives
-
 dp = DataPrimitives()
+
 
 class UtilTest(unittest.TestCase):
 

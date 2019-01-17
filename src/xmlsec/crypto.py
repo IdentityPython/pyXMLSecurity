@@ -3,15 +3,15 @@ import os
 import base64
 import logging
 import threading
-from xmlsec import constants
 import six
+from xmlsec import constants
 from binascii import hexlify
 from xmlsec.exceptions import XMLSigException
 from xmlsec.utils import unicode_to_bytes
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils, ec
+from cryptography.hazmat.primitives.asymmetric import padding, ec
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
 from xmlsec.utils import sigvalue2dsssig, noop
 
@@ -147,7 +147,6 @@ class XMlSecCrypto(object):
         if not self.is_private:
             if not isinstance(msg, six.binary_type):
                 msg = unicode_to_bytes(msg)
-
             try:
                 sig_alg = constants.sign_alg_xmldsig_sig_to_sigalg(sig_uri)
                 scheme, encoder, decoder = self.parse_sig_scheme(sig_alg, parameters=parameters)
