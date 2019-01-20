@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, ec
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
 from xmlsec.utils import sigvalue2dsssig, noop
-import codecs
+import base64
 
 if six.PY2:
     from UserDict import DictMixin
@@ -261,7 +261,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
             msg = r.json()
             if not 'signed' in msg:
                 raise ValueError("Missing signed data in response message")
-            return codecs.encode(msg['signed'], 'base64')
+            return base64.encodestring(msg['signed'])
         except Exception as ex:
             from traceback import print_exc
             print_exc(ex)
