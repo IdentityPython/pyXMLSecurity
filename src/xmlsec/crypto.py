@@ -4,6 +4,8 @@ import base64
 import logging
 import threading
 import six
+from six.moves import xrange
+from xmlsec import constants
 from binascii import hexlify
 from xmlsec.exceptions import XMLSigException
 from xmlsec.utils import unicode_to_bytes
@@ -12,6 +14,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
+import codecs
 
 if six.PY2:
     from UserDict import DictMixin
@@ -229,7 +232,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
             msg = r.json()
             if not 'signed' in msg:
                 raise ValueError("Missing signed data in response message")
-            return msg['signed'].decode('base64')
+            return codecs.encode(msg['signed'], 'base64')
         except Exception as ex:
             from traceback import print_exc
             print_exc(ex)
@@ -311,7 +314,7 @@ def _cert_fingerprint(cert_pem):
     else:
         cert = load_der_x509_certificate(base64.standard_b64decode(cert_pem), backend=default_backend())
 
-    fingerprint = hexlify(cert.fingerprint(hashes.SHA1())).lower()
+    fingerprint = hexlify(cert.fingerprint(hashes.SHA1())).lower().decode('ascii')
     fingerprint = ":".join([fingerprint[x:x + 2] for x in xrange(0, len(fingerprint), 2)])
     
     return fingerprint, cert

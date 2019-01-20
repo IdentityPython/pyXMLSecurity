@@ -1,4 +1,5 @@
 idna==2.5
+six
 defusedxml
 lxml
 pyconfig
