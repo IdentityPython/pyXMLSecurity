@@ -226,7 +226,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
             import requests
             import json
             url = '{!s}/rawsign'.format(self._keyspec)
-            r = requests.post(url, json=dict(mech='RSAPKCS1', data=data.encode("base64")))
+            r = requests.post(url, json=dict(mech='RSAPKCS1', data=base64.encodestring(data)))
             if r.status_code != requests.codes.ok:
                 r.raise_for_status()
             msg = r.json()
