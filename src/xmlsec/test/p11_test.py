@@ -245,7 +245,7 @@ def _get_all_signatures(t):
         sv = sig.findtext(".//{%s}SignatureValue" % xmlsec.NS['ds'])
         assert sv is not None
         # base64-dance to normalize newlines
-        res.append(codecs.encode(codecs.decode(sv, 'base64'),'base64'))
+        res.append(base64.encodestring(base64.decodestring(sv)))
     return res
 
 
