@@ -226,16 +226,22 @@ class XMLSecCryptoREST(XMlSecCrypto):
             import requests
             import json
             url = '{!s}/rawsign'.format(self._keyspec)
-            r = requests.post(url, json=dict(mech='RSAPKCS1', data=base64.encodestring(data)))
+            if not isinstance(data, six.binary_type):
+                data = data.encode("utf-8")
+            data = base64.b64encode(data)
+            r = requests.post(url, json=dict(mech='RSAPKCS1', data=data))
             if r.status_code != requests.codes.ok:
                 r.raise_for_status()
             msg = r.json()
-            if not 'signed' in msg:
+            if 'signed' not in msg:
                 raise ValueError("Missing signed data in response message")
-            return base64.encodestring(msg['signed'])
+            signed_msg = msg['signed']
+            if not isinstance(signed_msg, six.binary_type):
+                signed_msg = signed_msg.encode("utf-8")
+            return base64.b64decode(signed_msg)
         except Exception as ex:
-            from traceback import print_exc
-            print_exc(ex)
+            from traceback import format_exc
+            log.debug(format_exc())
             raise XMLSigException(ex)
 
 
