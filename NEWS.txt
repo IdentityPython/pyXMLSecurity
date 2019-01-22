@@ -168,3 +168,6 @@ News
 * fix private key leak issue
 * P11 fixes
 * test improvements
+
+0.20
+----
