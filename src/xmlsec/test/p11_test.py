@@ -12,7 +12,6 @@ import traceback
 import subprocess
 import shutil
 import tempfile
-import codecs
 
 from lxml import etree
 
