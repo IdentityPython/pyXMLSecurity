@@ -12,7 +12,6 @@ import traceback
 import subprocess
 import shutil
 import tempfile
-import codecs
 
 from lxml import etree
 
@@ -237,16 +236,6 @@ def teardown(self):
             else:
                 os.unlink(o)
     self.p11_test_files = []
-
-
-def _get_all_signatures(t):
-    res = []
-    for sig in t.findall(".//{%s}Signature" % xmlsec.NS['ds']):
-        sv = sig.findtext(".//{%s}SignatureValue" % xmlsec.NS['ds'])
-        assert sv is not None
-        # base64-dance to normalize newlines
-        res.append(codecs.encode(codecs.decode(sv, 'base64'),'base64'))
-    return res
 
 
 class TestPKCS11(unittest.TestCase):
