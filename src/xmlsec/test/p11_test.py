@@ -238,16 +238,6 @@ def teardown(self):
     self.p11_test_files = []
 
 
-def _get_all_signatures(t):
-    res = []
-    for sig in t.findall(".//{%s}Signature" % xmlsec.NS['ds']):
-        sv = sig.findtext(".//{%s}SignatureValue" % xmlsec.NS['ds'])
-        assert sv is not None
-        # base64-dance to normalize newlines
-        res.append(sv.decode('base64').encode('base64'))
-    return res
-
-
 class TestPKCS11(unittest.TestCase):
     def setUp(self):
         datadir = pkg_resources.resource_filename(__name__, 'data')

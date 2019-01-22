@@ -4,6 +4,8 @@ import base64
 import logging
 import threading
 import six
+from six.moves import xrange
+from xmlsec import constants
 from binascii import hexlify
 from xmlsec.exceptions import XMLSigException
 from xmlsec.utils import unicode_to_bytes
@@ -12,6 +14,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
+import base64
 
 if six.PY2:
     from UserDict import DictMixin
@@ -223,16 +226,22 @@ class XMLSecCryptoREST(XMlSecCrypto):
             import requests
             import json
             url = '{!s}/rawsign'.format(self._keyspec)
-            r = requests.post(url, json=dict(mech='RSAPKCS1', data=data.encode("base64")))
+            if not isinstance(data, six.binary_type):
+                data = data.encode("utf-8")
+            data = base64.b64encode(data)
+            r = requests.post(url, json=dict(mech='RSAPKCS1', data=data))
             if r.status_code != requests.codes.ok:
                 r.raise_for_status()
             msg = r.json()
-            if not 'signed' in msg:
+            if 'signed' not in msg:
                 raise ValueError("Missing signed data in response message")
-            return msg['signed'].decode('base64')
+            signed_msg = msg['signed']
+            if not isinstance(signed_msg, six.binary_type):
+                signed_msg = signed_msg.encode("utf-8")
+            return base64.b64decode(signed_msg)
         except Exception as ex:
-            from traceback import print_exc
-            print_exc(ex)
+            from traceback import format_exc
+            log.debug(format_exc())
             raise XMLSigException(ex)
 
 
@@ -311,7 +320,7 @@ def _cert_fingerprint(cert_pem):
     else:
         cert = load_der_x509_certificate(base64.standard_b64decode(cert_pem), backend=default_backend())
 
-    fingerprint = hexlify(cert.fingerprint(hashes.SHA1())).lower()
+    fingerprint = hexlify(cert.fingerprint(hashes.SHA1())).lower().decode('ascii')
     fingerprint = ":".join([fingerprint[x:x + 2] for x in xrange(0, len(fingerprint), 2)])
     
     return fingerprint, cert
