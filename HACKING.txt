@@ -17,6 +17,7 @@ To make a release,
   4) git tag <version>
   5) git push
   6) Upload to PyPI: 'python setup.py sdist register upload'
+  6b) wheel: pip install wheel && python setup.py bdist_wheel --universal upload
   7) Increase version in setup.py (for next release) with dev suffix
   8) Create NEWS.txt entry for next release
 
