@@ -175,7 +175,7 @@ def b64e(s):
 
 
 def serialize(t, stream=None):
-    xml = etree.tostring(t, xml_declaration=True)
+    xml = six.text_type(etree.tostring(t, xml_declaration=True), 'utf-8')
     if stream is not None:
         with open(stream, 'w') as xml_out:
             xml_out.write(xml)
