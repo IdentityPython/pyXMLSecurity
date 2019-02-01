@@ -42,8 +42,8 @@ def sign_cmd():
                                     'logfile=',
                                     'reference='])
     except getopt.error as msg:
-        print msg
-        print __doc__
+        print(msg)
+        print(__doc__)
         sys.exit(2)
 
     output = None
@@ -55,10 +55,10 @@ def sign_cmd():
     do_xinclude = False
     for o, a in opts:
         if o in ('-h', '--help'):
-            print __doc__
+            print(__doc__)
             sys.exit(0)
         elif o in '--version':
-            print "sign version %s" % __version__
+            print("sign version %s" % __version__)
             sys.exit(0)
         elif o in ('-k','--key'):
             keyspec = a
@@ -83,8 +83,8 @@ def sign_cmd():
     logging.basicConfig(**log_args)
 
     if keyspec is None:
-        print "Missing -k|--key argument"
-        print __doc__
+        print("Missing -k|--key argument")
+        print(__doc__)
         sys.exit(0)
 
     def _resolve_reference_uri(ref, t): # can probably be improved a bit
@@ -123,8 +123,8 @@ def verify_cmd():
         opts, args = getopt.getopt(sys.argv[1:], 'hc:o:r:',
                                    ['help', 'cert=', 'version', 'output=', 'loglevel=', 'logfile=', 'reference='])
     except getopt.error as msg:
-        print msg
-        print __doc__
+        print(msg)
+        print(__doc__)
         sys.exit(2)
 
     output = None
@@ -134,10 +134,10 @@ def verify_cmd():
     logfile = None
     for o, a in opts:
         if o in ('-h', '--help'):
-            print __doc__
+            print(__doc__)
             sys.exit(0)
         elif o in '--version':
-            print "sign version %s" % __version__
+            print("sign version %s" % __version__)
             sys.exit(0)
         elif o in ('-c','--cert'):
             certspec = a
