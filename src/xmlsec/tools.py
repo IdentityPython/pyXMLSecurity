@@ -41,7 +41,7 @@ def sign_cmd():
                                     'loglevel=',
                                     'logfile=',
                                     'reference='])
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         print __doc__
         sys.exit(2)
@@ -122,7 +122,7 @@ def verify_cmd():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:o:r:',
                                    ['help', 'cert=', 'version', 'output=', 'loglevel=', 'logfile=', 'reference='])
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         print __doc__
         sys.exit(2)
