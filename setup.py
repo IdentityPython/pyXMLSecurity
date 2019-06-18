@@ -5,8 +5,8 @@ import os
 from distutils import versionpredicate
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.rst'),encoding='utf-8').read()
-NEWS = open(os.path.join(here, 'NEWS.txt'),encoding='utf-8').read()
+README = open(os.path.join(here, 'README.rst'),'rb').read().decode('utf-8')
+NEWS = open(os.path.join(here, 'NEWS.txt'),'rb').read().decode('utf-8')
 
 
 version = '0.20dev2'
