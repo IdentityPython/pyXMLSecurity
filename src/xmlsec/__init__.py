@@ -6,9 +6,12 @@
 __author__ = 'leifj'
 
 import six
+import logging
+# Instantiate log here to avoid circular dependency
+log = logging.getLogger('xmlsec')
+
 from defusedxml import lxml
 from lxml import etree as etree
-import logging
 import copy
 from lxml.builder import ElementMaker
 from xmlsec.exceptions import XMLSigException
@@ -20,9 +23,6 @@ import pyconfig
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 NSDefault = {None: 'http://www.w3.org/2000/09/xmldsig#'}
 DS = ElementMaker(namespace=NS['ds'], nsmap=NSDefault)
-
-
-log = logging.getLogger('xmlsec')
 
 class Config(object):
     """
