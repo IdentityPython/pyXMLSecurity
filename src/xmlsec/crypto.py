@@ -241,7 +241,7 @@ class XMLSecCryptoREST(XMlSecCrypto):
             return base64.b64decode(signed_msg)
         except Exception as ex:
             from traceback import format_exc
-            log.debug(format_exc())
+            logging.debug(format_exc())
             raise XMLSigException(ex)
 
 
