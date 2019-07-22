@@ -1,10 +1,11 @@
 import io
 import os
 import base64
+import logging
 import threading
 import six
 from six.moves import xrange
-from xmlsec import constants, log
+from xmlsec import constants
 from binascii import hexlify
 from xmlsec.exceptions import XMLSigException
 from xmlsec.utils import unicode_to_bytes
@@ -21,6 +22,8 @@ else:
     from collections import MutableMapping as DictMixin
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
+
+log = logging.getLogger(__name__)
 
 
 def from_keyspec(keyspec, private=False, signature_element=None):
