@@ -23,6 +23,8 @@ else:
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 
+log = logging.getLogger(__name__)
+
 
 def from_keyspec(keyspec, private=False, signature_element=None):
     """
@@ -169,7 +171,7 @@ class XMLSecCryptoP11(XMlSecCrypto):
         from xmlsec import pk11
 
         self._private_callable, data = pk11.signer(keyspec)
-        logging.debug("Using pkcs11 signing key: {!s}".format(self._private_callable))
+        log.debug("Using pkcs11 signing key: {!s}".format(self._private_callable))
         if data is not None:
             self.key = load_pem_x509_certificate(data, backend=default_backend())
             if not isinstance(self.key.public_key(), rsa.RSAPublicKey):
