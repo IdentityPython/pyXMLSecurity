@@ -171,3 +171,6 @@ News
 
 0.20
 ----
+*Release tis 10 sep 2019 19:41:58 CEST*
+
+* more p3 compat
