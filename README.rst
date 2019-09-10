@@ -4,17 +4,17 @@ python XML Security
 .. image:: https://img.shields.io/travis/IdentityPython/pyXMLSecurity.svg
    :target: https://travis-ci.org/IdentityPython/pyXMLSecurity
    :alt: Travis Build
-.. image:: https://img.shields.io/coveralls/leifj/pyXMLSecurity.svg
-   :target: https://coveralls.io/r/leifj/pyXMLSecurity?branch=master
+.. image:: https://img.shields.io/coveralls/IdentityPython/pyXMLSecurity.svg
+   :target: https://coveralls.io/r/IdentityPython/pyXMLSecurity?branch=master
    :alt: Coverage
-.. image:: https://img.shields.io/requires/github/leifj/pyXMLSecurity.svg
-   :target: https://requires.io/github/leifj/pyXMLSecurity/requirements/?branch=master
+.. image:: https://img.shields.io/requires/github/IdentityPython/pyXMLSecurity.svg
+   :target: https://requires.io/github/IdentityPython/pyXMLSecurity/requirements/?branch=master
    :alt: Requirements Status
-.. image:: https://img.shields.io/codeclimate/github/leifj/pyXMLSecurity.svg
-   :target: https://codeclimate.com/github/leifj/pyXMLSecurity
+.. image:: https://img.shields.io/codeclimate/github/IdentityPython/pyXMLSecurity.svg
+   :target: https://codeclimate.com/github/IdentityPython/pyXMLSecurity
    :alt: Code Climate
 .. image:: https://img.shields.io/pypi/l/pyXMLSecurity.svg
-   :target: https://github.com/leifj/pyXMLSecurity/blob/master/LICENSE.txt
+   :target: https://github.com/IdentityPython/pyXMLSecurity/blob/master/LICENSE.txt
    :alt: License
 .. image:: https://img.shields.io/pypi/format/pyXMLSecurity.svg
    :target: https://pypi.python.org/pypi/pyXMLSecurity
