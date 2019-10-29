@@ -31,7 +31,9 @@ ALGORITHM_SIGNATURE_RSA_PSS_SHA256_MGF1 = "http://www.w3.org/2007/05/xmldsig-mor
 ALGORITHM_SIGNATURE_RSA_PSS_SHA384_MGF1 = "http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1"
 ALGORITHM_SIGNATURE_RSA_PSS_SHA512_MGF1 = "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1"
 
-ALGORITHM_BASE_URIS = ['http://www.w3.org/2000/09/xmldsig','http://www.w3.org/2001/04/xmldsig-more']
+ALGORITHM_BASE_URIS = ['http://www.w3.org/2000/09/xmldsig',
+                       'http://www.w3.org/2001/04/xmldsig-more',
+                       'http://www.w3.org/2007/05/xmldsig-more']
 
 # ASN.1 BER SHA1 algorithm designator prefixes (RFC3447)
 ASN1_BER_ALG_DESIGNATOR_PREFIX = {
@@ -82,7 +84,7 @@ def sign_alg_xmldsig_digest_to_internal(xmldsig_digest_alg):
 
 def sign_alg_xmldsig_sig_to_sigalg(xmldsig_sign_alg):
     (base, _, method) = xmldsig_sign_alg.rpartition('#')
-    if not base in ALGORITHM_BASE_URIS:
+    if base not in ALGORITHM_BASE_URIS:
         raise XMLSigException("Algorithm '{}' not supported.".format(xmldsig_sign_alg))
 
     return method.lower()

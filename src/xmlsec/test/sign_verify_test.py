@@ -97,6 +97,12 @@ class TestVerify(unittest.TestCase):
         res = xmlsec.verify(case.as_etree("in.xml"), public_keyspec)
         self.assertTrue(res)
 
+    def test_verify_pss_mgf1(self):
+        case = self.cases['eesti']
+        public_keyspec = os.path.join(self.resource_dir, case.name, "signer.crt")
+        res = xmlsec.verify(case.as_etree("in.xml"), public_keyspec)
+        self.assertTrue(res)
+
 
 class TestSignVerify(unittest.TestCase):
     

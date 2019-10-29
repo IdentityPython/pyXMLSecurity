@@ -100,22 +100,30 @@ class XMlSecCrypto(object):
         hasher = getattr(hashes, hash_alg.upper())
         return hasher()
 
+    _salts = {'sha224': 28, 'sha256': 32, 'sha384': 48, 'sha512': 64}
+
+    def salt_length(self, hash_alg):
+        if hash_alg not in self._salts:
+            raise XMLSigException("sha3 hashes not yet supported")
+
+        return self._salts[hash_alg]
+
     def parse_sig_scheme(self, sig_alg, parameters=None):
         if sig_alg == 'mgf1' or sig_alg == 'rsa-pss':
             if not parameters:
                 hasher = hashes.SHA256()
-                padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=padding.PSS.MAX_LENGTH)
+                padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=self.salt_length('sha256'))
                 return [padder, hasher], noop, noop
             else:
                 raise XMLSigException("Parametrized RSA-PSS or RSA-PSS-MGF1 not yet supported")
 
         if sig_alg.endswith('rsa-mgf1'):
             sig_alg_lst = sig_alg.split('-')
-            if len(sig_alg_list) != 3:
+            if len(sig_alg_lst) != 3:
                 raise XMLSigException("Unable to determine MGF1 digest method f '{}'".format(sig_alg))
 
             hasher = self.mk_hasher(sig_alg_lst[0])
-            padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=padding.PSS.MAX_LENGTH)
+            padder = padding.PSS(mgf=padding.MGF1(hasher), salt_length=self.salt_length(sig_alg_lst[0]))
             return [padder, hasher], noop, noop
 
         if sig_alg.startswith('rsa-'):
