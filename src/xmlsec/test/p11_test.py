@@ -38,6 +38,7 @@ except (ImportError, XMLSigException):
 component_default_paths = {
     'P11_MODULE': [
         '/usr/lib/softhsm/libsofthsm2.so',
+        '/usr/lib/x86_64-linux-gnu/softhsm/libsofthsm2.so',
         '/usr/lib/softhsm/libsofthsm.so',
     ],
     'P11_ENGINE': [
@@ -137,13 +138,14 @@ log.level = DEBUG
                  '--init-token',
                  '--pin', 'secret1',
                  '--so-pin', 'secret2'], softhsm_conf=softhsm_conf)
+
         logging.debug("Generating 1024 bit RSA key in token")
         run_cmd([component_path['PKCS11_TOOL'],
                  '--module', component_path['P11_MODULE'],
                  '-l',
                  '-k',
                  '--key-type', 'rsa:1024',
-                 '--slot-index', '0',
+                 '--slot', '0',
                  '--id', 'a1b2',
                  '--label', 'test',
                  '--pin', 'secret1'], softhsm_conf=softhsm_conf)
