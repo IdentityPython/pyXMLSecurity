@@ -174,3 +174,9 @@ News
 *Release tis 10 sep 2019 19:41:58 CEST*
 
 * more p3 compat
+
+0.21
+----
+*Release ons 19 feb 2020 16:21:05 CET
+
+* add cmdline arg for setting position of signature in xmlsign tool
