@@ -16,6 +16,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding, utils
 from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certificate, Certificate
 import base64
 
+log = logging.getLogger('xmlsec.crypto')
+
 if six.PY2:
     from UserDict import DictMixin
 else:
