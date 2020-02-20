@@ -17,6 +17,8 @@ from cryptography.x509 import load_pem_x509_certificate, load_der_x509_certifica
 from xmlsec.utils import sigvalue2dsssig, noop
 import base64
 
+log = logging.getLogger('xmlsec.crypto')
+
 if six.PY2:
     from UserDict import DictMixin
 else:
