@@ -5,6 +5,7 @@ Usage: xmlsign
        -k|--key <keyspec>
        [-c|--cert <certspec>]
        [-o|--output <output>]
+       [-p|--pos <signature element position>]
        [<xml-file to be signed>]
 """
 
@@ -31,7 +32,7 @@ def sign_cmd():
     opts = None
     args = None
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hk:c:o:r:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hk:c:o:r:p:',
                                    ['help',
                                     'key=',
                                     'cert=',
@@ -40,7 +41,8 @@ def sign_cmd():
                                     'output=',
                                     'loglevel=',
                                     'logfile=',
-                                    'reference='])
+                                    'reference=',
+                                    'pos='])
     except getopt.error as msg:
         print(msg)
         print(__doc__)
@@ -53,6 +55,7 @@ def sign_cmd():
     loglevel = logging.WARN
     logfile = None
     do_xinclude = False
+    insert_index = 0
     for o, a in opts:
         if o in ('-h', '--help'):
             print(__doc__)
@@ -76,6 +79,8 @@ def sign_cmd():
                 raise ValueError('Invalid log level: %s' % a)
         elif o in '--logfile':
             logfile = a
+        elif o in ('-p','--pos'):
+            insert_index = int(a)
 
     log_args = {'level': loglevel}
     if logfile is not None:
@@ -101,13 +106,13 @@ def sign_cmd():
                 if do_xinclude:
                     t.xinclude()
                 reference_uri = _resolve_reference_uri(reference, t)
-                signed = sign(t, keyspec, certspec, reference_uri=reference_uri)
+                signed = sign(t, keyspec, certspec, reference_uri=reference_uri, insert_index=insert_index)
                 if signed:
                     serialize(signed, stream=output)
     else:
         t = etree.parse(sys.stdin)
         reference_uri = _resolve_reference_uri(reference, t)
-        signed = sign(t, keyspec, certspec, reference_uri=reference_uri)
+        signed = sign(t, keyspec, certspec, reference_uri=reference_uri, insert_index=insert_index)
         if signed:
             serialize(signed, stream=output)
 
