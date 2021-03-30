@@ -7,9 +7,6 @@ python XML Security
 .. image:: https://img.shields.io/coveralls/IdentityPython/pyXMLSecurity.svg
    :target: https://coveralls.io/r/IdentityPython/pyXMLSecurity?branch=master
    :alt: Coverage
-.. image:: https://img.shields.io/requires/github/IdentityPython/pyXMLSecurity.svg
-   :target: https://requires.io/github/IdentityPython/pyXMLSecurity/requirements/?branch=master
-   :alt: Requirements Status
 .. image:: https://api.codeclimate.com/v1/badges/a99a88d28ad37a79dbf6/test_coverage
    :target: https://codeclimate.com/github/codeclimate/codeclimate/test_coverage
    :alt: Test Coverage
