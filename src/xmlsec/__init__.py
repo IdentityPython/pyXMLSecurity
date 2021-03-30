@@ -337,7 +337,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                 if not this_cert.verify(b64d(sv), actual, sig_digest_alg):
                     raise XMLSigException("Failed to validate {!s} using sig digest {!s} and cm {!s}".format(etree.tostring(sig), sig_digest_alg, cm_alg))
                 validated.append(obj)
-        except XMLSigException as ex:
+        except (XMLSigException, ValueError) as ex:
             log.error(ex)
 
     if not validated:
