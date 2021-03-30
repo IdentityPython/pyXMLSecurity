@@ -10,9 +10,12 @@ python XML Security
 .. image:: https://img.shields.io/requires/github/IdentityPython/pyXMLSecurity.svg
    :target: https://requires.io/github/IdentityPython/pyXMLSecurity/requirements/?branch=master
    :alt: Requirements Status
-.. image:: https://img.shields.io/codeclimate/github/IdentityPython/pyXMLSecurity.svg
-   :target: https://codeclimate.com/github/IdentityPython/pyXMLSecurity
-   :alt: Code Climate
+.. image:: https://api.codeclimate.com/v1/badges/a99a88d28ad37a79dbf6/test_coverage
+   :target: https://codeclimate.com/github/codeclimate/codeclimate/test_coverage
+   :alt: Test Coverage
+.. image:: https://api.codeclimate.com/v1/badges/a99a88d28ad37a79dbf6/maintainability
+   :target: https://codeclimate.com/github/codeclimate/codeclimate/maintainability
+   :alt: Maintainability
 .. image:: https://img.shields.io/pypi/l/pyXMLSecurity.svg
    :target: https://github.com/IdentityPython/pyXMLSecurity/blob/master/LICENSE.txt
    :alt: License
