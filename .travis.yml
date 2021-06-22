@@ -9,17 +9,15 @@ python:
 
 addons:
   apt:
-    sources:
-      - sourceline: ppa:pkg-opendnssec/ppa
     packages:
+      # build deps
+      - swig
+      # runtime deps
       - xmlsec1
-      - libxml2-dev
-      - libxslt-dev
+      - libengine-pkcs11-openssl
       - libsofthsm2
       - softhsm2
       - opensc
-      - libengine-pkcs11-openssl
-      - swig
 
 install:
   - pip install pykcs11
