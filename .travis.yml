@@ -1,25 +1,23 @@
 sudo: false
-dist: xenial
+dist: bionic
 language: python
 python:
-  - 2.7
-  - 3.5
   - 3.6
   - 3.7
+  - 3.8
+  - 3.9
 
 addons:
   apt:
-    sources:
-      - sourceline: ppa:pkg-opendnssec/ppa
     packages:
+      # build deps
+      - swig
+      # runtime deps
       - xmlsec1
-      - libxml2-dev
-      - libxslt-dev
+      - libengine-pkcs11-openssl
       - libsofthsm2
       - softhsm2
       - opensc
-      - libengine-pkcs11-openssl
-      - swig
 
 install:
   - pip install pykcs11

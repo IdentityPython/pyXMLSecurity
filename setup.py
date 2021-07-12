@@ -1,15 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from setuptools import setup, find_packages
 import sys
 import os
 from distutils import versionpredicate
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.rst')).read()
-NEWS = open(os.path.join(here, 'NEWS.txt')).read()
+README = open(os.path.join(here, 'README.rst'),'rb').read().decode('utf-8')
+NEWS = open(os.path.join(here, 'NEWS.txt'),'rb').read().decode('utf-8')
 
 
-version = '0.21'
+version = '0.22dev0'
 
 install_requires = [
     'defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'six'
