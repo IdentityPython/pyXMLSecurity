@@ -4,6 +4,7 @@ import base64
 import logging
 import threading
 import six
+import sys
 from six.moves import xrange
 from xmlsec import constants
 from binascii import hexlify
@@ -20,6 +21,8 @@ log = logging.getLogger('xmlsec.crypto')
 
 if six.PY2:
     from UserDict import DictMixin
+elif sys.version_info[:2] >= (3, 8):
+    from collections.abc import MutableMapping as DictMixin
 else:
     from collections import MutableMapping as DictMixin
 
