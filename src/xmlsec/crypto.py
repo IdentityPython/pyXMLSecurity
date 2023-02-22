@@ -22,7 +22,7 @@ log = logging.getLogger('xmlsec.crypto')
 if six.PY2:
     from UserDict import DictMixin
 else:
-    from collections import MutableMapping as DictMixin
+    from collections.abc import MutableMapping as DictMixin
 
 NS = {'ds': 'http://www.w3.org/2000/09/xmldsig#'}
 
