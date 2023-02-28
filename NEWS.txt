@@ -180,3 +180,14 @@ News
 *Release ons 19 feb 2020 16:21:05 CET*
 
 * add cmdline arg for setting position of signature in xmlsign tool
+
+0.3
+----
+*Release ons 28 Feb 2023 16:01:25 CET*
+
+* add support for non-RSA and non-PKCS1 v1.5 padding
+* improved logging
+* drop python3
+* fix for mgf1 verification
+* avoid tripping up on missing fingerprints - validate over all signatures
+* correct import for MutableMapping
