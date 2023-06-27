@@ -12,6 +12,7 @@ import logging
 import copy
 import traceback
 from lxml.builder import ElementMaker
+from cryptography.x509 import ExtensionNotFound, BasicConstraints, load_pem_x509_certificate
 from xmlsec.exceptions import XMLSigException
 from xmlsec import constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, etree_to_string
@@ -312,6 +313,27 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             log.debug("SignatureValue: {!s}".format(sv))
             this_cert = xmlsec.crypto.from_keyspec(keyspec, signature_element=sig)
             log.debug("key size: {!s} bits".format(this_cert.keysize))
+
+            # Try verification by CA signed signing certificate
+            bc = None
+            try:
+                bc = this_cert.key.extensions.get_extension_for_class(BasicConstraints)
+            except ExtensionNotFound:
+                pass
+            else:
+                # If this_cert a CA cert it is probably not the signing cert
+                if bc.value.ca is True:
+                    # Find X509Certificate in signature that is child of the root element
+                    cert = t.find("/ds:Signature/ds:KeyInfo/ds:X509Data/ds:X509Certificate", namespaces=NS)
+                    if cert is not None:
+                        certspec = "-----BEGIN CERTIFICATE-----\n" + cert.text.strip() + "\n-----END CERTIFICATE-----"
+                        embedded_cert = load_pem_x509_certificate(certspec.encode())
+                        try:
+                            embedded_cert.verify_directly_issued_by(this_cert.key)
+                        except Exception:
+                            raise XMLSigException("Metadata certificate not signed by CA")
+                        else:
+                            this_cert.key = embedded_cert
 
             si = sig.find(".//{%s}SignedInfo" % NS['ds'])
             log.debug("Found signedinfo {!s}".format(etree.tostring(si)))
