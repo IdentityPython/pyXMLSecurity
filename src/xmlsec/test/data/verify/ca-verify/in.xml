@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui" ID="idm140120993870624" entityID="https://engine.test.surfconext.nl/authentication/idp/metadata" validUntil="2023-07-18T06:46:01Z"><ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+<ds:Reference URI="#idm140120993870624">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+<ds:DigestValue>nFmEOBy0lWykN/Adeg92P15qmYqGf0+jr4vGhKmnkfw=</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>
+ElClJWEtE4Lil/X8aIm/oQXlhbWpPm0LMraUTfxXA0f21i1KmfrkEkxWfhUTYeR4URoYgMqG0pXM
+u2HWKYexRth+oFSBZcnpYf37h5IqTBlwEwLMwU/v0vu8qRuiDPX61YtT/5zzSZXU0KTFBLq0f5+G
+RyFhLD7rUm96nJNswD4JRENhRao4ldfoKyk8POVsLEBbW0hRZ87/eXfiTLaP3y3amBcNCc6TNi1T
+XdnqXFEF54mhVWCWIv9Q3eAGIcyMouQy1edk4PIVnNj0Uov/DeitEJUTE6UC+L7oZNxthg4zT7vN
+wLXPp68vXKb7SyGy+xEu/91LcuVuNe5RHQCLCOCQFmEBkTjEVtijnKYrqb2pYUe4goXx+oG20lUZ
+tgDdSvpSXtiXREJS8PL1rDCIUwCXiND0ZB7ehXRhnTBmh8kpBjShjSfikWkAEWskcn/GD79bxUDF
+k4j3EKELGOT/9LdbedRQQFL4Mvn8BiJuOiGlwQvTpmRC/E2t2DPVSK1G
+</ds:SignatureValue>
+<ds:KeyInfo>
+<ds:KeyValue>
+<ds:RSAKeyValue>
+<ds:Modulus>
+tVo9TGMM2OuOlmvbXeM1GW+Vtu/nGwEYTWyGbLXlCD1erp8aDurRwiyYUcQuKQU0LHa4X4Yd/rOa
+8JvJo4SbNq3IkJAnT4k5fOtI6ooYVouWxV8hl+aNVOZmYKJlE/qO/p1I9HrdZf5GxSdBqiCrX9Lj
+4+0f86k6ank9HOlRcXIVOiwPBjiPcOVyCEhBovyFpQysjOvSNw5mwoqf65vLupCENKql4efJTTTr
+GcPFmKJAlz9CDxUFqT5CgtVRmLYr8Ci887zcUhnLr6d/bovt+4a3Y6ok8SuvGePLyepfirCT/o6Q
+12AWBPzbElWHs9721Uwf5euuMrwXyshiBxw3U6uWpCwkA4GEM43jTlNaEmW3LLm9JPqLKezBRpLJ
+WEYS29FfbV9F7vu418xrYT1FonDdF3ZR0tCTpUoDgX7T5/JHKmDTBdCGVXulfwFYH4+P+Ig5Nzip
+fRUXLRad5EmvBsyyG46pmF6RhiBLHulNoH6h0vVh7uKHXyh+64Q94WbL
+</ds:Modulus>
+<ds:Exponent>AQAB</ds:Exponent>
+</ds:RSAKeyValue>
+</ds:KeyValue>
+<ds:X509Data>
+<ds:X509Certificate>
+MIIFbjCCA1agAwIBAgIQagXJvtKqIRRO8zD41OktRjANBgkqhkiG9w0BAQsFADB8MQswCQYDVQQG
+EwJOTDEQMA4GA1UEBwwHVXRyZWNodDEQMA4GA1UECAwHVXRyZWNodDESMBAGA1UECgwJU1VSRiBC
+LlYuMRMwEQYDVQQLDApTVVJGY29uZXh0MSAwHgYDVQQDDBdTVVJGY29uZXh0IENBIDIwMjMgVEVT
+VDAeFw0yMzA2MDcxMTQxNDRaFw0yNTA2MDYxMTQxNDRaMIGVMQswCQYDVQQGEwJOTDEQMA4GA1UE
+BwwHVXRyZWNodDEQMA4GA1UECAwHVXRyZWNodDESMBAGA1UECgwJU1VSRiBCLlYuMRMwEQYDVQQL
+DApTVVJGY29uZXh0MTkwNwYDVQQDDDBTVVJGY29uZXh0IHRlc3QgZW52aXJvbm1lbnQgbWV0YWRh
+dGEgc2lnbmVyIDIwMjMwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQC1Wj1MYwzY646W
+a9td4zUZb5W27+cbARhNbIZsteUIPV6unxoO6tHCLJhRxC4pBTQsdrhfhh3+s5rwm8mjhJs2rciQ
+kCdPiTl860jqihhWi5bFXyGX5o1U5mZgomUT+o7+nUj0et1l/kbFJ0GqIKtf0uPj7R/zqTpqeT0c
+6VFxchU6LA8GOI9w5XIISEGi/IWlDKyM69I3DmbCip/rm8u6kIQ0qqXh58lNNOsZw8WYokCXP0IP
+FQWpPkKC1VGYtivwKLzzvNxSGcuvp39ui+37hrdjqiTxK68Z48vJ6l+KsJP+jpDXYBYE/NsSVYez
+3vbVTB/l664yvBfKyGIHHDdTq5akLCQDgYQzjeNOU1oSZbcsub0k+osp7MFGkslYRhLb0V9tX0Xu
++7jXzGthPUWicN0XdlHS0JOlSgOBftPn8kcqYNMF0IZVe6V/AVgfj4/4iDk3OKl9FRctFp3kSa8G
+zLIbjqmYXpGGIEse6U2gfqHS9WHu4odfKH7rhD3hZssCAwEAAaNSMFAwHQYDVR0OBBYEFNclSgPT
+rGp4QJQZGjFu6VEBTX4PMB8GA1UdIwQYMBaAFI5kmzwW92s2rRY2B5NNjSYI2oj1MA4GA1UdDwEB
+/wQEAwIHgDANBgkqhkiG9w0BAQsFAAOCAgEAORNL7FGBkeq6u/rmcNf+jZZz27vw86COPOiN6ygT
+yxaBq5fmJ4JZlDnlfO4C/4iek2QjKdgPlpvATGUUMXJdO6a7A3/vXNuoIGu3Ug9GW4vpTVPulaYZ
+edPHC8zBsxwRKwxpSTda7ubWDxH3vUxHz/zDOD2O71O6KFj6Ph8JXwa3TLH0xRN5CXa0UMKX0S+c
+k8MahCYnMtd99EBL/uOr0+D4q2HwxDRDpL4I9yRwyWxCafoR+6OfzO/vc/SGcjEk/9s0DrMKDkDT
+JlE9eZbaaWFFCkAkg3LHHLMYjykcTvjDEV75OohYcEC5/6uKHcB/ZQjHwkPBqv9pUF897yZ7sxS6
+6GEJmqqVIC+ayWRvC8N+UmvMGWAdohrY7r7CPeTE+iVHaeB7xGTSI9BhTEv3yMNHhqzqIOvgr8h5
+iCv7B5hQL+V7MRqD7e7X9uRR7wbyGmwT4p4VFbz5VqthCOFobsMxam9Axt+saebRyH6Mg3Ro9D5W
+gGoZmTP1yyiMrmEHQdf9+iblbfTbRW0irlaX5t58fWB1u4QZqcamlhVcl65Fub0g+QkSyGDMD9G5
+7z3CKOluNy6TxFZOxMynY6CEtaozDaiETm7NaNC1lkhi+SOHKRX5+q0KqJdnEC7GOX69hSDsCT90
+5dpVnr8JgFKoUfXWSmbwTMj45190dw7RMzk=
+</ds:X509Certificate>
+</ds:X509Data>
+</ds:KeyInfo>
+</ds:Signature><md:IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol"><md:Extensions><mdui:UIInfo><mdui:DisplayName xml:lang="nl">SURFconext TEST</mdui:DisplayName><mdui:DisplayName xml:lang="en">SURFconext TEST</mdui:DisplayName><mdui:Description xml:lang="nl">SURFconext TEST</mdui:Description><mdui:Description xml:lang="en">SURFconext TEST</mdui:Description><mdui:Logo height="160" width="200">https://static.surfconext.nl/media/idp/surfconext.png</mdui:Logo><mdui:Keywords xml:lang="en">SURFconext engine</mdui:Keywords><mdui:Keywords xml:lang="nl">SURFconext engine</mdui:Keywords></mdui:UIInfo></md:Extensions><md:KeyDescriptor xmlns:ds="http://www.w3.org/2000/09/xmldsig#" use="signing"><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIE7TCCA1WgAwIBAgIJANrbxA3xAUIIMA0GCSqGSIb3DQEBCwUAMIGMMQswCQYDVQQGEwJOTDEQMA4GA1UECAwHVXRyZWNodDEQMA4GA1UEBwwHVXRyZWNodDESMBAGA1UECgwJU1VSRiBCLlYuMRgwFgYDVQQLDA9TVVJGY29uZXh0IFRFU1QxKzApBgNVBAMMImVuZ2luZS50ZXN0LnN1cmZjb25leHQubmwgMjAyMzA0MDMwHhcNMjMwNDAzMTI1ODA0WhcNMjgwNDAyMTI1ODA0WjCBjDELMAkGA1UEBhMCTkwxEDAOBgNVBAgMB1V0cmVjaHQxEDAOBgNVBAcMB1V0cmVjaHQxEjAQBgNVBAoMCVNVUkYgQi5WLjEYMBYGA1UECwwPU1VSRmNvbmV4dCBURVNUMSswKQYDVQQDDCJlbmdpbmUudGVzdC5zdXJmY29uZXh0Lm5sIDIwMjMwNDAzMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAx+vZHDla/MMnksJjWfKwXXl7cmW9sEaavn3xNEGa9qjxA5GZXwQjSIrKwB9LLZLIPQIjyIzUJDl1oUrx3TYEg8wjYGs/PhavVLdlpJTqPHoSGKpHBQBoAqaN3hT9ahFkD3RyamLOWX0o4lOnManIuWMhdQe5qVbQehlbpKLbsLIApYryE2aTICQ0KxB1aobbudaslujYXuqAC8SZaP+lbZ7Pa9NkLI03UDk8wO5ZpCA/vad/6/QTfMqPrXM8xho8YjIXgUDSPbyyi8R0I6vDlk1asH2e8ujmregrSBu02reQLft4Drr1xBWLc7y23mFcixjEa1fynWcVvshfVJe2Syk+1Mak3TuAW2+/i6n8GcQejH5UgVBRpOi/XE9Gw37ImD4sld2kDnztsoqF1+LGTciolPJiB1mja6Ew9NRKy1y3waM3ZTKZyHg+GKZumtmTw+4dC72MnH8lkiB8iYInPB5jvUK/c14rDmOzaGWJavjLnxy8UXuKCJJUOMz0JxWlAgMBAAGjUDBOMB0GA1UdDgQWBBQC4qy6CHN6ndJyqycDbZYtOrjESDAfBgNVHSMEGDAWgBQC4qy6CHN6ndJyqycDbZYtOrjESDAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBgQAvrqfrfeY4J+wpSaaGHD53Z7X8SZx0jyHUbszYrKlAgxNO8bo0zbbCSkaJ/DJx7XmY2e1Po3u/qrYa3PQSlC31iQCF+8StLtGFdRLPAabl8OS5YqvOyHF0LHqhnJGkIgWIadkwlez4O4fA1X7JDk3K9oz/thR5xsJY31yCFxIWSaQVEW8j1vKcb0jK7ig7JHa7APvZNQY2A9Y06YhFEeNCu8MjmTHtY3Khko3PrsTIzXcUxWCztjvCmv4y7Jzhn4WzRKpRRskzaU6fZ6lty6Fk5L5u0PTfDQ8YNzgxfniIjdkeBLxSmvvoL6BhhDhwlHoSGekmDnyVh0n9qUKp5uBNsdy6LsQF6KJ1jNEN0raMOf3FS1bt0SWPTpZoXEEM6ao6TlfndvDX2zKzUdhE82QpNXThHZXrF6w3lgMyUugcxlvC2OwsJzmYH8fSU+xxSO8TrwDd9unmy+4hGfF3Gm7Oj+AI+6czR7VWtqz1dcV1sfi/fc9EVUD15XCiPD38F9s=
+</ds:X509Certificate></ds:X509Data></ds:KeyInfo></md:KeyDescriptor><md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</md:NameIDFormat><md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat><md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</md:NameIDFormat><md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://engine.test.surfconext.nl/authentication/idp/single-sign-on/key:20230403"/></md:IDPSSODescriptor><md:Organization><md:OrganizationName xml:lang="en">SURF BV</md:OrganizationName><md:OrganizationDisplayName xml:lang="en">SURF</md:OrganizationDisplayName><md:OrganizationURL xml:lang="en">http://www.surf.nl</md:OrganizationURL></md:Organization><md:ContactPerson contactType="administrative"><md:GivenName>SURFconext support</md:GivenName><md:EmailAddress>mailto:support@surfconext.nl</md:EmailAddress></md:ContactPerson><md:ContactPerson contactType="technical"><md:GivenName>SURFconext support</md:GivenName><md:EmailAddress>mailto:support@surfconext.nl</md:EmailAddress></md:ContactPerson><md:ContactPerson contactType="support"><md:GivenName>SURFconext support</md:GivenName><md:EmailAddress>mailto:help@surfconext.nl</md:EmailAddress></md:ContactPerson></md:EntityDescriptor>

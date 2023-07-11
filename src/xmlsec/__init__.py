@@ -321,17 +321,18 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
             except ExtensionNotFound:
                 pass
             else:
+                log.debug("CA=true cert")
                 # If this_cert a CA cert it is probably not the signing cert
                 if bc.value.ca is True:
                     # Find X509Certificate in signature that is child of the root element
-                    cert = t.find("/ds:Signature/ds:KeyInfo/ds:X509Data/ds:X509Certificate", namespaces=NS)
+                    cert = t.find(".//ds:Signature/ds:KeyInfo/ds:X509Data/ds:X509Certificate", namespaces=NS)
                     if cert is not None:
                         certspec = "-----BEGIN CERTIFICATE-----\n" + cert.text.strip() + "\n-----END CERTIFICATE-----"
                         embedded_cert = load_pem_x509_certificate(certspec.encode())
                         try:
                             embedded_cert.verify_directly_issued_by(this_cert.key)
                         except Exception:
-                            raise XMLSigException("Metadata certificate not signed by CA")
+                            pass
                         else:
                             this_cert.key = embedded_cert
 

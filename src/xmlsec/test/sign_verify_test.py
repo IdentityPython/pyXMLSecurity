@@ -105,7 +105,7 @@ class TestVerify(unittest.TestCase):
 
 
 class TestSignVerify(unittest.TestCase):
-    
+
     def setUp(self):
         self.datadir = pkg_resources.resource_filename(__name__, 'data')
         self.private_keyspec = os.path.join(self.datadir, 'test.key')
