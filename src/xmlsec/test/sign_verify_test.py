@@ -4,13 +4,13 @@ import os
 import copy
 import unittest
 import xmlsec
-import pkg_resources
 from xmlsec.test.case import load_test_data
 from xmlsec import constants, utils
 import six
 import base64
 from . import find_alts, run_cmd
 import tempfile
+from importlib_resources import files
 
 __author__ = 'ft'
 
@@ -39,9 +39,9 @@ def _get_all_signatures(t):
 
 class TestSignVerifyXmlSec1(unittest.TestCase):
     def setUp(self):
-        self.datadir = pkg_resources.resource_filename(__name__, 'data')
-        self.private_keyspec = os.path.join(self.datadir, 'test.key')
-        self.public_keyspec = os.path.join(self.datadir, 'test.pem')
+        self.datadir = files(__name__).joinpath('data')
+        self.private_keyspec = str(self.datadir.joinpath('test.key'))
+        self.public_keyspec = str(self.datadir.joinpath('test.pem'))
         self.cases = load_test_data('data/verifyxmlsec1')
         self.tmpf = tempfile.NamedTemporaryFile(delete=False)
 
@@ -80,26 +80,25 @@ class TestSignVerifyXmlSec1(unittest.TestCase):
 class TestVerify(unittest.TestCase):
 
     def setUp(self):
-        self.datadir = pkg_resources.resource_filename(__name__, 'data')
-        self.resource_dir = pkg_resources.resource_filename(__name__, '')
+        self.datadir = files(__name__).joinpath('data')
+        self.resource_dir = self.datadir.joinpath('verify')
         self.cases = load_test_data('data/verify')
 
     def test_verify_all(self):
         for case in self.cases.values():
-            print(str(case))
-            public_keyspec = os.path.join(self.resource_dir, case.name, "signer.crt")
+            public_keyspec = str(self.resource_dir.joinpath(case.name).joinpath("signer.crt"))
             res = xmlsec.verify(case.as_etree("in.xml"), public_keyspec)
             self.assertTrue(res)
 
     def test_verify_one(self):
         case = self.cases['it-connector']
-        public_keyspec = os.path.join(self.resource_dir, case.name, "signer.crt")
+        public_keyspec = str(self.resource_dir.joinpath('it-connector').joinpath("signer.crt"))
         res = xmlsec.verify(case.as_etree("in.xml"), public_keyspec)
         self.assertTrue(res)
 
     def test_verify_pss_mgf1(self):
         case = self.cases['eesti']
-        public_keyspec = os.path.join(self.resource_dir, case.name, "signer.crt")
+        public_keyspec = str(self.resource_dir.joinpath('eesti').joinpath("signer.crt"))
         res = xmlsec.verify(case.as_etree("in.xml"), public_keyspec)
         self.assertTrue(res)
 
@@ -107,10 +106,12 @@ class TestVerify(unittest.TestCase):
 class TestSignVerify(unittest.TestCase):
 
     def setUp(self):
-        self.datadir = pkg_resources.resource_filename(__name__, 'data')
-        self.private_keyspec = os.path.join(self.datadir, 'test.key')
-        self.public_keyspec = os.path.join(self.datadir, 'test.pem')
+        self.datadir = files(__name__).joinpath('data')
+        self.resource_dir = self.datadir.joinpath('signverify')
+        self.private_keyspec = str(self.datadir.joinpath('test.key'))
+        self.public_keyspec = str(self.datadir.joinpath('test.pem'))
         self.cases = load_test_data('data/signverify')
+
 
     def test_sign_verify_SAML_assertion1(self):
         """
@@ -431,7 +432,7 @@ class TestSignVerify(unittest.TestCase):
         print("Signed   SignatureValue: %s" % (repr(signed_sv)))
         print("Expected SignatureValue: %s" % (repr(expected_sv)))
 
-        self.assertEquals(digest, expected_digest)
+        self.assertEqual(digest, expected_digest)
         self.assertEqual(signed_sv, expected_sv)
 
     def test_verify_href(self):

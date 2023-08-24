@@ -311,6 +311,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                 raise XMLSigException("No SignatureValue")
 
             log.debug("SignatureValue: {!s}".format(sv))
+            log.debug("KeySpec: {!s}".format(keyspec))
             this_cert = xmlsec.crypto.from_keyspec(keyspec, signature_element=sig)
             log.debug("key size: {!s} bits".format(this_cert.keysize))
 

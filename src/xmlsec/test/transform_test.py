@@ -1,5 +1,4 @@
-import pkg_resources
-
+from importlib_resources import files
 __author__ = 'leifj'
 
 import unittest
@@ -12,9 +11,8 @@ from xmlsec.test.case import XMLTestData
 class TestTransforms(unittest.TestCase):
     def setUp(self):
         self.cases = {}
-        for case_n in pkg_resources.resource_listdir(__name__, "data/transform"):
-            case = XMLTestData(__name__, "data/transform/%s" % case_n)
-            self.cases[case_n] = case
+        for case_n in files(__name__).joinpath("data/transform").iterdir():
+            self.cases[case_n.name] = XMLTestData(case_n)
 
     def test_enveloped1(self):
         case = self.cases['enveloped1']
