@@ -9,7 +9,7 @@ README = open(os.path.join(here, 'README.rst'),'rb').read().decode('utf-8')
 NEWS = open(os.path.join(here, 'NEWS.txt'),'rb').read().decode('utf-8')
 
 
-version = '0.30'
+version = '1.0.0'
 
 install_requires = [
     'defusedxml', 'lxml', 'pyconfig', 'requests', 'cryptography', 'six'

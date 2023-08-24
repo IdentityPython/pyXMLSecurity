@@ -191,3 +191,11 @@ News
 * fix for mgf1 verification
 * avoid tripping up on missing fingerprints - validate over all signatures
 * correct import for MutableMapping
+
+1.0.0
+-----
+*Release tor 24 aug 2023 14:08:17 CEST*
+
+* support for PKIX chain validation for XML signatures
+* support for python 3.10
+* start using semantic versioning
