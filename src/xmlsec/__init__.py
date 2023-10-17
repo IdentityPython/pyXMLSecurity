@@ -16,6 +16,7 @@ from cryptography.x509 import ExtensionNotFound, BasicConstraints, load_pem_x509
 from xmlsec.exceptions import XMLSigException
 from xmlsec import constants
 from xmlsec.utils import parse_xml, pem2b64, unescape_xml_entities, delete_elt, root_elt, b64d, b64e, etree_to_string
+from xmlsec.Signer import Signer
 import xmlsec.crypto
 import pyconfig
 
@@ -453,74 +454,8 @@ def sign(t, key_spec, cert_spec=None, reference_uri='', insert_index=0, sig_path
                          Signature is inserted at beginning by default
     :returns: XML as lxml.etree (for convenience, 't' is modified in-place)
     """
-    private = xmlsec.crypto.from_keyspec(key_spec, private=True)
-
-    public = None
-    if cert_spec is not None:
-        public = xmlsec.crypto.from_keyspec(cert_spec)
-        if public is None:
-            raise XMLSigException("Unable to load public key from '%s'" % cert_spec)
-        if public.keysize and private.keysize:  # XXX maybe one set and one not set should also raise exception?
-            if public.keysize != private.keysize:
-                raise XMLSigException("Public and private key sizes do not match ({!s}, {!s})".format(
-                                      public.keysize, private.keysize))
-            # This might be incorrect for PKCS#11 tokens if we have no public key
-            log.debug("Using {!s} bit key".format(private.keysize))
-    sig_paths = t.findall(sig_path)
-    templates = list(filter(_is_template, sig_paths))
-    if not templates:
-        tmpl = add_enveloped_signature(t, reference_uri=reference_uri, pos=insert_index)
-        templates = [tmpl]
-
-    assert templates, XMLSigException("Failed to both find and add a signing template")
-
-    if config.debug_write_to_files:
-        with open("/tmp/sig-ref.xml", "w") as fd:
-            fd.write(etree_to_string(root_elt(t)))
-
-    for sig in templates:
-        log.debug("processing sig template: %s" % etree.tostring(sig))
-        si = sig.find(".//{%s}SignedInfo" % NS['ds'])
-        assert si is not None
-        cm_alg = _cm_alg(si)
-        sig_uri = _sig_uri(si)
-
-        _process_references(t, sig, verify_mode=False, sig_path=sig_path)
-        # XXX create signature reference duplicates/overlaps process references unless a c14 is part of transforms
-        log.debug("transform %s on %s" % (cm_alg, etree.tostring(si)))
-        sic = _transform(cm_alg, si)
-        log.debug("SignedInfo C14N: %s" % sic)
-
-        # sign hash digest and insert it into the XML
-        if private.do_digest: # assume pkcs1 v1.5
-            hash_alg = constants.sign_alg_xmldsig_sig_to_hashalg(sig_uri)
-            digest = xmlsec.crypto._digest(sic, hash_alg)
-            log.debug("SignedInfo digest: %s" % digest)
-            b_digest = b64d(digest)
-            tbs = _signed_value_pkcs1_v1_5(b_digest, private.keysize, private.do_padding, hash_alg)
-        else:
-            tbs = sic
-
-        signed = private.sign(tbs, sig_uri)
-        signature = b64e(signed)
-        if isinstance(signature, six.binary_type):
-            signature = six.text_type(signature, 'utf-8')
-        log.debug("SignatureValue: %s" % signature)
-        sv = sig.find(".//{%s}SignatureValue" % NS['ds'])
-        if sv is None:
-            si.addnext(DS.SignatureValue(signature))
-        else:
-            sv.text = signature
-
-        for cert_src in (public, private):
-            if cert_src is not None and cert_src.cert_pem:
-                # Insert cert_data as b64-encoded X.509 certificate into XML document
-                sv_elt = si.getnext()
-                sv_elt.addnext(DS.KeyInfo(DS.X509Data(DS.X509Certificate(pem2b64(cert_src.cert_pem)))))
-                break  # add the first we find, no more
-
-    return t
-
+    signer = Signer(key_spec=key_spec, cert_spec=cert_spec)
+    return signer.sign(t, reference_uri, insert_index, sig_path)
 
 def _cm_alg(si):
     cm = si.find(".//{%s}CanonicalizationMethod" % NS['ds'])
