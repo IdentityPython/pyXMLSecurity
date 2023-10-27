@@ -363,7 +363,7 @@ def _verify(t, keyspec, sig_path=".//{%s}Signature" % NS['ds'], drop_signature=F
                 if not this_cert.verify(b64d(sv), actual, sig_uri):
                     raise XMLSigException("Failed to validate {!s} using sig sig method {!s}".format(etree.tostring(sig), sig_uri))
                 validated.append(obj)
-        except (XMLSigException, ValueError) as ex:
+        except (XMLSigException, ValueError) as ex: # we will try the next available signature
             log.error(ex)
 
     if not validated:
